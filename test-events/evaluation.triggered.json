@@ -1,0 +1,28 @@
+{
+    "data": {
+      "deployment": {
+        "deploymentNames": null
+      },
+      "evaluation": {
+        "end": "2021-01-15T15:09:45.000Z",
+        "start": "2021-01-15T15:04:45.000Z"
+      },
+      "labels": null,
+      "message": "",
+      "project": "sockshop",
+      "result": "",
+      "service": "carts",
+      "stage": "staging",
+      "status": "",
+      "test": {
+        "end": "",
+        "start": ""
+      }
+    },
+    "id": "5afa758e-697c-4496-8deb-4d7cc1c93967",
+    "source": "test-events",
+    "specversion": "1.0",
+    "time": "2021-01-15T15:09:46.006Z",
+    "type": "sh.keptn.event.evaluation.triggered",
+    "shkeptncontext": "da7aec34-78c4-4182-a2c8-51eb88f5871d"
+  }

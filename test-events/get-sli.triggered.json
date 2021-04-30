@@ -1,0 +1,27 @@
+{
+    "data": {
+      "get-sli": {
+        "customFilters": [],
+        "end": "2021-01-15T15:09:45.000Z",
+        "indicators": [
+          "response_time_p95",
+          "some_other_metric"
+        ],
+        "sliProvider": "keptn-service-template-go",
+        "start": "2021-01-15T15:04:45.000Z"
+      },
+      "labels": null,
+      "message": "",
+      "project": "sockshop",
+      "result": "",
+      "service": "carts",
+      "stage": "staging",
+      "status": ""
+    },
+    "id": "409539ae-c0b9-436e-abc6-c257292e28ff",
+    "source": "test-events",
+    "specversion": "1.0",
+    "time": "2021-01-15T15:09:46.144Z",
+    "type": "sh.keptn.event.get-sli.triggered",
+    "shkeptncontext": "da7aec34-78c4-4182-a2c8-51eb88f5871d"
+  }

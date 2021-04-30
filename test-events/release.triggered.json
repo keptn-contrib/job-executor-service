@@ -1,0 +1,25 @@
+{
+    "type": "sh.keptn.event.release.triggered",
+    "specversion": "1.0",
+    "source": "test-events",
+    "id": "f2b878d3-03c0-4e8f-bc3f-454bc1b3d79b",
+    "time": "2019-06-07T07:02:15.64489Z",
+    "contenttype": "application/json",
+    "shkeptncontext": "08735340-6f9e-4b32-97ff-3b6c292bc50h",
+    "data": {
+      "project": "sockshop",
+      "stage": "dev",
+      "service": "carts",
+      "labels": {
+        "testId": "4711",
+        "buildId": "build-17",
+        "owner": "JohnDoe"
+      },
+      "status": "succeeded",
+      "result": "pass",
+  
+      "deployment": {
+        "deploymentstrategy": "blue_green_service"
+      }
+    }
+  }

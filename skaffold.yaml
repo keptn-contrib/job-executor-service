@@ -1,0 +1,13 @@
+apiVersion: skaffold/v1beta13
+kind: Config
+build:
+  artifacts:
+    - image: keptnsandbox/keptn-service-template-go # Todo: Replace this with your image name
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          debugBuild: true
+deploy:
+  kubectl:
+    manifests:
+      - deploy/service.yaml

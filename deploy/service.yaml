@@ -1,0 +1,67 @@
+---
+# Deployment of our keptn-service-template-go
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keptn-service-template-go
+  namespace: keptn
+spec:
+  selector:
+    matchLabels:
+      run: keptn-service-template-go
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: keptn-service-template-go
+    spec:
+      containers:
+        - name: keptn-service-template-go
+          image: keptnsandbox/keptn-service-template-go:latest # Todo: Replace this with your image name
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONFIGURATION_SERVICE
+              value: 'http://configuration-service:8080'
+        - name: distributor
+          image: keptn/distributor:0.8.0-alpha
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 10999
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "25m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          env:
+            - name: PUBSUB_URL
+              value: 'nats://keptn-nats-cluster'
+            - name: PUBSUB_TOPIC
+              value: 'sh.keptn.>'
+            - name: PUBSUB_RECIPIENT
+              value: '127.0.0.1'
+      serviceAccountName: keptn-default
+---
+# Expose keptn-service-template-go via Port 8080 within the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: keptn-service-template-go
+  namespace: keptn
+  labels:
+    run: keptn-service-template-go
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+  selector:
+    run: keptn-service-template-go
+
