@@ -1,20 +1,20 @@
 
-keptn-service-template-go
+keptn-generic-job-service
 ===========
 
-Helm Chart for the keptn keptn-service-template-go
+Helm Chart for the keptn keptn-generic-job-service
 
 
 ## Configuration
 
-The following table lists the configurable parameters of the keptn-service-template-go chart and their default values.
+The following table lists the configurable parameters of the keptn-generic-job-service chart and their default values.
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `keptnservice.image.repository` | Container image name | `"docker.io/keptnsandbox/keptn-service-template-go"` |
+| `keptnservice.image.repository` | Container image name | `"docker.io/didiladi/keptn-generic-job-service"` |
 | `keptnservice.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `keptnservice.image.tag` | Container tag | `""` |
-| `keptnservice.service.enabled` | Creates a kubernetes service for the keptn-service-template-go | `true` |
+| `keptnservice.service.enabled` | Creates a kubernetes service for the keptn-generic-job-service | `true` |
 | `distributor.stageFilter` | Sets the stage this helm service belongs to | `""` |
 | `distributor.serviceFilter` | Sets the service this helm service belongs to | `""` |
 | `distributor.projectFilter` | Sets the project this helm service belongs to | `""` |

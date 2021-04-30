@@ -1,10 +1,10 @@
 keptnservice:
   image:
-    repository: docker.io/keptnsandbox/keptn-service-template-go # Container Image Name
+    repository: docker.io/didiladi/keptn-generic-job-service # Container Image Name
     pullPolicy: Always                   # Kubernetes Image Pull Policy
     tag: "dev"                                    # Container Tag
   service:
-    enabled: true                              # Creates a Kubernetes Service for the keptn-service-template-go
+    enabled: true                              # Creates a Kubernetes Service for the keptn-generic-job-service
 
 distributor:
   stageFilter: ""                            # Sets the stage this helm service belongs to

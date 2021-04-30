@@ -1,23 +1,23 @@
 ---
-# Deployment of our keptn-service-template-go
+# Deployment of our keptn-generic-job-service
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: keptn-service-template-go
+  name: keptn-generic-job-service
   namespace: keptn
 spec:
   selector:
     matchLabels:
-      run: keptn-service-template-go
+      run: keptn-generic-job-service
   replicas: 1
   template:
     metadata:
       labels:
-        run: keptn-service-template-go
+        run: keptn-generic-job-service
     spec:
       containers:
-        - name: keptn-service-template-go
-          image: keptnsandbox/keptn-service-template-go:latest # Todo: Replace this with your image name
+        - name: keptn-generic-job-service
+          image: didiladi/keptn-generic-job-service:latest
           ports:
             - containerPort: 8080
           env:
@@ -50,18 +50,18 @@ spec:
               value: '127.0.0.1'
       serviceAccountName: keptn-default
 ---
-# Expose keptn-service-template-go via Port 8080 within the cluster
+# Expose keptn-generic-job-service via Port 8080 within the cluster
 apiVersion: v1
 kind: Service
 metadata:
-  name: keptn-service-template-go
+  name: keptn-generic-job-service
   namespace: keptn
   labels:
-    run: keptn-service-template-go
+    run: keptn-generic-job-service
 spec:
   ports:
     - port: 8080
       protocol: TCP
   selector:
-    run: keptn-service-template-go
+    run: keptn-generic-job-service
 

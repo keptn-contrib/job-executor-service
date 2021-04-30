@@ -16,7 +16,7 @@ vendor/*
 
 # binaries (created by go build on Linux/OSX)
 main
-keptn-service-template-go
+keptn-generic-job-service
 
 # IDE specific folders
 .vscode

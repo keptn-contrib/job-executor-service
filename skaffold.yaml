@@ -2,7 +2,7 @@ apiVersion: skaffold/v1beta13
 kind: Config
 build:
   artifacts:
-    - image: keptnsandbox/keptn-service-template-go # Todo: Replace this with your image name
+    - image: didiladi/keptn-generic-job-service
       docker:
         dockerfile: Dockerfile
         buildArgs:

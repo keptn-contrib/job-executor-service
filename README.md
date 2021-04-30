@@ -5,9 +5,9 @@ This is a Keptn Service Template written in GoLang.
 Quick start:
 
 1. In case you want to contribute your service to keptn-sandbox or keptn-contrib, make sure you have read and understood the [Contributing Guidelines](https://github.com/keptn-sandbox/contributing).
-1. Click [Use this template](https://github.com/keptn-sandbox/keptn-service-template-go/generate) on top of the repository, or download the repo as a zip-file, extract it into a new folder named after the service you want to create (e.g., simple-service) 
-1. Replace every occurrence of (docker) image names and tags from `keptnsandbox/keptn-service-template-go` to your docker organization and image name (e.g., `yourorganization/simple-service`)
-1. Replace every occurrence of `keptn-service-template-go` with the name of your service (e.g., `simple-service`)
+1. Click [Use this template](https://github.com/keptn-sandbox/keptn-generic-job-service/generate) on top of the repository, or download the repo as a zip-file, extract it into a new folder named after the service you want to create (e.g., simple-service) 
+1. Replace every occurrence of (docker) image names and tags from `didiladi/keptn-generic-job-service` to your docker organization and image name (e.g., `yourorganization/simple-service`)
+1. Replace every occurrence of `keptn-generic-job-service` with the name of your service (e.g., `simple-service`)
 1. Optional (but recommended): Create a git repo (e.g., on `github.com/your-username/simple-service`)
 1. Àdapt the [go.mod](go.mod) file and change `example.com/` to the actual package name (e.g., `github.com/your-username/simple-service`)
 1. Add yourself to the [CODEOWNERS](CODEOWNERS) file
@@ -21,39 +21,39 @@ Quick start:
 
 ---
 
-# keptn-service-template-go
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/keptn-service-template-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/keptn-service-template-go)](https://goreportcard.com/report/github.com/keptn-sandbox/keptn-service-template-go)
+# keptn-generic-job-service
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/keptn-generic-job-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/keptn-generic-job-service)](https://goreportcard.com/report/github.com/keptn-sandbox/keptn-generic-job-service)
 
-This implements a keptn-service-template-go for Keptn. If you want to learn more about Keptn visit us on [keptn.sh](https://keptn.sh)
+This implements a keptn-generic-job-service for Keptn. If you want to learn more about Keptn visit us on [keptn.sh](https://keptn.sh)
 
 ## Compatibility Matrix
 
 *Please fill in your versions accordingly*
 
-| Keptn Version    | [Keptn-Service-Template-Go Docker Image](https://hub.docker.com/r/keptnsandbox/keptn-service-template-go/tags) |
+| Keptn Version    | [Keptn-Service-Template-Go Docker Image](https://hub.docker.com/r/didiladi/keptn-generic-job-service/tags) |
 |:----------------:|:----------------------------------------:|
-|       0.6.1      | keptnsandbox/keptn-service-template-go:0.1.0 |
-|       0.7.1      | keptnsandbox/keptn-service-template-go:0.1.1 |
-|       0.7.2      | keptnsandbox/keptn-service-template-go:0.1.2 |
+|       0.6.1      | didiladi/keptn-generic-job-service:0.1.0 |
+|       0.7.1      | didiladi/keptn-generic-job-service:0.1.1 |
+|       0.7.2      | didiladi/keptn-generic-job-service:0.1.2 |
 
 ## Installation
 
-The *keptn-service-template-go* can be installed as a part of [Keptn's uniform](https://keptn.sh).
+The *keptn-generic-job-service* can be installed as a part of [Keptn's uniform](https://keptn.sh).
 
 ### Deploy in your Kubernetes cluster
 
-To deploy the current version of the *keptn-service-template-go* in your Keptn Kubernetes cluster, apply the [`deploy/service.yaml`](deploy/service.yaml) file:
+To deploy the current version of the *keptn-generic-job-service* in your Keptn Kubernetes cluster, apply the [`deploy/service.yaml`](deploy/service.yaml) file:
 
 ```console
 kubectl apply -f deploy/service.yaml
 ```
 
-This should install the `keptn-service-template-go` together with a Keptn `distributor` into the `keptn` namespace, which you can verify using
+This should install the `keptn-generic-job-service` together with a Keptn `distributor` into the `keptn` namespace, which you can verify using
 
 ```console
-kubectl -n keptn get deployment keptn-service-template-go -o wide
-kubectl -n keptn get pods -l run=keptn-service-template-go
+kubectl -n keptn get deployment keptn-generic-job-service -o wide
+kubectl -n keptn get pods -l run=keptn-generic-job-service
 ```
 
 ### Up- or Downgrading
@@ -61,12 +61,12 @@ kubectl -n keptn get pods -l run=keptn-service-template-go
 Adapt and use the following command in case you want to up- or downgrade your installed version (specified by the `$VERSION` placeholder):
 
 ```console
-kubectl -n keptn set image deployment/keptn-service-template-go keptn-service-template-go=keptnsandbox/keptn-service-template-go:$VERSION --record
+kubectl -n keptn set image deployment/keptn-generic-job-service keptn-generic-job-service=didiladi/keptn-generic-job-service:$VERSION --record
 ```
 
 ### Uninstall
 
-To delete a deployed *keptn-service-template-go*, use the file `deploy/*.yaml` files from this repository and delete the Kubernetes resources:
+To delete a deployed *keptn-generic-job-service*, use the file `deploy/*.yaml` files from this repository and delete the Kubernetes resources:
 
 ```console
 kubectl delete -f deploy/service.yaml
@@ -99,16 +99,16 @@ If you want to get more insights into processing those CloudEvents or even defin
 
 ### Common tasks
 
-* Build the binary: `go build -ldflags '-linkmode=external' -v -o keptn-service-template-go`
+* Build the binary: `go build -ldflags '-linkmode=external' -v -o keptn-generic-job-service`
 * Run tests: `go test -race -v ./...`
-* Build the docker image: `docker build . -t keptnsandbox/keptn-service-template-go:dev` (Note: Ensure that you use the correct DockerHub account/organization)
-* Run the docker image locally: `docker run --rm -it -p 8080:8080 keptnsandbox/keptn-service-template-go:dev`
-* Push the docker image to DockerHub: `docker push keptnsandbox/keptn-service-template-go:dev` (Note: Ensure that you use the correct DockerHub account/organization)
+* Build the docker image: `docker build . -t didiladi/keptn-generic-job-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
+* Run the docker image locally: `docker run --rm -it -p 8080:8080 didiladi/keptn-generic-job-service:dev`
+* Push the docker image to DockerHub: `docker push didiladi/keptn-generic-job-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
 * Deploy the service using `kubectl`: `kubectl apply -f deploy/`
 * Delete/undeploy the service using `kubectl`: `kubectl delete -f deploy/`
-* Watch the deployment using `kubectl`: `kubectl -n keptn get deployment keptn-service-template-go -o wide`
-* Get logs using `kubectl`: `kubectl -n keptn logs deployment/keptn-service-template-go -f`
-* Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=keptn-service-template-go`
+* Watch the deployment using `kubectl`: `kubectl -n keptn get deployment keptn-generic-job-service -o wide`
+* Get logs using `kubectl`: `kubectl -n keptn logs deployment/keptn-generic-job-service -f`
+* Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=keptn-generic-job-service`
 * Deploy the service using [Skaffold](https://skaffold.dev/): `skaffold run --default-repo=your-docker-registry --tail` (Note: Replace `your-docker-registry` with your DockerHub username; also make sure to adapt the image name in [skaffold.yaml](skaffold.yaml))
 
 
@@ -134,7 +134,7 @@ You can find the details in [.github/workflows/tests.yml](.github/workflows/test
 
 This repo uses GH Actions and Workflows to test the code and automatically build docker images.
 
-Docker Images are automatically pushed based on the configuration done in [.ci_env](.ci_env) and the two [GitHub Secrets](https://github.com/keptn-sandbox/keptn-service-template-go/settings/secrets/actions)
+Docker Images are automatically pushed based on the configuration done in [.ci_env](.ci_env) and the two [GitHub Secrets](https://github.com/keptn-sandbox/keptn-generic-job-service/settings/secrets/actions)
 * `REGISTRY_USER` - your DockerHub username
 * `REGISTRY_PASSWORD` - a DockerHub [access token](https://hub.docker.com/settings/security) (alternatively, your DockerHub password)
 
@@ -155,7 +155,7 @@ If any problems occur, fix them in the release branch and test them again.
 
 Once you have confirmed that everything works and your version is ready to go, you should
 
-* create a new release on the release branch using the [GitHub releases page](https://github.com/keptn-sandbox/keptn-service-template-go/releases), and
+* create a new release on the release branch using the [GitHub releases page](https://github.com/keptn-sandbox/keptn-generic-job-service/releases), and
 * merge any changes from the release branch back to the master branch.
 
 ## License

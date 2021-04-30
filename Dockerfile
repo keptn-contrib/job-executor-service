@@ -5,7 +5,7 @@ FROM golang:1.13.7-alpine as builder
 
 RUN apk add --no-cache gcc libc-dev git
 
-WORKDIR /src/keptn-service-template-go
+WORKDIR /src/keptn-generic-job-service
 
 ARG version=develop
 ENV VERSION="${version}"
@@ -32,7 +32,7 @@ COPY . .
 
 # Build the command inside the container.
 # (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
-RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o keptn-service-template-go
+RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o keptn-generic-job-service
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
@@ -51,7 +51,7 @@ ARG version=develop
 ENV VERSION="${version}"
 
 # Copy the binary to the production image from the builder stage.
-COPY --from=builder /src/keptn-service-template-go/keptn-service-template-go /keptn-service-template-go
+COPY --from=builder /src/keptn-generic-job-service/keptn-generic-job-service /keptn-generic-job-service
 
 EXPOSE 8080
 
@@ -64,4 +64,4 @@ ENV GOTRACEBACK=all
 #build-uncomment ENTRYPOINT ["/entrypoint.sh"]
 
 # Run the web service on container startup.
-CMD ["/keptn-service-template-go"]
+CMD ["/keptn-generic-job-service"]
