@@ -19,8 +19,8 @@
       "result": "pass",
   
       "action": {
-        "name": "my action name",
-        "action": "action-xyz",
+        "name": "run locust tests",
+        "action": "locust",
         "description": "so something as defined in remediation.yaml",
         "value" : "1"
       },

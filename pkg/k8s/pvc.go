@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,7 @@ func CreateK8sPvc(clientset *kubernetes.Clientset, namespace string, pvcName str
 		},
 	}
 
-	_, err := pvcs.Create(pvcSpec)
+	_, err := pvcs.Create(context.TODO(), pvcSpec, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

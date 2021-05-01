@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"context"
 	"fmt"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -57,7 +58,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 
 	jobs := clientset.BatchV1().Jobs(namespace)
 
-	job, err := jobs.Create(jobSpec)
+	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -74,12 +75,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 			return fmt.Errorf("max poll count reaced for job %s. Timing out after 5 minutes", jobName)
 		}
 
-		job, err = jobs.Get(job.Name, metav1.GetOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "job",
-			},
-		})
-
+		job, err = jobs.Get(context.TODO(), job.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

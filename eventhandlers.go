@@ -1,7 +1,7 @@
 package main
 
 import (
-	"example.com/keptn-generic-job-service/pkg/k8s"
+	"didiladi/keptn-generic-job-service/pkg/k8s"
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -29,7 +29,7 @@ func HandleActionTriggeredEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevent
 	// check if action is supported
 	if data.Action.Action == "locust" {
 
-		go handleLocust(myKeptn, data)
+		handleLocust(myKeptn, data)
 
 	} else {
 		log.Printf("Retrieved unknown action %s, skipping...", data.Action.Action)
