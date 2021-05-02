@@ -118,6 +118,7 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 		}()
 
 		// TODO get the logs of the job
+		// TODO is there a way to display the logs in the keptn bridge?
 
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err.Error())

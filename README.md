@@ -1,41 +1,46 @@
-# README
-
-This is a Keptn Service Template written in GoLang. 
-
-Quick start:
-
-1. In case you want to contribute your service to keptn-sandbox or keptn-contrib, make sure you have read and understood the [Contributing Guidelines](https://github.com/keptn-sandbox/contributing).
-1. Click [Use this template](https://github.com/keptn-sandbox/keptn-generic-job-service/generate) on top of the repository, or download the repo as a zip-file, extract it into a new folder named after the service you want to create (e.g., simple-service) 
-1. Replace every occurrence of (docker) image names and tags from `didiladi/keptn-generic-job-service` to your docker organization and image name (e.g., `yourorganization/simple-service`)
-1. Replace every occurrence of `keptn-generic-job-service` with the name of your service (e.g., `simple-service`)
-1. Optional (but recommended): Create a git repo (e.g., on `github.com/your-username/simple-service`)
-1. Àdapt the [go.mod](go.mod) file and change `example.com/` to the actual package name (e.g., `github.com/your-username/simple-service`)
-1. Add yourself to the [CODEOWNERS](CODEOWNERS) file
-1. Initialize a git repository: 
-  * `git init .`
-  * `git add .`
-  * `git commit -m "Initial Commit"`
-1. Optional: Push your code an upstream git repo (e.g., GitHub) and adapt all links that contain `github.com` (e.g., to `github.com/your-username/simple-service`)
-1. Figure out whether your Kubernetes Deployment requires [any RBAC rules or a different service-account](https://github.com/keptn-sandbox/contributing#rbac-guidelines), and adapt [deploy/service.yaml](deploy/service.yaml) accordingly (initial setup is `serviceAccountName: keptn-default`).
-1. Last but not least: Remove this intro within the README file and make sure the README file properly states what this repository is about
-
----
-
-# keptn-generic-job-service
+# Keptn Generic Job Service
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/keptn-generic-job-service)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/keptn-generic-job-service)](https://goreportcard.com/report/github.com/keptn-sandbox/keptn-generic-job-service)
 
-This implements a keptn-generic-job-service for Keptn. If you want to learn more about Keptn visit us on [keptn.sh](https://keptn.sh)
+(naming not final)
+
+This Keptn service introduces a radical new approach to running tasks with keptn. It provides the meand
+to run any container as a Kubernetes Job orchestrated by keptn.
+
+## Why?
+
+The current approach of services running in the keptn ecosystem has the following downsides:
+
+| Problem | Solution |
+|----------------|----------------|
+| Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on your Kubernetes cluster. | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), which just consume resources while the task is executed. |
+| Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The **code of the new keptn service needs to be written and maintained**. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.  |
+| Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed. | The Generic Job Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.  |
+| File handling | |
+| New functionality in keptn | |
+
+## How?
+
+### Event Matching
+
+### Kubernetes Job
+
+### File Handling
+
+
+## Endless Possibilities
+
+* Run the helm service as a kubernetes job and limit the permissions of it by assigning a different service account to it.
+* Execute infrastructure as code with keptn (e.g. run terraform, pulumi, etc)
+* Run kaniko inside the cluster and build and push your images. Suddenly, keptn turns into your CI
 
 ## Compatibility Matrix
 
 *Please fill in your versions accordingly*
 
-| Keptn Version    | [Keptn-Service-Template-Go Docker Image](https://hub.docker.com/r/didiladi/keptn-generic-job-service/tags) |
+| Keptn Version    | [Keptn-Generic-Job-Service Docker Image](https://hub.docker.com/r/didiladi/keptn-generic-job-service/tags) |
 |:----------------:|:----------------------------------------:|
-|       0.6.1      | didiladi/keptn-generic-job-service:0.1.0 |
-|       0.7.1      | didiladi/keptn-generic-job-service:0.1.1 |
-|       0.7.2      | didiladi/keptn-generic-job-service:0.1.2 |
+|       0.8.2      | didiladi/keptn-generic-job-service:latest |
 
 ## Installation
 
@@ -84,18 +89,6 @@ It is recommended to make use of branches as follows:
 * once ready, create a pull request from that branch back to the `master` branch
 
 When writing code, it is recommended to follow the coding style suggested by the [Golang community](https://github.com/golang/go/wiki/CodeReviewComments).
-
-### Where to start
-
-If you don't care about the details, your first entrypoint is [eventhandlers.go](eventhandlers.go). Within this file 
- you can add implementation for pre-defined Keptn Cloud events.
- 
-To better understand all variants of Keptn CloudEvents, please look at the [Keptn Spec](https://github.com/keptn/spec).
- 
-If you want to get more insights into processing those CloudEvents or even defining your own CloudEvents in code, please 
- look into [main.go](main.go) (specifically `processKeptnCloudEvent`), [deploy/service.yaml](deploy/service.yaml),
- consult the [Keptn docs](https://keptn.sh/docs/) as well as existing [Keptn Core](https://github.com/keptn/keptn) and
- [Keptn Contrib](https://github.com/keptn-contrib/) services.
 
 ### Common tasks
 
