@@ -2,7 +2,9 @@ package k8s
 
 import (
 	"context"
+	"didiladi/keptn-generic-job-service/pkg/config"
 	"fmt"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"strings"
 	"time"
 
@@ -13,14 +15,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, image string, cmd string) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, task config.Task, eventData *keptnv2.EventData, actionName string, configurationServiceUrl string) error {
 
 	var backOffLimit int32 = 0
 
 	jobVolumeName := "job-volume"
-	jobVolumeMountPath := "/mnt"
 
+	// TODO configure from outside:
+	jobVolumeMountPath := "/keptn"
+	// TODO configure from outside:
 	quantity := resource.MustParse("20Mi")
+
 	emptyDirVolume := v1.EmptyDirVolumeSource{
 		Medium:    v1.StorageMediumDefault,
 		SizeLimit: &quantity,
@@ -38,12 +43,41 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 					InitContainers: []v1.Container{
 						{
 							Name:    "init-" + jobName,
-							Image:   "bash",
-							Command: []string{"sh", "-c", "touch /mnt/hello"},
+							Image:   "didiladi/keptn-generic-job-service-initcontainer",
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
 									MountPath: jobVolumeMountPath,
+								},
+							},
+							Env: []v1.EnvVar{
+								{
+									Name: "ENV",
+									Value: "",
+								},
+								{
+									Name: "CONFIGURATION_SERVICE",
+									Value: configurationServiceUrl,
+								},
+								{
+									Name: "KEPTN_PROJECT",
+									Value: eventData.Project,
+								},
+								{
+									Name: "KEPTN_STAGE",
+									Value: eventData.Stage,
+								},
+								{
+									Name: "KEPTN_SERVICE",
+									Value: eventData.Service,
+								},
+								{
+									Name: "JOB_ACTION",
+									Value: actionName,
+								},
+								{
+									Name: "JOB_TASK",
+									Value: task.Name,
 								},
 							},
 						},
@@ -51,8 +85,8 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 					Containers: []v1.Container{
 						{
 							Name:    jobName,
-							Image:   "bash",
-							Command: strings.Split(cmd, " "),
+							Image:   task.Image,
+							Command: strings.Split(task.Cmd, " "),
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,

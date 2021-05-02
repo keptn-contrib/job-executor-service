@@ -23,10 +23,8 @@ spec:
           env:
             - name: CONFIGURATION_SERVICE
               value: 'http://configuration-service:8080'
-            - name: STORAGE_CLASS_NAME
-              value: "local-path"
-            - name: STORAGE_VOLUME_NAME
-              value: "keptn-generic-job-service-git-volume"
+            - name: JOB_NAMESPACE
+              value: 'keptn'
         - name: distributor
           image: keptn/distributor:0.8.0-alpha
           livenessProbe:
@@ -120,28 +118,4 @@ subjects:
   - kind: ServiceAccount
     name: keptn-generic-job-service
     namespace: keptn
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: keptn-generic-job-service-git-volume
-  labels:
-    keptn-service: generic-job-service
-spec:
-  accessModes:
-    - ReadWriteOnce
-  capacity:
-    storage: 1Gi
-  storageClassName: local-path
-  local:
-    path: /home/didi/keptn
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - diditop
-  persistentVolumeReclaimPolicy: Retain
 

@@ -3,5 +3,4 @@ kind: ConfigMap
 metadata:
   name: job-service-config
 data:
-  storage_class_name: "{{ .Values.config.storageClassName }}"
-  storage_volume_name: "{{ .Values.config.storageVolumeName }}"
+  job_namespace: "{{ .Release.Namespace }}"

@@ -17,10 +17,9 @@
       },
       "status": "succeeded",
       "result": "pass",
-  
       "action": {
         "name": "run locust tests",
-        "action": "locust",
+        "action": "hello",
         "description": "so something as defined in remediation.yaml",
         "value" : "1"
       },
