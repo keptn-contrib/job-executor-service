@@ -1,0 +1,24 @@
+
+events:
+  - type: "sh.keptn.event.test.triggered"
+    jsonpath:
+      property: ".data.test.teststrategy" 
+      match: "locust"
+    actions:
+      - name: "Run locust smoke tests"
+        files: 
+          - locust/basic.py
+          - locust/import.py
+        image: "locustio/locust"
+        cmd: "locust -f /mnt/locust/locustfile.py"
+
+  - type: "sh.keptn.event.action.triggered"
+    jsonpath: 
+      property: ".data.action.action"
+      match: "hello"
+    actions:
+      - name: "Run hello world"
+        files: 
+          - hello/hello-world.txt
+        image: "bash"
+        cmd: "cat /mnt/hello/heppo-world.txt | echo"

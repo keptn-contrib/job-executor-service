@@ -30,6 +30,10 @@ serviceAccount:
   annotations: {}                            # Annotations to add to the service account
   name: ""                                   # The name of the service account to use.
 
+config:
+  storageClassName: "gp2"
+  storageVolumeName: "keptn-generic-job-service-git-volume"
+
 podAnnotations: {}                           # Annotations to add to the created pods
 
 podSecurityContext: {}                       # Set the pod security context (e.g. fsGroups)

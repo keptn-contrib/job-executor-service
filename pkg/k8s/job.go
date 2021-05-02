@@ -3,20 +3,29 @@ package k8s
 import (
 	"context"
 	"fmt"
-	batchv1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"strings"
 	"time"
+
+	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, image string, cmd string, pvcName string) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, image string, cmd string) error {
 
 	var backOffLimit int32 = 0
 
-	jobVolumeName := "jobVolume"
+	jobVolumeName := "job-volume"
 	jobVolumeMountPath := "/mnt"
+
+	quantity := resource.MustParse("20Mi")
+	emptyDirVolume := v1.EmptyDirVolumeSource{
+		Medium:    v1.StorageMediumDefault,
+		SizeLimit: &quantity,
+	}
+	automountServiceAccountToken := false
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -26,12 +35,25 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
+					InitContainers: []v1.Container{
+						{
+							Name:    "init-" + jobName,
+							Image:   "bash",
+							Command: []string{"sh", "-c", "touch /mnt/hello"},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									Name:      jobVolumeName,
+									MountPath: jobVolumeMountPath,
+								},
+							},
+						},
+					},
 					Containers: []v1.Container{
 						{
 							Name:    jobName,
-							Image:   image,
+							Image:   "bash",
 							Command: strings.Split(cmd, " "),
-							VolumeMounts: []v1.VolumeMount {
+							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
 									MountPath: jobVolumeMountPath,
@@ -44,12 +66,11 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 						{
 							Name: jobVolumeName,
 							VolumeSource: v1.VolumeSource{
-								PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-									ClaimName: pvcName,
-								},
+								EmptyDir: &emptyDirVolume,
 							},
 						},
 					},
+					AutomountServiceAccountToken: &automountServiceAccountToken,
 				},
 			},
 			BackoffLimit: &backOffLimit,
@@ -63,6 +84,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		return err
 	}
 
+	// TODO timeout from outside
 	// 60 times with 5 seconds wait time => 5 minutes
 	const maxPollCount = 60
 	const pollIntervalInSeconds = 5
@@ -80,7 +102,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 			return err
 		}
 
-		for _, condition := range job.Status.Conditions{
+		for _, condition := range job.Status.Conditions {
 
 			switch condition.Type {
 			case batchv1.JobComplete:
@@ -96,5 +118,10 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		time.Sleep(pollIntervalInSeconds * time.Second)
 	}
 
+}
 
+func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
+
+	jobs := clientset.BatchV1().Jobs(namespace)
+	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }

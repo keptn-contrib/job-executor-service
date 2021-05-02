@@ -86,6 +86,16 @@ spec:
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
             {{- end }}
+            - name: STORAGE_CLASS_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: job-service-config
+                  key: storage_class_name
+            - name: STORAGE_VOLUME_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: job-service-config
+                  key: storage_volume_name
 
       {{- with .Values.nodeSelector }}
       nodeSelector:

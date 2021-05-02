@@ -112,7 +112,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		* Also, see https://github.com/keptn-sandbox/echo-service/blob/a90207bc119c0aca18368985c7bb80dea47309e9/pkg/events.go as an example how to create your own CloudEvents
 		**/
 
-	supportedEvents := [2]string{"locust", "hello-world"}
+	supportedEvents := [2]string{"action"}
 
 	for _, task := range supportedEvents {
 
@@ -199,10 +199,21 @@ func main() {
  * Opens up a listener on localhost:port/path and passes incoming requets to gotEvent
  */
 func _main(args []string, env envConfig) int {
+
 	// configure keptn options
 	if env.Env == "local" {
 		log.Println("env=local: Running with local filesystem to fetch resources")
 		keptnOptions.UseLocalFileSystem = true
+	}
+
+	_, available := os.LookupEnv("STORAGE_CLASS_NAME")
+	if !available {
+		log.Fatalf("STORAGE_CLASS_NAME was not available. Please set it as env var")
+	}
+
+	_, available = os.LookupEnv("STORAGE_VOLUME_NAME")
+	if !available {
+		log.Fatalf("STORAGE_VOLUME_NAME was not available. Please set it as env var")
 	}
 
 	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceUrl
