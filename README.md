@@ -4,28 +4,32 @@
 
 (naming not final)
 
-This Keptn service introduces a radical new approach to running tasks with keptn. It provides the meand
+This Keptn service introduces a radical new approach to running tasks with keptn. It provides the means
 to run any container as a Kubernetes Job orchestrated by keptn.
 
 ## Why?
 
-The current approach of services running in the keptn ecosystem has the following downsides:
+The generic job service aims to tackle several current pain points with the current approach of services running in the keptn ecosystem:
 
 | Problem | Solution |
 |----------------|----------------|
-| Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on your Kubernetes cluster. | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), which just consume resources while the task is executed. |
-| Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The **code of the new keptn service needs to be written and maintained**. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.  |
+| Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on the Kubernetes cluster. | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), they just consume resources while the task is executed. |
+| Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The code of the new keptn service needs to be written and maintained. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.  |
 | Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed. | The Generic Job Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.  |
-| File handling | |
-| New functionality in keptn | |
+| Keptn services are usually opinionized on how your framework execution looks like. E.g. the locust service just executes three different (statically named) files depending on the test strategy in the shipyard. It is not possible to write tests consisting of multiply files. | This service provides the possibility to write any specified file from the keptn git repository into a mounted folder (`/keptn`) of the Kubernetes job. This is done by a initcontainer running before the specified image. |
+| Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature. | The Generic Job Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
 
 ## How?
+TODO
 
 ### Event Matching
+TODO
 
 ### Kubernetes Job
+TODO
 
 ### File Handling
+TODO
 
 
 ## Endless Possibilities
@@ -33,6 +37,11 @@ The current approach of services running in the keptn ecosystem has the followin
 * Run the helm service as a kubernetes job and limit the permissions of it by assigning a different service account to it.
 * Execute infrastructure as code with keptn (e.g. run terraform, pulumi, etc)
 * Run kaniko inside the cluster and build and push your images. Suddenly, keptn turns into your CI
+* ...
+
+## Credits
+
+The credits of this service heavily go to @thschue and @augustin-dt who originally came up with this idea. :rocket:
 
 ## Compatibility Matrix
 
