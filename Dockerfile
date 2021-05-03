@@ -32,7 +32,7 @@ COPY . .
 
 # Build the command inside the container.
 # (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
-RUN GOOS=linux go build ./cmd/keptn-generic-job-service -ldflags '-linkmode=external' $BUILDFLAGS -v -o keptn-generic-job-service
+RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o keptn-generic-job-service cmd/keptn-generic-job-service/main.go
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
