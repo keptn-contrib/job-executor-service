@@ -18,7 +18,6 @@ require (
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.8.3
-	github.com/keptn/kubernetes-utils v0.8.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/spf13/afero v1.2.2
 	go.uber.org/multierr v1.6.0 // indirect

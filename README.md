@@ -20,16 +20,105 @@ The generic job service aims to tackle several current pain points with the curr
 | Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature. | The Generic Job Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
 
 ## How?
-TODO
+
+Just put a file into the keptn git repository (in folder `<service>/generic-job/config.yaml`) to specify 
+* the containers which should be run as Kubernetes Jobs and
+* the events for which they should be triggered.
+
+```yaml
+actions:
+  - name: "Run locust"
+    event: "sh.keptn.event.test.triggered"
+    jsonpath:
+      property: "$.test.teststrategy" 
+      match: "locust"
+    tasks:
+      - name: "Run locust smoke tests"
+        files: 
+          - locust/basic.py
+          - locust/import.py
+        image: "locustio/locust"
+        cmd: "locust -f /keptn/locust/locustfile.py"
+```
 
 ### Event Matching
-TODO
+
+The configuration located in `<service>/generic-job/config.yaml` contains the following section:
+
+```
+    jsonpath:
+      property: "$.test.teststrategy" 
+      match: "locust"
+```
+
+If the service receives an event which matches the jsonpath match expression, the specified tasks are executed. E.g. the 
+following cloud event would match the jsonpath above:
+
+```
+{
+    "type": "sh.keptn.event.test.triggered",
+    "specversion": "1.0",
+    "source": "test-events",
+    "id": "f2b878d3-03c0-4e8f-bc3f-454bc1b3d79b",
+    "time": "2019-06-07T07:02:15.64489Z",
+    "contenttype": "application/json",
+    "shkeptncontext": "08735340-6f9e-4b32-97ff-3b6c292bc50i",
+    "data": {
+      "project": "sockshop",
+      "stage": "dev",
+      "service": "carts",
+      "labels": {
+        "testId": "4711",
+        "buildId": "build-17",
+        "owner": "JohnDoe"
+      },
+      "status": "succeeded",
+      "result": "pass",
+      "test": {
+        teststrategy": "locust"
+      }
+    }
+  }
+```
 
 ### Kubernetes Job
-TODO
+
+The configuration contains the following section:
+
+```
+    tasks:
+      - name: "Run locust smoke tests"
+        files: 
+          - locust/basic.py
+          - locust/import.py
+        image: "locustio/locust"
+        cmd: "locust -f /keptn/locust/locustfile.py"
+```
+
+It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of these
+tasks in the order, they are listed within the config. The service waits for the successful execution of all of the tasks 
+to respond with a `StatusSucceeded` finished event. When one of the events fail, it responds with `StatusErrored` 
+finished cloud event. 
 
 ### File Handling
-TODO
+
+Files can be added to your running tasks by specifying them in the `files` section of your tasks:
+
+```
+        files: 
+          - locust/basic.py
+          - locust/import.py
+```
+
+This is done by using an `initcontainer` for the scheduled Kubernetes Job which prepares the `èmptyDir` volume mounted to 
+the Kubernetes Job. Within the Job itself, the files will be available within the `keptn` folder. The naming of the files 
+and the location will be preserved.
+
+When using these files in your comtainer command, please make sure to reference them by prepending the `keptn` path. E.g.:
+
+```
+        cmd: "locust -f /keptn/locust/locustfile.py"
+```
 
 
 ## Endless Possibilities
