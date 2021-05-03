@@ -38,7 +38,7 @@ actions:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd: "locust -f /keptn/locust/basic.py"
 ```
 
 ### Event Matching
@@ -92,7 +92,7 @@ The configuration contains the following section:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd: "locust -f /keptn/locust/basic.py"
 ```
 
 It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of these

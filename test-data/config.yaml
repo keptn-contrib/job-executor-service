@@ -11,7 +11,7 @@ actions:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd: "locust -f /keptn/locust/basic.py"
 
   - name: "Run Bash"
     event: "sh.keptn.event.action.triggered"
