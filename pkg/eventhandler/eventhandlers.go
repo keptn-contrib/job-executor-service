@@ -25,44 +25,44 @@ func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data i
 
 	resource, err := myKeptn.GetKeptnResource("generic-job/config.yaml")
 	if err != nil {
-		log.Printf("Could not find config for generic Job service")
+		log.Printf("Could not find config for generic Job service: %s", err.Error())
 		return err
 	}
 
 	/* For testing:
 
-	configuration, err := config.NewConfig(resource)
-	const complexConfig = `
-actions:
-  - name: "Run locust"
-    event: "sh.keptn.event.test.triggered"
-    jsonpath:
-      property: "$.test.teststrategy" 
-      match: "locust"
-    tasks:
-      - name: "Run locust smoke tests"
-        files: 
-          - locust/basic.py
-          - locust/import.py
-        image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+		configuration, err := config.NewConfig(resource)
+		const complexConfig = `
+	actions:
+	  - name: "Run locust"
+	    event: "sh.keptn.event.test.triggered"
+	    jsonpath:
+	      property: "$.test.teststrategy"
+	      match: "locust"
+	    tasks:
+	      - name: "Run locust smoke tests"
+	        files:
+	          - locust/basic.py
+	          - locust/import.py
+	        image: "locustio/locust"
+	        cmd: "locust -f /keptn/locust/locustfile.py"
 
-  - name: "Run bash"
-    event: "sh.keptn.event.action.triggered"
-    jsonpath: 
-      property: "$.action.action"
-      match: "hello"
-    tasks:
-      - name: "Run static world"
-        image: "bash"
-        cmd: "echo static"
-      - name: "Run hello world"
-        files: 
-          - hello/hello-world.txt
-        image: "bash"
-        cmd: "cat /keptn/hello/heppo-world.txt | echo"
-`
-	configuration, err := config.NewConfig([]byte(complexConfig))
+	  - name: "Run bash"
+	    event: "sh.keptn.event.action.triggered"
+	    jsonpath:
+	      property: "$.action.action"
+	      match: "hello"
+	    tasks:
+	      - name: "Run static world"
+	        image: "bash"
+	        cmd: "echo static"
+	      - name: "Run hello world"
+	        files:
+	          - hello/hello-world.txt
+	        image: "bash"
+	        cmd: "cat /keptn/hello/heppo-world.txt | echo"
+	`
+		configuration, err := config.NewConfig([]byte(complexConfig))
 	*/
 
 	configuration, err := config.NewConfig(resource)
@@ -95,9 +95,9 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 	namespace, _ := os.LookupEnv("JOB_NAMESPACE")
 
 	for index, task := range action.Tasks {
-		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index + 1), strconv.Itoa(len(action.Tasks)), task.Name)
+		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
-		jobName := "keptn-generic-job-" + event + "-" + strconv.Itoa(index + 1)
+		jobName := "keptn-generic-job-" + event + "-" + strconv.Itoa(index+1)
 
 		clientset, err := k8s.ConnectToCluster(namespace)
 		if err != nil {
@@ -106,10 +106,11 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 			return
 		}
 
-		actionName := action.Name
-		configurationServiceUrl := myKeptn.ResourceHandler.BaseURL
+		if action.Configuration.ConfigurationService.Url == "" {
+			action.Configuration.ConfigurationService.Url = myKeptn.ResourceHandler.BaseURL
+		}
 
-		err = k8s.CreateK8sJob(clientset, namespace, jobName, task, eventData, actionName, configurationServiceUrl)
+		err = k8s.CreateK8sJob(clientset, namespace, jobName, action, task, eventData)
 		defer func() {
 			err = k8s.DeleteK8sJob(clientset, namespace, jobName)
 			if err != nil {
@@ -132,7 +133,7 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 	myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
-		Message: fmt.Sprintf("Job %s finished successfully!", "keptn-generic-job-" + event),
+		Message: fmt.Sprintf("Job %s finished successfully!", "keptn-generic-job-"+event),
 	}, serviceName)
 }
 

@@ -11,15 +11,25 @@ type Config struct {
 }
 
 type Action struct {
-	Name     string   `yaml:"name"`
-	Event    string   `yaml:"event"`
-	JsonPath JsonPath `yaml:"jsonpath"`
-	Tasks    []Task   `yaml:"tasks"`
+	Name          string        `yaml:"name"`
+	Event         string        `yaml:"event"`
+	JsonPath      JsonPath      `yaml:"jsonpath"`
+	Configuration Configuration `yaml:"configuration"`
+	Tasks         []Task        `yaml:"tasks"`
 }
 
 type JsonPath struct {
 	Property string `yaml:"property"`
 	Match    string `yaml:"match"`
+}
+
+type Configuration struct {
+	ConfigurationService ConfigurationService `yaml:"configurationService"`
+}
+
+type ConfigurationService struct {
+	Url                   string `yaml:"url"`
+	CredentialsSecretName string `yaml:"credentialsSecretName"`
 }
 
 type Task struct {

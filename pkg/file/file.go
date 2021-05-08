@@ -4,14 +4,16 @@ import (
 	"didiladi/keptn-generic-job-service/pkg/config"
 	"didiladi/keptn-generic-job-service/pkg/keptn"
 	"fmt"
-	"github.com/spf13/afero"
 	"log"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
 
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.KeptnConfigService) error {
 
-	resource, err := configService.GetKeptnResource("generic-job/config.yaml")
+	// https://github.com/keptn/keptn/issues/2707
+	resource, err := configService.GetKeptnResource("generic-job%2Fconfig.yaml")
 	if err != nil {
 		log.Printf("Could not find config for generic Job service")
 		return err
