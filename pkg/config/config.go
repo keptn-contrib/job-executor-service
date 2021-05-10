@@ -7,15 +7,15 @@ import (
 )
 
 type Config struct {
-	Actions []Action `yaml:"actions"`
+	Configuration Configuration `yaml:"configuration"`
+	Actions       []Action      `yaml:"actions"`
 }
 
 type Action struct {
-	Name          string        `yaml:"name"`
-	Event         string        `yaml:"event"`
-	JsonPath      JsonPath      `yaml:"jsonpath"`
-	Configuration Configuration `yaml:"configuration"`
-	Tasks         []Task        `yaml:"tasks"`
+	Name     string   `yaml:"name"`
+	Event    string   `yaml:"event"`
+	JsonPath JsonPath `yaml:"jsonpath"`
+	Tasks    []Task   `yaml:"tasks"`
 }
 
 type JsonPath struct {

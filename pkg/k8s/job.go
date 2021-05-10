@@ -16,8 +16,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, configuration *config.Configuration, action *config.Action, task config.Task, eventData *keptnv2.EventData) error {
 
+	configurationService := configuration.ConfigurationService
 	var backOffLimit int32 = 0
 
 	jobVolumeName := "job-volume"
@@ -32,8 +33,6 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		SizeLimit: &quantity,
 	}
 	automountServiceAccountToken := false
-
-	configurationService := action.Configuration.ConfigurationService
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -91,6 +90,20 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 								{
 									Name:      jobVolumeName,
 									MountPath: jobVolumeMountPath,
+								},
+							},
+							Env: []v1.EnvVar{
+								{
+									Name:  "KEPTN_PROJECT",
+									Value: eventData.Project,
+								},
+								{
+									Name:  "KEPTN_STAGE",
+									Value: eventData.Stage,
+								},
+								{
+									Name:  "KEPTN_SERVICE",
+									Value: eventData.Service,
 								},
 							},
 						},

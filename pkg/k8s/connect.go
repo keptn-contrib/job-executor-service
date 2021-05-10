@@ -7,12 +7,10 @@ import (
 
 func ConnectToCluster(namespace string) (*kubernetes.Clientset, error) {
 
-	// creates the in-cluster config
 	config, err := keptnutils.GetClientset(true)
 	if err != nil {
 		return nil, err
 	}
 
-	// return kubernetes.NewForConfig(config)
 	return config, nil
 }

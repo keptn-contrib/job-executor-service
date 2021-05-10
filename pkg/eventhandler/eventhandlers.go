@@ -79,12 +79,12 @@ func HandleEvent(myKeptn *keptnv2.Keptn, incomingEvent cloudevents.Event, data i
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", incomingEvent.Context.GetID(), incomingEvent.Type(), action.Name)
 
-	startK8sJob(myKeptn, eventData, action, serviceName)
+	startK8sJob(myKeptn, eventData, &configuration.Configuration, action, serviceName)
 
 	return nil
 }
 
-func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *config.Action, serviceName string) {
+func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, configuration *config.Configuration, action *config.Action, serviceName string) {
 
 	event, err := myKeptn.SendTaskStartedEvent(eventData, serviceName)
 	if err != nil {
@@ -106,11 +106,11 @@ func startK8sJob(myKeptn *keptnv2.Keptn, eventData *keptnv2.EventData, action *c
 			return
 		}
 
-		if action.Configuration.ConfigurationService.Url == "" {
-			action.Configuration.ConfigurationService.Url = myKeptn.ResourceHandler.BaseURL
+		if configuration.ConfigurationService.Url == "" {
+			configuration.ConfigurationService.Url = myKeptn.ResourceHandler.BaseURL
 		}
 
-		err = k8s.CreateK8sJob(clientset, namespace, jobName, action, task, eventData)
+		err = k8s.CreateK8sJob(clientset, namespace, jobName, configuration, action, task, eventData)
 		defer func() {
 			err = k8s.DeleteK8sJob(clientset, namespace, jobName)
 			if err != nil {
