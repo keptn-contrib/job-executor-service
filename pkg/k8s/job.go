@@ -4,9 +4,10 @@ import (
 	"context"
 	"didiladi/keptn-generic-job-service/pkg/config"
 	"fmt"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"strings"
 	"time"
+
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -15,8 +16,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, task config.Task, eventData *keptnv2.EventData, actionName string, configurationServiceUrl string) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, configuration *config.Configuration, action *config.Action, task config.Task, eventData *keptnv2.EventData) error {
 
+	configurationService := configuration.ConfigurationService
 	var backOffLimit int32 = 0
 
 	jobVolumeName := "job-volume"
@@ -42,8 +44,9 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 				Spec: v1.PodSpec{
 					InitContainers: []v1.Container{
 						{
-							Name:    "init-" + jobName,
-							Image:   "didiladi/keptn-generic-job-service-initcontainer",
+							Name:            "init-" + jobName,
+							Image:           "didiladi/keptn-generic-job-service-initcontainer",
+							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
@@ -52,31 +55,27 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 							},
 							Env: []v1.EnvVar{
 								{
-									Name: "ENV",
-									Value: "",
+									Name:  "CONFIGURATION_SERVICE",
+									Value: configurationService.Url,
 								},
 								{
-									Name: "CONFIGURATION_SERVICE",
-									Value: configurationServiceUrl,
-								},
-								{
-									Name: "KEPTN_PROJECT",
+									Name:  "KEPTN_PROJECT",
 									Value: eventData.Project,
 								},
 								{
-									Name: "KEPTN_STAGE",
+									Name:  "KEPTN_STAGE",
 									Value: eventData.Stage,
 								},
 								{
-									Name: "KEPTN_SERVICE",
+									Name:  "KEPTN_SERVICE",
 									Value: eventData.Service,
 								},
 								{
-									Name: "JOB_ACTION",
-									Value: actionName,
+									Name:  "JOB_ACTION",
+									Value: action.Name,
 								},
 								{
-									Name: "JOB_TASK",
+									Name:  "JOB_TASK",
 									Value: task.Name,
 								},
 							},
@@ -91,6 +90,20 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 								{
 									Name:      jobVolumeName,
 									MountPath: jobVolumeMountPath,
+								},
+							},
+							Env: []v1.EnvVar{
+								{
+									Name:  "KEPTN_PROJECT",
+									Value: eventData.Project,
+								},
+								{
+									Name:  "KEPTN_STAGE",
+									Value: eventData.Stage,
+								},
+								{
+									Name:  "KEPTN_SERVICE",
+									Value: eventData.Service,
 								},
 							},
 						},
@@ -111,6 +124,21 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		},
 	}
 
+	if configurationService.CredentialsSecretName != "" {
+		jobSpec.Spec.Template.Spec.InitContainers[0].Env = append(jobSpec.Spec.Template.Spec.InitContainers[0].Env,
+			v1.EnvVar{
+				Name: "KEPTN_API_TOKEN",
+				ValueFrom: &v1.EnvVarSource{
+					SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: configurationService.CredentialsSecretName,
+						},
+						Key: "token",
+					},
+				},
+			})
+	}
+
 	jobs := clientset.BatchV1().Jobs(namespace)
 
 	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
@@ -128,7 +156,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 
 		currentPollCount++
 		if currentPollCount > maxPollCount {
-			return fmt.Errorf("max poll count reaced for job %s. Timing out after 5 minutes", jobName)
+			return fmt.Errorf("max poll count reached for job %s. Timing out after 5 minutes", jobName)
 		}
 
 		job, err = jobs.Get(context.TODO(), job.Name, metav1.GetOptions{})

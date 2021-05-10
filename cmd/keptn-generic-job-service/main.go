@@ -76,7 +76,10 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		log.Printf("failed to convert incoming cloudevent: %v", err)
 	}
 
-	return eventhandler.HandleEvent(myKeptn, event, eventDataAsInterface, eventData, ServiceName)
+	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888
+	go eventhandler.HandleEvent(myKeptn, event, eventDataAsInterface, eventData, ServiceName)
+
+	return nil
 }
 
 /**

@@ -3,11 +3,13 @@ package main
 import (
 	"didiladi/keptn-generic-job-service/pkg/file"
 	"didiladi/keptn-generic-job-service/pkg/keptn"
+	"log"
+	"net/url"
+	"os"
+
 	"github.com/kelseyhightower/envconfig"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	"github.com/spf13/afero"
-	"log"
-	"os"
 )
 
 type envConfig struct {
@@ -25,6 +27,8 @@ type envConfig struct {
 	Stage string `envconfig:"KEPTN_STAGE" required:"true"`
 	// The keptn service contained in the initial cloud event
 	Service string `envconfig:"KEPTN_SERVICE" required:"true"`
+	// The keptn service contained in the initial cloud event
+	ApiToken string `envconfig:"KEPTN_API_TOKEN" required:"false"`
 	// The name of the config action which triggered the init container run
 	Action string `envconfig:"JOB_ACTION" required:"true"`
 	// The name of the config task which triggered the init container run
@@ -39,7 +43,15 @@ func main() {
 	}
 
 	fs := afero.NewOsFs()
-	resourceHandler := api.NewResourceHandler(env.ConfigurationServiceUrl)
+
+	var resourceHandler *api.ResourceHandler
+	if env.ApiToken != "" {
+		configurationServiceUrl, _ := url.Parse(env.ConfigurationServiceUrl)
+		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceUrl.String(), env.ApiToken, "x-token", nil, configurationServiceUrl.Scheme)
+	} else {
+		resourceHandler = api.NewResourceHandler(env.ConfigurationServiceUrl)
+	}
+
 	useLocalFileSystem := false
 
 	// configure keptn options
@@ -58,5 +70,3 @@ func main() {
 
 	os.Exit(0)
 }
-
-

@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Actions []Action `yaml:"actions"`
+	Configuration Configuration `yaml:"configuration"`
+	Actions       []Action      `yaml:"actions"`
 }
 
 type Action struct {
@@ -20,6 +21,15 @@ type Action struct {
 type JsonPath struct {
 	Property string `yaml:"property"`
 	Match    string `yaml:"match"`
+}
+
+type Configuration struct {
+	ConfigurationService ConfigurationService `yaml:"configurationService"`
+}
+
+type ConfigurationService struct {
+	Url                   string `yaml:"url"`
+	CredentialsSecretName string `yaml:"credentialsSecretName"`
 }
 
 type Task struct {
