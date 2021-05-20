@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"didiladi/keptn-generic-job-service/pkg/eventhandler"
-	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -11,11 +10,12 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	"github.com/kelseyhightower/envconfig"
-	keptn "github.com/keptn/go-utils/pkg/lib/keptn"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 var keptnOptions = keptn.KeptnOpts{}
+var env envConfig
 
 type envConfig struct {
 	// Port on which to listen for cloudevents
@@ -25,7 +25,13 @@ type envConfig struct {
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
-	ConfigurationServiceUrl string `envconfig:"CONFIGURATION_SERVICE" default:""`
+	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:""`
+	// The endpoint of the keptn configuration service API
+	InitContainerConfigurationServiceAPIEndpoint string `envconfig:"INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT" required:"true"`
+	// The k8s namespace the job will run in
+	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
+	// The token of the keptn API
+	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -68,16 +74,18 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		log.Printf("failed to convert incoming cloudevent to event data: %v", err)
 	}
 
-	var eventDataAsInterface interface{}
-	//err = event.DataAs(eventDataAsInterface)
-	err = json.Unmarshal(event.Data(), &eventDataAsInterface)
-	//err = parseKeptnCloudEventPayload(event, eventDataAsInterface)
-	if err != nil {
-		log.Printf("failed to convert incoming cloudevent: %v", err)
+	eventHandler := &eventhandler.EventHandler{
+		Keptn:        myKeptn,
+		Event:        event,
+		EventData:    eventData,
+		ServiceName:  ServiceName,
+		JobNamespace: env.JobNamespace,
+		InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
+		KeptnAPIToken: env.KeptnAPIToken,
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888
-	go eventhandler.HandleEvent(myKeptn, event, eventDataAsInterface, eventData, ServiceName)
+	go eventHandler.HandleEvent()
 
 	return nil
 }
@@ -90,7 +98,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
  * env=runlocal   -> will fetch resources from local drive instead of configuration service
  */
 func main() {
-	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatalf("Failed to process env var: %s", err)
 	}
@@ -109,12 +116,7 @@ func _main(args []string, env envConfig) int {
 		keptnOptions.UseLocalFileSystem = true
 	}
 
-	_, available := os.LookupEnv("JOB_NAMESPACE")
-	if !available {
-		log.Fatalf("JOB_NAMESPACE was not available. Please set it as env var")
-	}
-
-	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceUrl
+	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceURL
 
 	log.Println("Starting keptn-generic-job-service...")
 	log.Printf("    on Port = %d; Path=%s", env.Port, env.Path)

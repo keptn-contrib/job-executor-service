@@ -87,7 +87,7 @@ const actionTriggeredEventData = `{
 
 func TestSimpleConfigUnmarshalling(t *testing.T) {
 
-	config, err := NewConfig([]byte(SimpleConfig))
+	config, err := NewConfig([]byte(simpleConfig))
 
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 1)
@@ -118,7 +118,7 @@ func TestSimpleMatch(t *testing.T) {
 
 func TestSimpleNoMatch(t *testing.T) {
 
-	config, err := NewConfig([]byte(SimpleConfig))
+	config, err := NewConfig([]byte(simpleConfig))
 	assert.NilError(t, err)
 
 	jsonEventData := interface{}(nil)

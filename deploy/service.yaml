@@ -21,6 +21,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
+              value: "http://configuration-service:8080"
             - name: CONFIGURATION_SERVICE
               value: 'http://configuration-service:8080'
             - name: JOB_NAMESPACE
@@ -92,6 +94,7 @@ rules:
       - ""
     resources:
       - "pods"
+      - "pods/log"
       - "persistentvolumeclaims"
       - "jobs"
     verbs:

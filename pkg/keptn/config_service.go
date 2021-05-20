@@ -6,22 +6,24 @@ import (
 	"os"
 )
 
-//go:generate mockgen -source=config_service.go -destination=config_service_mock.go -package=keptn KeptnConfigService
+//go:generate mockgen -source=config_service.go -destination=config_service_mock.go -package=keptn ConfigService
 
-type KeptnConfigService interface {
+// ConfigService provides methods to work with the keptn configuration service
+type ConfigService interface {
 	GetKeptnResource(resource string) ([]byte, error)
 }
 
-type keptnConfigServiceImpl struct {
+type configServiceImpl struct {
 	useLocalFileSystem bool
-	project string
-	stage string
-	service string
-	resourceHandler *api.ResourceHandler
+	project            string
+	stage              string
+	service            string
+	resourceHandler    *api.ResourceHandler
 }
 
-func NewKeptnConfigService(useLocalFileSystem bool, project string, stage string, service string, resourceHandler *api.ResourceHandler) KeptnConfigService {
-	return &keptnConfigServiceImpl{
+// NewConfigService creates and returns new ConfigService
+func NewConfigService(useLocalFileSystem bool, project string, stage string, service string, resourceHandler *api.ResourceHandler) ConfigService {
+	return &configServiceImpl{
 		useLocalFileSystem: useLocalFileSystem,
 		project:            project,
 		stage:              stage,
@@ -31,7 +33,7 @@ func NewKeptnConfigService(useLocalFileSystem bool, project string, stage string
 }
 
 // getKeptnResource returns a resource from the configuration repo based on the incoming cloud events project, service and stage
-func (k *keptnConfigServiceImpl) GetKeptnResource(resource string) ([]byte, error) {
+func (k *configServiceImpl) GetKeptnResource(resource string) ([]byte, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	if k.useLocalFileSystem {
@@ -52,10 +54,10 @@ func (k *keptnConfigServiceImpl) GetKeptnResource(resource string) ([]byte, erro
 /**
  * Retrieves a resource (=file) from the local file system. Basically checks if the file is available and if so returns it
  */
-func (k *keptnConfigServiceImpl) getKeptnResourceFromLocal(resource string) ([]byte, error) {
-	if _, err := os.Stat(resource); err == nil {
+func (k *configServiceImpl) getKeptnResourceFromLocal(resource string) ([]byte, error) {
+	_, err := os.Stat(resource)
+	if err == nil {
 		return []byte(resource), nil
-	} else {
-		return nil, err
 	}
+	return nil, err
 }

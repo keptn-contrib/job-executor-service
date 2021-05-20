@@ -3,7 +3,7 @@ package eventhandler
 import (
 	"encoding/json"
 	"fmt"
-	keptn "github.com/keptn/go-utils/pkg/lib/keptn"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
 	"io/ioutil"
@@ -36,7 +36,3 @@ func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.E
 
 	return myKeptn, incomingEvent, err
 }
-
-
-
-

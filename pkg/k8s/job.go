@@ -16,23 +16,31 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, configuration *config.Configuration, action *config.Action, task config.Task, eventData *keptnv2.EventData) error {
+// CreateK8sJob creates a k8s job with the keptn-generic-job-service-initcontainer and the job image of the task and waits until the job finishes
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string) error {
 
-	configurationService := configuration.ConfigurationService
 	var backOffLimit int32 = 0
 
 	jobVolumeName := "job-volume"
 
 	// TODO configure from outside:
 	jobVolumeMountPath := "/keptn"
+
 	// TODO configure from outside:
 	quantity := resource.MustParse("20Mi")
+
+	// TODO resource quotas from outside
 
 	emptyDirVolume := v1.EmptyDirVolumeSource{
 		Medium:    v1.StorageMediumDefault,
 		SizeLimit: &quantity,
 	}
 	automountServiceAccountToken := false
+
+	runAsNonRoot := true
+	convert := func(s int64) *int64 {
+		return &s
+	}
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -42,10 +50,16 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
+					SecurityContext: &v1.PodSecurityContext{
+						RunAsUser:    convert(1000),
+						RunAsGroup:   convert(3000),
+						FSGroup:      convert(2000),
+						RunAsNonRoot: &runAsNonRoot,
+					},
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
-							Image:           "didiladi/keptn-generic-job-service-initcontainer",
+							Image:           "yeahservice/keptn-generic-job-service-initcontainer",
 							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
@@ -56,7 +70,11 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 							Env: []v1.EnvVar{
 								{
 									Name:  "CONFIGURATION_SERVICE",
-									Value: configurationService.Url,
+									Value: configurationServiceURL,
+								},
+								{
+									Name:  "KEPTN_API_TOKEN",
+									Value: configurationServiceToken,
 								},
 								{
 									Name:  "KEPTN_PROJECT",
@@ -124,21 +142,6 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 		},
 	}
 
-	if configurationService.CredentialsSecretName != "" {
-		jobSpec.Spec.Template.Spec.InitContainers[0].Env = append(jobSpec.Spec.Template.Spec.InitContainers[0].Env,
-			v1.EnvVar{
-				Name: "KEPTN_API_TOKEN",
-				ValueFrom: &v1.EnvVarSource{
-					SecretKeyRef: &v1.SecretKeySelector{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: configurationService.CredentialsSecretName,
-						},
-						Key: "token",
-					},
-				},
-			})
-	}
-
 	jobs := clientset.BatchV1().Jobs(namespace)
 
 	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
@@ -182,6 +185,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 
 }
 
+// DeleteK8sJob delete a k8s job in the given namespace
 func DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
 
 	jobs := clientset.BatchV1().Jobs(namespace)

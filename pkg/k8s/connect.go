@@ -5,7 +5,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func ConnectToCluster(namespace string) (*kubernetes.Clientset, error) {
+// ConnectToCluster returns the k8s Clientset
+func ConnectToCluster() (*kubernetes.Clientset, error) {
 
 	config, err := keptnutils.GetClientset(true)
 	if err != nil {

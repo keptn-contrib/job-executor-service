@@ -9,4 +9,4 @@ runner:
     errorformat:
       - "%f:%l %m"
   govet:
-    cmd: go vet -all .
+    cmd: go vet ./...

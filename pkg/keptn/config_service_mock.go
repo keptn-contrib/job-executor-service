@@ -5,35 +5,36 @@
 package keptn
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockKeptnConfigService is a mock of KeptnConfigService interface
-type MockKeptnConfigService struct {
+// MockConfigService is a mock of ConfigService interface.
+type MockConfigService struct {
 	ctrl     *gomock.Controller
-	recorder *MockKeptnConfigServiceMockRecorder
+	recorder *MockConfigServiceMockRecorder
 }
 
-// MockKeptnConfigServiceMockRecorder is the mock recorder for MockKeptnConfigService
-type MockKeptnConfigServiceMockRecorder struct {
-	mock *MockKeptnConfigService
+// MockConfigServiceMockRecorder is the mock recorder for MockConfigService.
+type MockConfigServiceMockRecorder struct {
+	mock *MockConfigService
 }
 
-// NewMockKeptnConfigService creates a new mock instance
-func NewMockKeptnConfigService(ctrl *gomock.Controller) *MockKeptnConfigService {
-	mock := &MockKeptnConfigService{ctrl: ctrl}
-	mock.recorder = &MockKeptnConfigServiceMockRecorder{mock}
+// NewMockConfigService creates a new mock instance.
+func NewMockConfigService(ctrl *gomock.Controller) *MockConfigService {
+	mock := &MockConfigService{ctrl: ctrl}
+	mock.recorder = &MockConfigServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockKeptnConfigService) EXPECT() *MockKeptnConfigServiceMockRecorder {
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockConfigService) EXPECT() *MockConfigServiceMockRecorder {
 	return m.recorder
 }
 
-// GetKeptnResource mocks base method
-func (m *MockKeptnConfigService) GetKeptnResource(resource string) ([]byte, error) {
+// GetKeptnResource mocks base method.
+func (m *MockConfigService) GetKeptnResource(resource string) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetKeptnResource", resource)
 	ret0, _ := ret[0].([]byte)
@@ -41,8 +42,8 @@ func (m *MockKeptnConfigService) GetKeptnResource(resource string) ([]byte, erro
 	return ret0, ret1
 }
 
-// GetKeptnResource indicates an expected call of GetKeptnResource
-func (mr *MockKeptnConfigServiceMockRecorder) GetKeptnResource(resource interface{}) *gomock.Call {
+// GetKeptnResource indicates an expected call of GetKeptnResource.
+func (mr *MockConfigServiceMockRecorder) GetKeptnResource(resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeptnResource", reflect.TypeOf((*MockKeptnConfigService)(nil).GetKeptnResource), resource)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeptnResource", reflect.TypeOf((*MockConfigService)(nil).GetKeptnResource), resource)
 }

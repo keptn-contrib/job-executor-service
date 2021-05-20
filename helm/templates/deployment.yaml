@@ -39,10 +39,24 @@ spec:
           ports:
             - containerPort: 80
           env:
+          {{- if .Values.remoteControlPlane.enabled }}
+          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
+            value: "{{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api/configuration-service"
+          - name: KEPTN_API_TOKEN
+            value: "{{ .Values.remoteControlPlane.api.token }}"
+          {{- else }}
+          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
+            value: "http://configuration-service:8080"
+          {{- end }}
           - name: CONFIGURATION_SERVICE
             value: "http://localhost:8081/configuration-service"
           - name: env
             value: 'production'
+          - name: JOB_NAMESPACE
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: job_namespace
           livenessProbe:
             httpGet:
               path: /health
@@ -86,11 +100,6 @@ spec:
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
             {{- end }}
-            - name: JOB_NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: job-service-config
-                  key: job_namespace
 
       {{- with .Values.nodeSelector }}
       nodeSelector:

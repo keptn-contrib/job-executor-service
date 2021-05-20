@@ -13,14 +13,12 @@ import (
 )
 
 type envConfig struct {
-	// Port on which to listen for cloudevents
-	Port int `envconfig:"RCV_PORT" default:"8080"`
-	// Path to which cloudevents are sent
-	Path string `envconfig:"RCV_PATH" default:"/"`
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
-	ConfigurationServiceUrl string `envconfig:"CONFIGURATION_SERVICE" default:""`
+	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" required:"true"`
+	// The token of the keptn API
+	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN" required:"true"`
 	// The keptn project contained in the initial cloud event
 	Project string `envconfig:"KEPTN_PROJECT" required:"true"`
 	// The keptn stage contained in the initial cloud event
@@ -28,8 +26,6 @@ type envConfig struct {
 	// The keptn service contained in the initial cloud event
 	Service string `envconfig:"KEPTN_SERVICE" required:"true"`
 	// The keptn service contained in the initial cloud event
-	ApiToken string `envconfig:"KEPTN_API_TOKEN" required:"false"`
-	// The name of the config action which triggered the init container run
 	Action string `envconfig:"JOB_ACTION" required:"true"`
 	// The name of the config task which triggered the init container run
 	Task string `envconfig:"JOB_TASK" required:"true"`
@@ -45,11 +41,11 @@ func main() {
 	fs := afero.NewOsFs()
 
 	var resourceHandler *api.ResourceHandler
-	if env.ApiToken != "" {
-		configurationServiceUrl, _ := url.Parse(env.ConfigurationServiceUrl)
-		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceUrl.String(), env.ApiToken, "x-token", nil, configurationServiceUrl.Scheme)
+	if env.KeptnAPIToken != "" { // gets set as empty string from the generic-job-service if the env variable is not set
+		configurationServiceURL, _ := url.Parse(env.ConfigurationServiceURL)
+		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceURL.String(), env.KeptnAPIToken, "x-token", nil, configurationServiceURL.Scheme)
 	} else {
-		resourceHandler = api.NewResourceHandler(env.ConfigurationServiceUrl)
+		resourceHandler = api.NewResourceHandler(env.ConfigurationServiceURL)
 	}
 
 	useLocalFileSystem := false
@@ -60,7 +56,7 @@ func main() {
 		useLocalFileSystem = true
 	}
 
-	configService := keptn.NewKeptnConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, resourceHandler)
+	configService := keptn.NewConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, resourceHandler)
 
 	err := file.MountFiles(env.Action, env.Task, fs, configService)
 	if err != nil {

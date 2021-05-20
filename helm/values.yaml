@@ -2,7 +2,7 @@ keptnservice:
   image:
     repository: docker.io/didiladi/keptn-generic-job-service # Container Image Name
     pullPolicy: Always                   # Kubernetes Image Pull Policy
-    tag: "dev"                                    # Container Tag
+    tag: "latest"                                    # Container Tag
   service:
     enabled: true                              # Creates a Kubernetes Service for the keptn-generic-job-service
 
@@ -18,9 +18,17 @@ distributor:
 remoteControlPlane:
   enabled: true                             # Enables remote execution plane mode
   api:
-    protocol: "http"                        # Used Protocol (http, https)
+    protocol: "https"                        # Used Protocol (http, https)
     hostname: ""                            # Hostname of the control plane cluster (and Port)
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
+    token: ""                                # Keptn API Token
+
+localControlPlane:
+  configurationServiceApi:
+    protocol: "http"                         # Used Protocol (http, https)
+    namespace: "keptn"                       # Namespace the keptn configuration service is in
+    service: "configuration-service"         # The name of the k8s service of the configuration-service
+    port: "8080"                             # The port which is exposed by the k8s service of the configuration-service
     token: ""                                # Keptn API Token
 
 imagePullSecrets: []                         # Secrets to use for container registry credentials
@@ -61,3 +69,7 @@ nodeSelector: {}                                # Node selector configuration
 tolerations: []                                 # Tolerations for the pods
 
 affinity: {}                                    # Affinity rules
+
+# TODO resource quotas of job
+
+
