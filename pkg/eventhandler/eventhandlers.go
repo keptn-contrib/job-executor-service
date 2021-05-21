@@ -1,8 +1,8 @@
 package eventhandler
 
 import (
-	"didiladi/keptn-generic-job-service/pkg/config"
-	"didiladi/keptn-generic-job-service/pkg/k8s"
+	"didiladi/job-executor-service/pkg/config"
+	"didiladi/job-executor-service/pkg/k8s"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -41,9 +41,9 @@ func (eh *EventHandler) HandleEvent() error {
 	log.Printf("Attempting to handle event %s of type %s ...", eh.Event.Context.GetID(), eh.Event.Type())
 	log.Printf("CloudEvent %T: %v", eventDataAsInterface, eventDataAsInterface)
 
-	resource, err := eh.Keptn.GetKeptnResource("generic-job/config.yaml")
+	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
 	if err != nil {
-		log.Printf("Could not find config for generic Job service: %s", err.Error())
+		log.Printf("Could not find config for job-executor-service: %s", err.Error())
 		return err
 	}
 
@@ -80,7 +80,8 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 	for index, task := range action.Tasks {
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
-		jobName := "keptn-generic-job-" + event + "-" + strconv.Itoa(index+1)
+		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
+		jobName := "job-executor-service-job-" + event[:28] + "-" + strconv.Itoa(index+1)
 
 		clientset, err := k8s.ConnectToCluster()
 		if err != nil {
@@ -103,8 +104,8 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 		}
 
 		if jobErr != nil {
-			log.Printf("Error while creating job: %s\n", err.Error())
-			sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, logs)
+			log.Printf("Error while creating job: %s\n", jobErr.Error())
+			sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, jobErr, logs)
 			return
 		}
 	}
@@ -114,7 +115,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 	eh.Keptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
-		Message: fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s", "keptn-generic-job-"+event, logs),
+		Message: fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s", "job-executor-service-job-"+event, logs),
 	}, eh.ServiceName)
 }
 

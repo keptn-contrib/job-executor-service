@@ -1,10 +1,10 @@
-keptnservice:
+jobexecutorservice:
   image:
-    repository: docker.io/didiladi/keptn-generic-job-service # Container Image Name
-    pullPolicy: Always                   # Kubernetes Image Pull Policy
-    tag: "latest"                                    # Container Tag
+    repository: docker.io/didiladi/job-executor-service # Container Image Name
+    pullPolicy: Always                       # Kubernetes Image Pull Policy
+    tag: "latest"                            # Container Tag
   service:
-    enabled: true                              # Creates a Kubernetes Service for the keptn-generic-job-service
+    enabled: true                            # Creates a Kubernetes Service for the job-executor-service
 
 distributor:
   stageFilter: ""                            # Sets the stage this helm service belongs to
@@ -16,10 +16,10 @@ distributor:
     tag: ""                                  # Container Tag
 
 remoteControlPlane:
-  enabled: true                             # Enables remote execution plane mode
+  enabled: true                              # Enables remote execution plane mode
   api:
     protocol: "https"                        # Used Protocol (http, https)
-    hostname: ""                            # Hostname of the control plane cluster (and Port)
+    hostname: ""                             # Hostname of the control plane cluster (and Port)
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
     token: ""                                # Keptn API Token
 
@@ -31,28 +31,28 @@ localControlPlane:
     port: "8080"                             # The port which is exposed by the k8s service of the configuration-service
     token: ""                                # Keptn API Token
 
-imagePullSecrets: []                         # Secrets to use for container registry credentials
+imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 
 serviceAccount:
   create: true                               # Enables the service account creation
-  annotations: {}                            # Annotations to add to the service account
+  annotations: { }                           # Annotations to add to the service account
   name: ""                                   # The name of the service account to use.
 
 config:
   storageClassName: "gp2"
-  storageVolumeName: "keptn-generic-job-service-git-volume"
+  storageVolumeName: "job-executor-service-git-volume"
 
-podAnnotations: {}                           # Annotations to add to the created pods
+podAnnotations: { }                           # Annotations to add to the created pods
 
-podSecurityContext: {}                       # Set the pod security context (e.g. fsGroups)
-  # fsGroup: 2000
+podSecurityContext: { }                       # Set the pod security context (e.g. fsGroups)
+# fsGroup: 2000
 
-securityContext: {}                          # Set the security context (e.g. runAsUser)
+securityContext: { }                          # Set the security context (e.g. runAsUser)
 #  readOnlyRootFilesystem: true
 #  runAsNonRoot: true
 #  runAsUser: 1000
 
-resources:                                 # Resource limits and requests
+resources: # Resource limits and requests
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following
@@ -61,14 +61,14 @@ resources:                                 # Resource limits and requests
   #   cpu: 100m
   #   memory: 128Mi
   requests:
-     cpu: 100m
-     memory: 128Mi
+    cpu: 100m
+    memory: 128Mi
 
-nodeSelector: {}                                # Node selector configuration
+nodeSelector: { }                                # Node selector configuration
 
-tolerations: []                                 # Tolerations for the pods
+tolerations: [ ]                                 # Tolerations for the pods
 
-affinity: {}                                    # Affinity rules
+affinity: { }                                    # Affinity rules
 
 # TODO resource quotas of job
 

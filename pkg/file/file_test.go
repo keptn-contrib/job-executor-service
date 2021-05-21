@@ -1,7 +1,7 @@
 package file
 
 import (
-	"didiladi/keptn-generic-job-service/pkg/keptn"
+	"didiladi/job-executor-service/pkg/keptn"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/afero"
@@ -43,7 +43,7 @@ func TestMountFiles(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
 	configServiceMock.EXPECT().GetKeptnResource("locust"+escapedSlash+"basic.py").Times(1).Return([]byte(pythonFile), nil)
 
 	err := MountFiles("action", "task", fs, configServiceMock)
@@ -63,7 +63,7 @@ func TestMountFilesConfigFileNotFound(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return(nil, errors.New("not found"))
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return(nil, errors.New("not found"))
 
 	err := MountFiles("action", "task", fs, configServiceMock)
 	assert.ErrorContains(t, err, "not found")
@@ -74,7 +74,7 @@ func TestMountFilesConfigFileNotValid(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return([]byte(pythonFile), nil)
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return([]byte(pythonFile), nil)
 
 	err := MountFiles("action", "task", fs, configServiceMock)
 	assert.ErrorContains(t, err, "cannot unmarshal")
@@ -85,7 +85,7 @@ func TestMountFilesNoActionMatch(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
 
 	err := MountFiles("actionNotMatching", "task", fs, configServiceMock)
 	assert.ErrorContains(t, err, "no action found with name 'actionNotMatching'")
@@ -96,7 +96,7 @@ func TestMountFilesNoTaskMatch(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
 
 	err := MountFiles("action", "taskNotMatching", fs, configServiceMock)
 	assert.ErrorContains(t, err, "no task found with name 'taskNotMatching'")
@@ -107,7 +107,7 @@ func TestMountFilesFileNotFound(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource("generic-job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	configServiceMock.EXPECT().GetKeptnResource("job"+escapedSlash+"config.yaml").Times(1).Return([]byte(simpleConfig), nil)
 	configServiceMock.EXPECT().GetKeptnResource("locust"+escapedSlash+"basic.py").Times(1).Return(nil, errors.New("not found"))
 
 	err := MountFiles("action", "task", fs, configServiceMock)

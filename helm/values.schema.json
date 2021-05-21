@@ -48,7 +48,7 @@
         }
       }
     },
-    "keptnservice": {
+    "jobexecutorservice": {
       "type": "object",
       "required": [
         "image"

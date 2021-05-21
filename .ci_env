@@ -1,2 +1,2 @@
 DOCKER_ORGANIZATION="didiladi"
-IMAGE="keptn-generic-job-service"
+IMAGE="job-executor-service"

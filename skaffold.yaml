@@ -2,7 +2,7 @@ apiVersion: skaffold/v1beta13
 kind: Config
 build:
   artifacts:
-    - image: didiladi/keptn-generic-job-service
+    - image: didiladi/job-executor-service
       docker:
         dockerfile: Dockerfile
         buildArgs:

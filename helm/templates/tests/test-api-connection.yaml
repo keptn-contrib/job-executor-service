@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: "{{ include "keptn-service.fullname" . }}-test-api-connection"
+  name: "{{ include "job-executor-service.fullname" . }}-test-api-connection"
   labels:
-  {{- include "keptn-service.labels" . | nindent 4 }}
+  {{- include "job-executor-service.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:

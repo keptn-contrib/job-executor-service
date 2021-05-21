@@ -1,6 +1,6 @@
 apiVersion: v2
 appVersion: 0.8.0
-description: Helm Chart for the keptn keptn-generic-job-service
-name: keptn-generic-job-service
+description: Helm Chart for the keptn job-executor-service
+name: job-executor-service
 type: application
 version: 0.8.0

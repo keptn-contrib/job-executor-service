@@ -7,7 +7,7 @@
           "response_time_p95",
           "some_other_metric"
         ],
-        "sliProvider": "keptn-generic-job-service",
+        "sliProvider": "job-executor-service",
         "start": "2021-01-15T15:04:45.000Z"
       },
       "labels": null,

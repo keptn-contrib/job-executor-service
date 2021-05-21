@@ -1,20 +1,20 @@
 
-keptn-generic-job-service
+job-executor-service
 ===========
 
-Helm Chart for the keptn keptn-generic-job-service
+Helm Chart for the keptn job-executor-service
 
 
 ## Configuration
 
-The following table lists the configurable parameters of the keptn-generic-job-service chart and their default values.
+The following table lists the configurable parameters of the job-executor-service chart and their default values.
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `keptnservice.image.repository` | Container image name | `"docker.io/didiladi/keptn-generic-job-service"` |
-| `keptnservice.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
-| `keptnservice.image.tag` | Container tag | `""` |
-| `keptnservice.service.enabled` | Creates a kubernetes service for the keptn-generic-job-service | `true` |
+| `jobexecutorservice.image.repository` | Container image name | `"docker.io/didiladi/job-executor-service"` |
+| `jobexecutorservice.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
+| `jobexecutorservice.image.tag` | Container tag | `""` |
+| `jobexecutorservice.service.enabled` | Creates a kubernetes service for the job-executor-service | `true` |
 | `distributor.stageFilter` | Sets the stage this helm service belongs to | `""` |
 | `distributor.serviceFilter` | Sets the service this helm service belongs to | `""` |
 | `distributor.projectFilter` | Sets the project this helm service belongs to | `""` |

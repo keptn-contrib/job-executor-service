@@ -6,7 +6,7 @@ import (
 	"github.com/PaesslerAG/jsonpath"
 )
 
-// Config contains the configuration of the generic job service (gerneric-job/config.yaml)
+// Config contains the configuration of the job-executor-service (job/config.yaml)
 type Config struct {
 	Actions []Action `yaml:"actions"`
 }

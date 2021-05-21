@@ -1,6 +1,6 @@
-# Keptn Generic Job Service
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/keptn-generic-job-service)
-[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/keptn-generic-job-service)](https://goreportcard.com/report/github.com/keptn-sandbox/keptn-generic-job-service)
+# Job Executor Service
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/job-executor-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/job-executor-service)](https://goreportcard.com/report/github.com/keptn-sandbox/job-executor-service)
 
 (naming not final)
 
@@ -9,19 +9,19 @@ to run any container as a Kubernetes Job orchestrated by keptn.
 
 ## Why?
 
-The generic job service aims to tackle several current pain points with the current approach of services running in the keptn ecosystem:
+The job-executor-service aims to tackle several current pain points with the current approach of services running in the keptn ecosystem:
 
 | Problem | Solution |
 |----------------|----------------|
 | Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on the Kubernetes cluster. | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), they just consume resources while the task is executed. |
 | Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The code of the new keptn service needs to be written and maintained. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.  |
-| Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed. | The Generic Job Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.  |
+| Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed. | The Job Executor Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.  |
 | Keptn services are usually opinionized on how your framework execution looks like. E.g. the locust service just executes three different (statically named) files depending on the test strategy in the shipyard. It is not possible to write tests consisting of multiply files. | This service provides the possibility to write any specified file from the keptn git repository into a mounted folder (`/keptn`) of the Kubernetes job. This is done by a initcontainer running before the specified image. |
-| Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature. | The Generic Job Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
+| Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature. | The Job Executor Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
 
 ## How?
 
-Just put a file into the keptn git repository (in folder `<service>/generic-job/config.yaml`) to specify 
+Just put a file into the keptn git repository (in folder `<service>/job/config.yaml`) to specify 
 * the containers which should be run as Kubernetes Jobs and
 * the events for which they should be triggered.
 
@@ -43,7 +43,7 @@ actions:
 
 ### Event Matching
 
-The configuration located in `<service>/generic-job/config.yaml` contains the following section:
+The configuration located in `<service>/job/config.yaml` contains the following section:
 
 ```
     jsonpath:
@@ -136,27 +136,27 @@ The credits of this service heavily go to @thschue and @augustin-dt who original
 
 *Please fill in your versions accordingly*
 
-| Keptn Version    | [Keptn-Generic-Job-Service Docker Image](https://hub.docker.com/r/didiladi/keptn-generic-job-service/tags) |
+| Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/didiladi/job-executor-service/tags) |
 |:----------------:|:----------------------------------------:|
-|       0.8.2      | didiladi/keptn-generic-job-service:latest |
+|       0.8.2      | didiladi/job-executor-service:latest |
 
 ## Installation
 
-The *keptn-generic-job-service* can be installed as a part of [Keptn's uniform](https://keptn.sh).
+The *job-executor-service* can be installed as a part of [Keptn's uniform](https://keptn.sh).
 
 ### Deploy in your Kubernetes cluster
 
-To deploy the current version of the *keptn-generic-job-service* in your Keptn Kubernetes cluster, apply the [`deploy/service.yaml`](deploy/service.yaml) file:
+To deploy the current version of the *job-executor-service* in your Keptn Kubernetes cluster, apply the [`deploy/service.yaml`](deploy/service.yaml) file:
 
 ```console
 kubectl apply -f deploy/service.yaml
 ```
 
-This should install the `keptn-generic-job-service` together with a Keptn `distributor` into the `keptn` namespace, which you can verify using
+This should install the `job-executor-service` together with a Keptn `distributor` into the `keptn` namespace, which you can verify using
 
 ```console
-kubectl -n keptn get deployment keptn-generic-job-service -o wide
-kubectl -n keptn get pods -l run=keptn-generic-job-service
+kubectl -n keptn get deployment job-executor-service -o wide
+kubectl -n keptn get pods -l run=job-executor-service
 ```
 
 ### Up- or Downgrading
@@ -164,12 +164,12 @@ kubectl -n keptn get pods -l run=keptn-generic-job-service
 Adapt and use the following command in case you want to up- or downgrade your installed version (specified by the `$VERSION` placeholder):
 
 ```console
-kubectl -n keptn set image deployment/keptn-generic-job-service keptn-generic-job-service=didiladi/keptn-generic-job-service:$VERSION --record
+kubectl -n keptn set image deployment/job-executor-service job-executor-service=didiladi/job-executor-service:$VERSION --record
 ```
 
 ### Uninstall
 
-To delete a deployed *keptn-generic-job-service*, use the file `deploy/*.yaml` files from this repository and delete the Kubernetes resources:
+To delete a deployed *job-executor-service*, use the file `deploy/*.yaml` files from this repository and delete the Kubernetes resources:
 
 ```console
 kubectl delete -f deploy/service.yaml
@@ -190,16 +190,16 @@ When writing code, it is recommended to follow the coding style suggested by the
 
 ### Common tasks
 
-* Build the binary: `go build -ldflags '-linkmode=external' -v -o keptn-generic-job-service`
+* Build the binary: `go build -ldflags '-linkmode=external' -v -o job-executor-service`
 * Run tests: `go test -race -v ./...`
-* Build the docker image: `docker build . -t didiladi/keptn-generic-job-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
-* Run the docker image locally: `docker run --rm -it -p 8080:8080 didiladi/keptn-generic-job-service:dev`
-* Push the docker image to DockerHub: `docker push didiladi/keptn-generic-job-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
+* Build the docker image: `docker build . -t didiladi/job-executor-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
+* Run the docker image locally: `docker run --rm -it -p 8080:8080 didiladi/job-executor-service:dev`
+* Push the docker image to DockerHub: `docker push didiladi/job-executor-service:dev` (Note: Ensure that you use the correct DockerHub account/organization)
 * Deploy the service using `kubectl`: `kubectl apply -f deploy/`
 * Delete/undeploy the service using `kubectl`: `kubectl delete -f deploy/`
-* Watch the deployment using `kubectl`: `kubectl -n keptn get deployment keptn-generic-job-service -o wide`
-* Get logs using `kubectl`: `kubectl -n keptn logs deployment/keptn-generic-job-service -f`
-* Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=keptn-generic-job-service`
+* Watch the deployment using `kubectl`: `kubectl -n keptn get deployment job-executor-service -o wide`
+* Get logs using `kubectl`: `kubectl -n keptn logs deployment/job-executor-service -f`
+* Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=job-executor-service`
 * Deploy the service using [Skaffold](https://skaffold.dev/): `skaffold run --default-repo=your-docker-registry --tail` (Note: Replace `your-docker-registry` with your DockerHub username; also make sure to adapt the image name in [skaffold.yaml](skaffold.yaml))
 
 
@@ -225,7 +225,7 @@ You can find the details in [.github/workflows/tests.yml](.github/workflows/test
 
 This repo uses GH Actions and Workflows to test the code and automatically build docker images.
 
-Docker Images are automatically pushed based on the configuration done in [.ci_env](.ci_env) and the two [GitHub Secrets](https://github.com/keptn-sandbox/keptn-generic-job-service/settings/secrets/actions)
+Docker Images are automatically pushed based on the configuration done in [.ci_env](.ci_env) and the two [GitHub Secrets](https://github.com/keptn-sandbox/job-executor-service/settings/secrets/actions)
 * `REGISTRY_USER` - your DockerHub username
 * `REGISTRY_PASSWORD` - a DockerHub [access token](https://hub.docker.com/settings/security) (alternatively, your DockerHub password)
 
@@ -246,7 +246,7 @@ If any problems occur, fix them in the release branch and test them again.
 
 Once you have confirmed that everything works and your version is ready to go, you should
 
-* create a new release on the release branch using the [GitHub releases page](https://github.com/keptn-sandbox/keptn-generic-job-service/releases), and
+* create a new release on the release branch using the [GitHub releases page](https://github.com/keptn-sandbox/job-executor-service/releases), and
 * merge any changes from the release branch back to the master branch.
 
 ## License

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"didiladi/keptn-generic-job-service/pkg/file"
-	"didiladi/keptn-generic-job-service/pkg/keptn"
+	"didiladi/job-executor-service/pkg/file"
+	"didiladi/job-executor-service/pkg/keptn"
 	"log"
 	"net/url"
 	"os"
@@ -41,7 +41,7 @@ func main() {
 	fs := afero.NewOsFs()
 
 	var resourceHandler *api.ResourceHandler
-	if env.KeptnAPIToken != "" { // gets set as empty string from the generic-job-service if the env variable is not set
+	if env.KeptnAPIToken != "" { // gets set as empty string from the job-executor-service if the env variable is not set
 		configurationServiceURL, _ := url.Parse(env.ConfigurationServiceURL)
 		resourceHandler = api.NewAuthenticatedResourceHandler(configurationServiceURL.String(), env.KeptnAPIToken, "x-token", nil, configurationServiceURL.Scheme)
 	} else {

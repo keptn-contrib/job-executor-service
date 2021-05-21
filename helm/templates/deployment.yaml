@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "keptn-service.fullname" . }}
+  name: {{ include "job-executor-service.fullname" . }}
   labels:
-    {{- include "keptn-service.labels" . | nindent 4 }}
+    {{- include "job-executor-service.labels" . | nindent 4 }}
 
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "keptn-service.selectorLabels" . | nindent 6 }}
+      {{- include "job-executor-service.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -17,25 +17,25 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "keptn-service.selectorLabels" . | nindent 8 }}
+        {{- include "job-executor-service.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "keptn-service.serviceAccountName" . }}
+      serviceAccountName: {{ include "job-executor-service.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: keptn-service
+        - name: job-executor-service
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           {{- if .Values.image }}
           image: {{ .Values.image }} # use image from .Values.image (e.g., when starting via skaffold)
           {{- else }}
-          image: "{{ .Values.keptnservice.image.repository }}:{{ .Values.keptnservice.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.jobexecutorservice.image.repository }}:{{ .Values.jobexecutorservice.image.tag | default .Chart.AppVersion }}"
           {{- end }}
-          imagePullPolicy: {{ .Values.keptnservice.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.jobexecutorservice.image.pullPolicy }}
           ports:
             - containerPort: 80
           env:

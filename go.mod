@@ -1,4 +1,4 @@
-module didiladi/keptn-generic-job-service
+module didiladi/job-executor-service
 
 go 1.16
 

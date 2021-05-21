@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"didiladi/keptn-generic-job-service/pkg/eventhandler"
+	"didiladi/job-executor-service/pkg/eventhandler"
 	"errors"
 	"log"
 	"os"
@@ -35,7 +35,7 @@ type envConfig struct {
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
-const ServiceName = "keptn-generic-job-service"
+const ServiceName = "job-executor-service"
 
 /**
  * Parses a Keptn Cloud Event payload (data attribute)
@@ -118,7 +118,7 @@ func _main(args []string, env envConfig) int {
 
 	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceURL
 
-	log.Println("Starting keptn-generic-job-service...")
+	log.Println("Starting job-executor-service...")
 	log.Printf("    on Port = %d; Path=%s", env.Port, env.Path)
 
 	ctx := context.Background()

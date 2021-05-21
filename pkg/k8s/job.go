@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"context"
-	"didiladi/keptn-generic-job-service/pkg/config"
+	"didiladi/job-executor-service/pkg/config"
 	"fmt"
 	"strings"
 	"time"
@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// CreateK8sJob creates a k8s job with the keptn-generic-job-service-initcontainer and the job image of the task and waits until the job finishes
+// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
 func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string) error {
 
 	var backOffLimit int32 = 0
@@ -59,7 +59,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
-							Image:           "yeahservice/keptn-generic-job-service-initcontainer",
+							Image:           "yeahservice/job-executor-service-initcontainer",
 							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
