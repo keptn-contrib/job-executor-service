@@ -13,12 +13,18 @@ type Config struct {
 
 // Action contains a action within the config which needs to be triggered
 type Action struct {
-	Name     string   `yaml:"name"`
-	Event    string   `yaml:"event"`
-	JSONPath JSONPath `yaml:"jsonpath"`
-	Tasks    []Task   `yaml:"tasks"`
+	Name   string  `yaml:"name"`
+	Events []Event `yaml:"events"`
+	Tasks  []Task  `yaml:"tasks"`
 }
 
+// Event defines a keptn event which determines if an Action should be triggered
+type Event struct {
+	Name     string   `yaml:"name"`
+	JSONPath JSONPath `yaml:"jsonpath,omitempty"`
+}
+
+// JSONPath defines a filter for an Event
 type JSONPath struct {
 	Property string `yaml:"property"`
 	Match    string `yaml:"match"`
@@ -42,20 +48,26 @@ func NewConfig(yamlContent []byte) (*Config, error) {
 }
 
 // IsEventMatch indicated whether a given event matches the config
-func (c *Config) IsEventMatch(event string, jsonEventData interface{}) (bool, *Action) {
+func (c *Config) IsEventMatch(eventType string, jsonEventData interface{}) (bool, *Action) {
 
 	for _, action := range c.Actions {
+		for _, event := range action.Events {
+			// does the event type match?
+			if event.Name == eventType {
 
-		// does the event type match?
-		if action.Event == event {
+				// no JSONPath specified, just match event type
+				if event.JSONPath.Property == "" {
+					return true, &action
+				}
 
-			value, err := jsonpath.Get(action.JSONPath.Property, jsonEventData)
-			if err != nil {
-				continue
-			}
+				value, err := jsonpath.Get(event.JSONPath.Property, jsonEventData)
+				if err != nil {
+					continue
+				}
 
-			if value == action.JSONPath.Match {
-				return true, &action
+				if value == event.JSONPath.Match {
+					return true, &action
+				}
 			}
 		}
 	}

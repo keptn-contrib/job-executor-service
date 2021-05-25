@@ -12,10 +12,11 @@ import (
 const simpleConfig = `
 actions:
   - name: "action"
-    event: "sh.keptn.event.test.triggered"
-    jsonpath:
-      property: "$.test.teststrategy" 
-      match: "health"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+        jsonpath:
+          property: "$.test.teststrategy" 
+          match: "health"
     tasks:
       - name: "task"
         files: 

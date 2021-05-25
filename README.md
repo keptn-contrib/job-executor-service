@@ -28,10 +28,15 @@ Just put a file into the keptn git repository (in folder `<service>/job/config.y
 ```yaml
 actions:
   - name: "Run locust"
-    event: "sh.keptn.event.test.triggered"
-    jsonpath:
-      property: "$.test.teststrategy" 
-      match: "locust"
+    events:
+    - name: "sh.keptn.event.test.triggered"
+      jsonpath:
+        property: "$.test.teststrategy" 
+        match: "health"
+    - name: "sh.keptn.event.test.triggered"
+      jsonpath:
+        property: "$.test.teststrategy"
+        match: "load"
     tasks:
       - name: "Run locust smoke tests"
         files: 
@@ -43,7 +48,7 @@ actions:
 
 ### Event Matching
 
-The configuration located in `<service>/job/config.yaml` contains the following section:
+The configuration located in `<service>/job/config.yaml` contains the following section for each event:
 
 ```
     jsonpath:
