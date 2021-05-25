@@ -2,6 +2,7 @@ package config
 
 import (
 	"gopkg.in/yaml.v2"
+	"regexp"
 
 	"github.com/PaesslerAG/jsonpath"
 )
@@ -52,8 +53,9 @@ func (c *Config) IsEventMatch(eventType string, jsonEventData interface{}) (bool
 
 	for _, action := range c.Actions {
 		for _, event := range action.Events {
-			// does the event type match?
-			if event.Name == eventType {
+			// does the event type match with regex?
+			matched, _ := regexp.MatchString(event.Name, eventType)
+			if matched {
 
 				// no JSONPath specified, just match event type
 				if event.JSONPath.Property == "" {

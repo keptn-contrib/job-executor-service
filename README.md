@@ -48,15 +48,21 @@ actions:
 
 ### Event Matching
 
-The configuration located in `<service>/job/config.yaml` contains the following section for each event:
+The tasks of an action are executed if the event name matches. Wildcards can also be used, e.g.
+```yaml
+    - name: "sh.keptn.event.*.triggered"
+```
+Would match events `sh.keptn.event.test.triggered`, `sh.keptn.event.deployment.triggered` and so on.
+
+Optionally the following section can be added to an event:
 
 ```yaml
-    jsonpath:
-      property: "$.data.test.teststrategy" 
-      match: "locust"
+      jsonpath:
+        property: "$.data.test.teststrategy"
+        match: "locust"
 ```
 
-If the service receives an event which matches the jsonpath match expression, the specified tasks are executed. E.g. the 
+If the service receives an event which matches the name and the jsonpath match expression, the specified tasks are executed. E.g. the
 following cloud event would match the jsonpath above:
 
 ```json

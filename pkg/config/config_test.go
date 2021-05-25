@@ -51,6 +51,7 @@ actions:
           property: "$.action.action"
           match: "goodbye"
       - name: "sh.keptn.event.action.started"
+      - name: "sh.keptn.event.*.triggered"
     tasks:
       - name: "Run static world"
         image: "bash"
@@ -203,13 +204,17 @@ func TestComplexMatch(t *testing.T) {
 
 	// sh.keptn.event.action.started - action: _
 
-	actionTriggeredEvent = getActionEvent("started", "")
-	jsonEventData = interface{}(nil)
-	err = json.Unmarshal([]byte(actionTriggeredEvent), &jsonEventData)
-	assert.NilError(t, err)
-
-	data = jsonEventData.(map[string]interface{})["data"]
-	found, action = config.IsEventMatch("sh.keptn.event.action.started", data)
+	found, action = config.IsEventMatch("sh.keptn.event.action.started", nil)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[2].Name, "sh.keptn.event.action.started")
+
+	// sh.keptn.event.*.triggered - action: _
+
+	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", nil)
+	assert.Equal(t, found, true)
+	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+
+	found, action = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
+	assert.Equal(t, found, true)
+	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
 }
