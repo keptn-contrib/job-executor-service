@@ -26,6 +26,7 @@ type EventHandler struct {
 	JobNamespace                                 string
 	InitContainerConfigurationServiceAPIEndpoint string
 	KeptnAPIToken                                string
+	InitContainerImage							 string
 }
 
 // HandleEvent handles all events in a generic manner
@@ -111,7 +112,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 			return
 		}
 
-		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken)
+		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage)
 		defer func() {
 			err = k8s.DeleteK8sJob(clientset, eh.JobNamespace, jobName)
 			if err != nil {

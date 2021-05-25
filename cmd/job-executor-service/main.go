@@ -32,6 +32,8 @@ type envConfig struct {
 	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN"`
+	// The token of the keptn API
+	InitContainerImage string `envconfig:"INIT_CONTAINER_IMAGE"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -82,6 +84,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		JobNamespace: env.JobNamespace,
 		InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
 		KeptnAPIToken: env.KeptnAPIToken,
+		InitContainerImage: env.InitContainerImage,
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888

@@ -27,6 +27,8 @@ spec:
               value: 'http://configuration-service:8080'
             - name: JOB_NAMESPACE
               value: 'keptn'
+            - name: INIT_CONTAINER_IMAGE
+              value: 'didiladi/job-executor-service-initcontainer'
         - name: distributor
           image: keptn/distributor:0.8.0-alpha
           livenessProbe:
