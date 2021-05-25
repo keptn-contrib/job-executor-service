@@ -31,11 +31,11 @@ actions:
     events:
     - name: "sh.keptn.event.test.triggered"
       jsonpath:
-        property: "$.test.teststrategy" 
+        property: "$.data.test.teststrategy" 
         match: "health"
     - name: "sh.keptn.event.test.triggered"
       jsonpath:
-        property: "$.test.teststrategy"
+        property: "$.data.test.teststrategy"
         match: "load"
     tasks:
       - name: "Run locust smoke tests"
@@ -50,16 +50,16 @@ actions:
 
 The configuration located in `<service>/job/config.yaml` contains the following section for each event:
 
-```
+```yaml
     jsonpath:
-      property: "$.test.teststrategy" 
+      property: "$.data.test.teststrategy" 
       match: "locust"
 ```
 
 If the service receives an event which matches the jsonpath match expression, the specified tasks are executed. E.g. the 
 following cloud event would match the jsonpath above:
 
-```
+```json
 {
     "type": "sh.keptn.event.test.triggered",
     "specversion": "1.0",
@@ -80,7 +80,7 @@ following cloud event would match the jsonpath above:
       "status": "succeeded",
       "result": "pass",
       "test": {
-        teststrategy": "locust"
+        "teststrategy": "locust"
       }
     }
   }
@@ -90,7 +90,7 @@ following cloud event would match the jsonpath above:
 
 The configuration contains the following section:
 
-```
+```yaml
     tasks:
       - name: "Run locust smoke tests"
         files: 
@@ -109,7 +109,7 @@ finished cloud event.
 
 Files can be added to your running tasks by specifying them in the `files` section of your tasks:
 
-```
+```yaml
         files: 
           - locust/basic.py
           - locust/import.py
@@ -121,7 +121,7 @@ and the location will be preserved.
 
 When using these files in your comtainer command, please make sure to reference them by prepending the `keptn` path. E.g.:
 
-```
+```yaml
         cmd: "locust -f /keptn/locust/locustfile.py"
 ```
 

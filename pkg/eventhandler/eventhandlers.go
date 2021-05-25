@@ -31,15 +31,14 @@ type EventHandler struct {
 // HandleEvent handles all events in a generic manner
 func (eh *EventHandler) HandleEvent() error {
 
-	var eventDataAsInterface interface{}
-	err := json.Unmarshal(eh.Event.Data(), &eventDataAsInterface)
+	eventAsInterface, err := eh.createEventPayloadAsInterface()
 	if err != nil {
 		log.Printf("failed to convert incoming cloudevent: %v", err)
 		return err
 	}
 
 	log.Printf("Attempting to handle event %s of type %s ...", eh.Event.Context.GetID(), eh.Event.Type())
-	log.Printf("CloudEvent %T: %v", eventDataAsInterface, eventDataAsInterface)
+	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
 	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
 	if err != nil {
@@ -54,7 +53,7 @@ func (eh *EventHandler) HandleEvent() error {
 		return err
 	}
 
-	match, action := configuration.IsEventMatch(eh.Event.Type(), eventDataAsInterface)
+	match, action := configuration.IsEventMatch(eh.Event.Type(), eventAsInterface)
 	if !match {
 		log.Printf("No match found for event %s of type %s. Skipping...", eh.Event.Context.GetID(), eh.Event.Type())
 		return nil
@@ -65,6 +64,28 @@ func (eh *EventHandler) HandleEvent() error {
 	eh.startK8sJob(action)
 
 	return nil
+}
+
+func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{}, error) {
+
+	var eventDataAsInterface interface{}
+	err := json.Unmarshal(eh.Event.Data(), &eventDataAsInterface)
+	if err != nil {
+		log.Printf("failed to convert incoming cloudevent: %v", err)
+		return nil, err
+	}
+
+	extension, _ := eh.Event.Context.GetExtension("shkeptncontext")
+	shKeptnContext := extension.(string)
+
+	eventAsInterface := make(map[string]interface{})
+	eventAsInterface["id"] = eh.Event.ID()
+	eventAsInterface["shkeptncontext"] = shKeptnContext
+	eventAsInterface["time"] = eh.Event.Time()
+	eventAsInterface["source"] = eh.Event.Source()
+	eventAsInterface["data"] = eventDataAsInterface
+
+	return eventAsInterface, nil
 }
 
 func (eh *EventHandler) startK8sJob(action *config.Action) {
