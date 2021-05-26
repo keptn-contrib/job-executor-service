@@ -21,7 +21,7 @@ require (
 	github.com/keptn/go-utils v0.8.3
 	github.com/keptn/kubernetes-utils v0.8.1
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/spf13/afero v1.2.2
+	github.com/spf13/afero v1.6.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
