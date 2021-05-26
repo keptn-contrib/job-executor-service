@@ -4,3 +4,4 @@ metadata:
   name: job-service-config
 data:
   job_namespace: "{{ .Release.Namespace }}"
+  init_container_image: "didiladi/job-executor-service-initcontainer"

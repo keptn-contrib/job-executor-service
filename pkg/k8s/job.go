@@ -17,7 +17,7 @@ import (
 )
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string) error {
+func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string) error {
 
 	var backOffLimit int32 = 0
 
@@ -59,7 +59,7 @@ func CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName str
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
-							Image:           "yeahservice/job-executor-service-initcontainer",
+							Image:           initContainerImage,
 							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
