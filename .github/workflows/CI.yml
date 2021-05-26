@@ -153,13 +153,22 @@ jobs:
           username: ${{ secrets.REGISTRY_USER }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - id: docker_build
-        name: Docker Build
-        uses: keptn/gh-action-build-docker-image@master
+      - id: docker_build_service
+        name: Docker Build Service
+        uses: yeahservice/gh-action-build-docker-image@feature/add-dockerfile-name-support
         with:
           VERSION: ${{ env.VERSION }}
           IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
           DATETIME: ${{ env.DATETIME }}
+
+      - id: docker_build_initcontainer
+        name: Docker Build InitContainer
+        uses: yeahservice/gh-action-build-docker-image@feature/add-dockerfile-name-support
+        with:
+          VERSION: ${{ env.VERSION }}
+          IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}"
+          DATETIME: ${{ env.DATETIME }}
+          FILE: ${{ env.DOCKERFILE_INITCONTAINER }}
 
       - id: create_docker_build_report
         name: Create Docker Build Report
