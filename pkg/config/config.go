@@ -37,6 +37,13 @@ type Task struct {
 	Files []string `yaml:"files"`
 	Image string   `yaml:"image"`
 	Cmd   string   `yaml:"cmd"`
+	Env   []Env    `yaml:"env"`
+}
+
+// Env value from the event which will be added as env to the job
+type Env struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
 }
 
 // NewConfig creates a new configuration from the provided config file content

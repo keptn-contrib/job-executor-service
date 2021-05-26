@@ -73,7 +73,7 @@ func TestInitializeEventPayloadAsInterface(t *testing.T) {
 
 	eh := EventHandler{
 		Event: event.Event{
-			Context: context,
+			Context:     context,
 			DataEncoded: []byte(testEvent),
 		},
 	}

@@ -26,7 +26,7 @@ type EventHandler struct {
 	JobNamespace                                 string
 	InitContainerConfigurationServiceAPIEndpoint string
 	KeptnAPIToken                                string
-	InitContainerImage							 string
+	InitContainerImage                           string
 }
 
 // HandleEvent handles all events in a generic manner
@@ -62,7 +62,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	eh.startK8sJob(action)
+	eh.startK8sJob(action, eventAsInterface)
 
 	return nil
 }
@@ -89,7 +89,7 @@ func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{},
 	return eventAsInterface, nil
 }
 
-func (eh *EventHandler) startK8sJob(action *config.Action) {
+func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interface{}) {
 
 	event, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
 	if err != nil {
@@ -112,7 +112,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action) {
 			return
 		}
 
-		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage)
+		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage, jsonEventData)
 		defer func() {
 			err = k8s.DeleteK8sJob(clientset, eh.JobNamespace, jobName)
 			if err != nil {

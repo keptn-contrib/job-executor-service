@@ -38,7 +38,10 @@ actions:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd: "locust -f /keptn/locust/locustfile.py --host=$HOST"
+        env:
+          - name: HOST
+            value: "$.data.deployment.deploymentURIsLocal[0]"
 
   - name: "Run bash"
     events:

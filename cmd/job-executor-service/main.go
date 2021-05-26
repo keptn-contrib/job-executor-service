@@ -83,7 +83,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		ServiceName:  ServiceName,
 		JobNamespace: env.JobNamespace,
 		InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
-		KeptnAPIToken: env.KeptnAPIToken,
+		KeptnAPIToken:      env.KeptnAPIToken,
 		InitContainerImage: env.InitContainerImage,
 	}
 
