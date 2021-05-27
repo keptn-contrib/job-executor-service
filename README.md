@@ -211,7 +211,7 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 
 | Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptn-sandbox/job-executor-service/tags) |
 |:----------------:|:----------------------------------------:|
-|       0.8.2      | keptn-sandbox/job-executor-service:latest |
+|       0.8.3      | keptn-sandbox/job-executor-service:0.1.0 |
 
 ## Installation
 
