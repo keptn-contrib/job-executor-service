@@ -3,8 +3,6 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/job-executor-service)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/job-executor-service)](https://goreportcard.com/report/github.com/keptn-sandbox/job-executor-service)
 
-(naming not final)
-
 This Keptn service introduces a radical new approach to running tasks with keptn. It provides the means to run any
 container as a Kubernetes Job orchestrated by keptn.
 
@@ -210,8 +208,6 @@ the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the 
 The credits of this service heavily go to @thschue and @yeahservice who originally came up with this idea. :rocket:
 
 ## Compatibility Matrix
-
-*Please fill in your versions accordingly*
 
 | Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/didiladi/job-executor-service/tags) |
 |:----------------:|:----------------------------------------:|
