@@ -1,7 +1,7 @@
 package file
 
 import (
-	"didiladi/job-executor-service/pkg/keptn"
+	"keptn-sandbox/job-executor-service/pkg/keptn"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/afero"

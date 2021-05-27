@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: job-executor-service
-          image: didiladi/job-executor-service:latest
+          image: keptn-sandbox/job-executor-service:latest
           ports:
             - containerPort: 8080
           env:
@@ -28,7 +28,7 @@ spec:
             - name: JOB_NAMESPACE
               value: 'keptn'
             - name: INIT_CONTAINER_IMAGE
-              value: 'didiladi/job-executor-service-initcontainer'
+              value: 'keptn-sandbox/job-executor-service-initcontainer'
         - name: distributor
           image: keptn/distributor:0.8.0-alpha
           livenessProbe:
