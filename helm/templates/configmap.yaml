@@ -4,4 +4,4 @@ metadata:
   name: job-service-config
 data:
   job_namespace: "{{ .Release.Namespace }}"
-  init_container_image: "keptn-sandbox/job-executor-service-initcontainer"
+  init_container_image: "keptnsandbox/job-executor-service-initcontainer"

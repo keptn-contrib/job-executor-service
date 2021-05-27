@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: job-executor-service
-          image: keptn-sandbox/job-executor-service:latest
+          image: keptnsandbox/job-executor-service:latest
           ports:
             - containerPort: 8080
           env:
@@ -28,9 +28,9 @@ spec:
             - name: JOB_NAMESPACE
               value: 'keptn'
             - name: INIT_CONTAINER_IMAGE
-              value: 'keptn-sandbox/job-executor-service-initcontainer'
+              value: 'keptnsandbox/job-executor-service-initcontainer'
         - name: distributor
-          image: keptn/distributor:0.8.0-alpha
+          image: keptn/distributor:0.8.3
           livenessProbe:
             httpGet:
               path: /health

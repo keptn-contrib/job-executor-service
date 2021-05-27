@@ -1,8 +1,8 @@
 jobexecutorservice:
   image:
-    repository: docker.io/keptn-sandbox/job-executor-service # Container Image Name
+    repository: docker.io/keptnsandbox/job-executor-service # Container Image Name
     pullPolicy: Always                       # Kubernetes Image Pull Policy
-    tag: "latest"                            # Container Tag
+    tag: "0.1.0"                            # Container Tag
   service:
     enabled: true                            # Creates a Kubernetes Service for the job-executor-service
 
