@@ -45,8 +45,9 @@ actions:
         files:
           - locust/basic.py
           - locust/import.py
+          - locust/locust.conf
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/basic.py --host=$HOST"
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
@@ -70,7 +71,7 @@ Optionally the following section can be added to an event:
         match: "locust"
 ```
 
-If the service receives an event which matches the name and the jsonpath match expression, the specified tasks are
+If the service receives an event which matches the name, and the jsonpath match expression, the specified tasks are
 executed. E.g. the following cloud event would match the jsonpath above:
 
 ```json
@@ -100,18 +101,40 @@ executed. E.g. the following cloud event would match the jsonpath above:
 }
 ```
 
-### Task Environment Variables
+### Kubernetes Job
+
+The configuration contains the following section:
+
+```yaml
+    tasks:
+      - name: "Run locust smoke tests"
+        files:
+          - locust/basic.py
+          - locust/import.py
+          - locust/locust.conf
+        image: "locustio/locust"
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+```
+
+It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of
+these tasks in the order, they are listed within the config. The service waits for the successful execution of all
+the tasks to respond with a `StatusSucceeded` finished event. When one of the events fail, it responds
+with `StatusErrored`
+finished cloud event.
+
+### Kubernetes Job Environment Variables
 
 Data from the incoming cloud event can be made available as environment variables in the job. In the `env` section of a
 task a list of environment variables can be declared, each with a `name` and a json path for the `value`.
 
 ```yaml
-        cmd: "locust -f /keptn/locust/basic.py --host=$HOST"
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)" 
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
 ```
 
+The environment variable appears in parentheses, "$(HOST)". This is required for the variable to be expanded in the command.
 In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
 
 ```yaml
@@ -148,26 +171,6 @@ In the above example the json path for `HOST` would resolve into `https://keptn.
 }
 ```
 
-### Kubernetes Job
-
-The configuration contains the following section:
-
-```yaml
-    tasks:
-      - name: "Run locust smoke tests"
-        files:
-          - locust/basic.py
-          - locust/import.py
-        image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/basic.py"
-```
-
-It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of
-these tasks in the order, they are listed within the config. The service waits for the successful execution of all of
-the tasks to respond with a `StatusSucceeded` finished event. When one of the events fail, it responds
-with `StatusErrored`
-finished cloud event.
-
 ### File Handling
 
 Files can be added to your running tasks by specifying them in the `files` section of your tasks:
@@ -176,18 +179,23 @@ Files can be added to your running tasks by specifying them in the `files` secti
         files:
           - locust/basic.py
           - locust/import.py
+          - locust/locust.conf
 ```
 
 This is done by using an `initcontainer` for the scheduled Kubernetes Job which prepares the `èmptyDir` volume mounted
 to the Kubernetes Job. Within the Job itself, the files will be available within the `keptn` folder. The naming of the
 files and the location will be preserved.
 
-When using these files in your comtainer command, please make sure to reference them by prepending the `keptn` path.
+When using these files in your container command, please make sure to reference them by prepending the `keptn` path.
 E.g.:
 
 ```yaml
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py"
 ```
+
+### Remote Control Plane
+If you are using the service in a remote control plane setup make sure the distributor is configured to forward all events used in 
+the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment configuration to fit your needs. 
 
 ## Endless Possibilities
 
@@ -199,7 +207,7 @@ E.g.:
 
 ## Credits
 
-The credits of this service heavily go to @thschue and @augustin-dt who originally came up with this idea. :rocket:
+The credits of this service heavily go to @thschue and @yeahservice who originally came up with this idea. :rocket:
 
 ## Compatibility Matrix
 
