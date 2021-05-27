@@ -1,8 +1,8 @@
 package eventhandler
 
 import (
-	"didiladi/job-executor-service/pkg/config"
-	"didiladi/job-executor-service/pkg/k8s"
+	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/k8s"
 	"encoding/json"
 	"fmt"
 	"log"

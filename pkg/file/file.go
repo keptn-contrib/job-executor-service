@@ -1,8 +1,8 @@
 package file
 
 import (
-	"didiladi/job-executor-service/pkg/config"
-	"didiladi/job-executor-service/pkg/keptn"
+	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/keptn"
 	"fmt"
 	"log"
 	"net/url"

@@ -1,4 +1,4 @@
-module didiladi/job-executor-service
+module keptn-sandbox/job-executor-service
 
 go 1.16
 

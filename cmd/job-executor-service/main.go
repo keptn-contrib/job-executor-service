@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"didiladi/job-executor-service/pkg/eventhandler"
+	"keptn-sandbox/job-executor-service/pkg/eventhandler"
 	"errors"
 	"log"
 	"os"
