@@ -1,4 +1,4 @@
-DOCKER_ORGANIZATION="keptn-sandbox"
+DOCKER_ORGANIZATION="keptnsandbox"
 IMAGE="job-executor-service"
 IMAGE_INITCONTAINER="job-executor-service-initcontainer"
 DOCKERFILE_INITCONTAINER="initcontainer.Dockerfile"
