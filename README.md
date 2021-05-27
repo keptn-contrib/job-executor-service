@@ -209,9 +209,9 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 
 ## Compatibility Matrix
 
-| Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/didiladi/job-executor-service/tags) |
+| Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptn-sandbox/job-executor-service/tags) |
 |:----------------:|:----------------------------------------:|
-|       0.8.2      | didiladi/job-executor-service:latest |
+|       0.8.2      | keptn-sandbox/job-executor-service:latest |
 
 ## Installation
 
@@ -240,7 +240,7 @@ Adapt and use the following command in case you want to up- or downgrade your in
 the `$VERSION` placeholder):
 
 ```console
-kubectl -n keptn set image deployment/job-executor-service job-executor-service=didiladi/job-executor-service:$VERSION --record
+kubectl -n keptn set image deployment/job-executor-service job-executor-service=keptn-sandbox/job-executor-service:$VERSION --record
 ```
 
 ### Uninstall
@@ -270,10 +270,10 @@ the [Golang community](https://github.com/golang/go/wiki/CodeReviewComments).
 
 * Build the binary: `go build -ldflags '-linkmode=external' -v -o job-executor-service`
 * Run tests: `go test -race -v ./...`
-* Build the docker image: `docker build . -t didiladi/job-executor-service:dev` (Note: Ensure that you use the correct
+* Build the docker image: `docker build . -t keptn-sandbox/job-executor-service:dev` (Note: Ensure that you use the correct
   DockerHub account/organization)
-* Run the docker image locally: `docker run --rm -it -p 8080:8080 didiladi/job-executor-service:dev`
-* Push the docker image to DockerHub: `docker push didiladi/job-executor-service:dev` (Note: Ensure that you use the
+* Run the docker image locally: `docker run --rm -it -p 8080:8080 keptn-sandbox/job-executor-service:dev`
+* Push the docker image to DockerHub: `docker push keptn-sandbox/job-executor-service:dev` (Note: Ensure that you use the
   correct DockerHub account/organization)
 * Deploy the service using `kubectl`: `kubectl apply -f deploy/`
 * Delete/undeploy the service using `kubectl`: `kubectl delete -f deploy/`

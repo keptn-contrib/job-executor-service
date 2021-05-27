@@ -11,7 +11,7 @@ The following table lists the configurable parameters of the job-executor-servic
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `jobexecutorservice.image.repository` | Container image name | `"docker.io/didiladi/job-executor-service"` |
+| `jobexecutorservice.image.repository` | Container image name | `"docker.io/keptn-sandbox/job-executor-service"` |
 | `jobexecutorservice.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `jobexecutorservice.image.tag` | Container tag | `""` |
 | `jobexecutorservice.service.enabled` | Creates a kubernetes service for the job-executor-service | `true` |

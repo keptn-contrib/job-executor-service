@@ -1,6 +1,6 @@
 jobexecutorservice:
   image:
-    repository: docker.io/didiladi/job-executor-service # Container Image Name
+    repository: docker.io/keptn-sandbox/job-executor-service # Container Image Name
     pullPolicy: Always                       # Kubernetes Image Pull Policy
     tag: "latest"                            # Container Tag
   service:

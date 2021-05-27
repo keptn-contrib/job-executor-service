@@ -2,7 +2,7 @@ package k8s
 
 import (
 	"context"
-	"didiladi/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/config"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"strings"
