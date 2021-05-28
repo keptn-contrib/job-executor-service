@@ -64,6 +64,7 @@ actions:
           - hello/hello-world.txt
         image: "bash"
         cmd: "cat /keptn/hello/heppo-world.txt | echo"
+    silent: true
 `
 
 const testTriggeredEvent = `
@@ -137,6 +138,7 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 1)
+	assert.Equal(t, config.Actions[0].Silent, false)
 }
 
 func TestComplexConfigUnmarshalling(t *testing.T) {
@@ -145,6 +147,7 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 2)
+	assert.Equal(t, config.Actions[1].Silent, true)
 }
 
 func TestSimpleMatch(t *testing.T) {

@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"keptn-sandbox/job-executor-service/pkg/eventhandler"
 	"errors"
+	"keptn-sandbox/job-executor-service/pkg/eventhandler"
 	"log"
 	"os"
 	"strings"

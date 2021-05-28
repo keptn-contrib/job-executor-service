@@ -1,10 +1,10 @@
 package k8s
 
 import (
-	"keptn-sandbox/job-executor-service/pkg/config"
 	"encoding/json"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gotest.tools/assert"
+	"keptn-sandbox/job-executor-service/pkg/config"
 	"testing"
 )
 

@@ -32,7 +32,7 @@ func NewConfigService(useLocalFileSystem bool, project string, stage string, ser
 	}
 }
 
-// getKeptnResource returns a resource from the configuration repo based on the incoming cloud events project, service and stage
+// GetKeptnResource returns a resource from the configuration repo based on the incoming cloud events project, service and stage
 func (k *configServiceImpl) GetKeptnResource(resource string) ([]byte, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
