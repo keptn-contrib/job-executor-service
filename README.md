@@ -326,7 +326,7 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * write release notes in the [releasenotes/](releasenotes/) folder,
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
-* update the image tags in [deploy/service.yaml], and
+* update the image tags in [deploy/service.yaml](deploy/service.yaml), [helm/Chart.yaml](helm/Chart.yaml), [helm/values.yaml](helm/values.yaml) and [helm/templates/configmap.yaml](helm/templates/configmap.yaml)
 * test your service against a working Keptn installation.
 
 If any problems occur, fix them in the release branch and test them again.

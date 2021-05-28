@@ -2,7 +2,7 @@ jobexecutorservice:
   image:
     repository: docker.io/keptnsandbox/job-executor-service # Container Image Name
     pullPolicy: Always                       # Kubernetes Image Pull Policy
-    tag: "0.1.0"                            # Container Tag
+    tag: ""                                  # Container Tag
   service:
     enabled: true                            # Creates a Kubernetes Service for the job-executor-service
 
@@ -13,7 +13,7 @@ distributor:
   image:
     repository: docker.io/keptn/distributor  # Container Image Name
     pullPolicy: IfNotPresent                 # Kubernetes Image Pull Policy
-    tag: ""                                  # Container Tag
+    tag: "0.8.3"                             # Container Tag
 
 remoteControlPlane:
   enabled: true                              # Enables remote execution plane mode
