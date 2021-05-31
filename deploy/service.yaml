@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: job-executor-service
-          image: keptnsandbox/job-executor-service:latest
+          image: keptnsandbox/job-executor-service:0.1.0
           ports:
             - containerPort: 8080
           env:
