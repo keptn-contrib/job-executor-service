@@ -1,4 +1,4 @@
-package k8s
+package k8sutils
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 )
 
 // GetLogsOfPod returns the k8s logs of a job in a namespace
-func (*K8s) GetLogsOfPod(clientset *kubernetes.Clientset, namespace string, jobName string) (string, error) {
+func (*k8sImpl) GetLogsOfPod(clientset *kubernetes.Clientset, namespace string, jobName string) (string, error) {
 
 	// TODO include the logs of the initcontainer
 

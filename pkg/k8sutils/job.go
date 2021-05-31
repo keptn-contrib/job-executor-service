@@ -1,4 +1,4 @@
-package k8s
+package k8sutils
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 )
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func (*K8s) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
+func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -179,7 +179,7 @@ func (*K8s) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobN
 }
 
 // DeleteK8sJob delete a k8s job in the given namespace
-func (*K8s) DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
+func (*k8sImpl) DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
 
 	jobs := clientset.BatchV1().Jobs(namespace)
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})

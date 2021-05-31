@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"keptn-sandbox/job-executor-service/pkg/config"
-	"keptn-sandbox/job-executor-service/pkg/k8s"
+	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
 	"strconv"
 
@@ -57,7 +57,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	k8s := &k8s.K8s{}
+	k8s := k8sutils.NewK8s()
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
@@ -85,7 +85,7 @@ func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{},
 	return eventAsInterface, nil
 }
 
-func (eh *EventHandler) startK8sJob(k8s k8s.Interface, action *config.Action, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)

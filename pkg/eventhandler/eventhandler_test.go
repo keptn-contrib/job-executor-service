@@ -12,7 +12,7 @@ import (
 	"gotest.tools/assert"
 	"io/ioutil"
 	"keptn-sandbox/job-executor-service/pkg/config"
-	k8sfake "keptn-sandbox/job-executor-service/pkg/k8s/fake"
+	k8sutilsfake "keptn-sandbox/job-executor-service/pkg/k8sutils/fake"
 	"testing"
 	"time"
 
@@ -39,10 +39,10 @@ const testEvent = `
       }
 }`
 
-func createK8sMock(t *testing.T) *k8sfake.MockInterface {
+func createK8sMock(t *testing.T) *k8sutilsfake.MockInterface {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
-	return k8sfake.NewMockInterface(mockCtrl)
+	return k8sutilsfake.NewMockInterface(mockCtrl)
 }
 
 /**
