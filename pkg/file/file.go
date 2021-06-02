@@ -1,9 +1,9 @@
 package file
 
 import (
+	"fmt"
 	"keptn-sandbox/job-executor-service/pkg/config"
 	"keptn-sandbox/job-executor-service/pkg/keptn"
-	"fmt"
 	"log"
 	"net/url"
 	"path/filepath"

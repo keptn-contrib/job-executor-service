@@ -115,9 +115,8 @@ The configuration contains the following section:
 ```
 
 It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of
-these tasks in the order, they are listed within the config. The service waits for the successful execution of all
-the tasks to respond with a `StatusSucceeded` finished event. When one of the events fail, it responds
-with `StatusErrored`
+these tasks in the order, they are listed within the config. The service waits for the successful execution of all the
+tasks to respond with a `StatusSucceeded` finished event. When one of the events fail, it responds with `StatusErrored`
 finished cloud event.
 
 ### Kubernetes Job Environment Variables
@@ -126,14 +125,14 @@ Data from the incoming cloud event can be made available as environment variable
 task a list of environment variables can be declared, each with a `name` and a json path for the `value`.
 
 ```yaml
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)" 
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
 ```
 
-The environment variable appears in parentheses, "$(HOST)". This is required for the variable to be expanded in the command.
-In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
+The environment variable appears in parentheses, "$(HOST)". This is required for the variable to be expanded in the
+command. In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
 
 ```yaml
 {
@@ -191,9 +190,24 @@ E.g.:
         cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py"
 ```
 
+### Silent mode
+
+Actions can be run in silent mode, meaning no `.started/.finished` events will be sent by the job-executor-service. This
+is particular useful when not matching `.triggered` events but e.g. `.finished` events where responding
+with `.started/.finished` events does not make sense. To enable silent mode simply set it to true for the corresponding
+action. By default silent mode is disabled for each action.
+
+```yaml
+actions:
+  - name: "Run locust"
+    silent: true
+```
+
 ### Remote Control Plane
-If you are using the service in a remote control plane setup make sure the distributor is configured to forward all events used in 
-the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment configuration to fit your needs. 
+
+If you are using the service in a remote control plane setup make sure the distributor is configured to forward all
+events used in the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment
+configuration to fit your needs.
 
 ## Endless Possibilities
 
@@ -270,8 +284,8 @@ the [Golang community](https://github.com/golang/go/wiki/CodeReviewComments).
 
 * Build the binary: `go build -ldflags '-linkmode=external' -v -o job-executor-service`
 * Run tests: `go test -race -v ./...`
-* Build the docker image: `docker build . -t keptnsandbox/job-executor-service:dev` (Note: Ensure that you use the correct
-  DockerHub account/organization)
+* Build the docker image: `docker build . -t keptnsandbox/job-executor-service:dev` (Note: Ensure that you use the
+  correct DockerHub account/organization)
 * Run the docker image locally: `docker run --rm -it -p 8080:8080 keptnsandbox/job-executor-service:dev`
 * Push the docker image to DockerHub: `docker push keptnsandbox/job-executor-service:dev` (Note: Ensure that you use the
   correct DockerHub account/organization)

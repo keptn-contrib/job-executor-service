@@ -1,29 +1,30 @@
-
 actions:
   - name: "Run locust"
-    event: "sh.keptn.event.test.triggered"
-    jsonpath:
-      property: "$.data.test.teststrategy" 
-      match: "locust"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+        jsonpath:
+          property: "$.data.test.teststrategy"
+          match: "locust"
     tasks:
       - name: "Run locust smoke tests"
-        files: 
+        files:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
         cmd: "locust -f /keptn/locust/basic.py"
 
   - name: "Run Bash"
-    event: "sh.keptn.event.action.triggered"
-    jsonpath: 
-      property: "$.data.action.action"
-      match: "hello"
+    events:
+      - name: "sh.keptn.event.action.triggered"
+        jsonpath:
+          property: "$.data.action.action"
+          match: "hello"
     tasks:
       - name: "Run static world"
         image: "bash"
         cmd: "echo static"
       - name: "Run hello world"
-        files: 
+        files:
           - hello/hello-world.txt
         image: "bash"
         cmd: "cat /keptn/hello/hello-world.txt | echo"

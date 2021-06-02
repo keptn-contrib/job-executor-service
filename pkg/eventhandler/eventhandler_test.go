@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/cloudevents/sdk-go/v2/binding/spec"
 	"github.com/cloudevents/sdk-go/v2/event"
+	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
+	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
 	"gotest.tools/assert"
 	"io/ioutil"
+	"keptn-sandbox/job-executor-service/pkg/config"
+	k8sutilsfake "keptn-sandbox/job-executor-service/pkg/k8sutils/fake"
 	"testing"
 	"time"
 
@@ -36,30 +39,38 @@ const testEvent = `
       }
 }`
 
+func createK8sMock(t *testing.T) *k8sutilsfake.MockInterface {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	return k8sutilsfake.NewMockInterface(mockCtrl)
+}
+
 /**
  * loads a cloud event from the passed test json file and initializes a keptn object with it
  */
-func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.Event, error) {
+func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.Event, *keptnfake.EventSender, error) {
 	// load sample event
 	eventFile, err := ioutil.ReadFile(eventFileName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Cant load %s: %s", eventFileName, err.Error())
+		return nil, nil, nil, fmt.Errorf("Cant load %s: %s", eventFileName, err.Error())
 	}
 
 	incomingEvent := &cloudevents.Event{}
+
 	err = json.Unmarshal(eventFile, incomingEvent)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error parsing: %s", err.Error())
+		return nil, nil, nil, fmt.Errorf("Error parsing: %s", err.Error())
 	}
 
 	// Add a Fake EventSender to KeptnOptions
+	fakeEventSender := &keptnfake.EventSender{}
 	var keptnOptions = keptn.KeptnOpts{
-		EventSender: &fake.EventSender{},
+		EventSender: fakeEventSender,
 	}
 	keptnOptions.UseLocalFileSystem = true
 	myKeptn, err := keptnv2.NewKeptn(incomingEvent, keptnOptions)
 
-	return myKeptn, incomingEvent, err
+	return myKeptn, incomingEvent, fakeEventSender, err
 }
 
 func TestInitializeEventPayloadAsInterface(t *testing.T) {
@@ -90,4 +101,81 @@ func TestInitializeEventPayloadAsInterface(t *testing.T) {
 	dataAsMap := data.(map[string]interface{})
 
 	assert.Equal(t, dataAsMap["project"], "sockshop")
+}
+
+func TestStartK8s(t *testing.T) {
+	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	assert.NilError(t, err)
+
+	eventData := &keptnv2.EventData{}
+	myKeptn.CloudEvent.DataAs(eventData)
+	eh := EventHandler{
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+	}
+	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+
+	action := config.Action{
+		Name: "Run locust",
+		Tasks: []config.Task{
+			{
+				Name: "Run locust smoked ham tests",
+			},
+			{
+				Name: "Run locust healthy snack tests",
+			},
+		},
+	}
+
+	k8sMock := createK8sMock(t)
+	k8sMock.EXPECT().ConnectToCluster().Times(1)
+	k8sMock.EXPECT().CreateK8sJob(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+
+	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
+
+	err = fakeEventSender.AssertSentEventTypes([]string{"sh.keptn.event.action.started", "sh.keptn.event.action.finished"})
+	assert.NilError(t, err)
+}
+
+func TestStartK8sJobSilent(t *testing.T) {
+	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	assert.NilError(t, err)
+
+	eventData := &keptnv2.EventData{}
+	myKeptn.CloudEvent.DataAs(eventData)
+	eh := EventHandler{
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+	}
+	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+
+	action := config.Action{
+		Name: "Run locust",
+		Tasks: []config.Task{
+			{
+				Name: "Run locust smoked ham tests",
+			},
+			{
+				Name: "Run locust healthy snack tests",
+			},
+		},
+		Silent: true,
+	}
+
+	k8sMock := createK8sMock(t)
+	k8sMock.EXPECT().ConnectToCluster().Times(1)
+	k8sMock.EXPECT().CreateK8sJob(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+
+	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
+
+	err = fakeEventSender.AssertSentEventTypes([]string{})
+	assert.NilError(t, err)
 }

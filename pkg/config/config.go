@@ -17,6 +17,7 @@ type Action struct {
 	Name   string  `yaml:"name"`
 	Events []Event `yaml:"events"`
 	Tasks  []Task  `yaml:"tasks"`
+	Silent bool    `yaml:"silent"`
 }
 
 // Event defines a keptn event which determines if an Action should be triggered

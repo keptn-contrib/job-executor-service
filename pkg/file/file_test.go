@@ -1,11 +1,11 @@
 package file
 
 import (
-	"keptn-sandbox/job-executor-service/pkg/keptn"
 	"errors"
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/afero"
 	"gotest.tools/assert"
+	"keptn-sandbox/job-executor-service/pkg/keptn"
 	"testing"
 )
 
