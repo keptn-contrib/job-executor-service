@@ -226,6 +226,7 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 | Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptnsandbox/job-executor-service/tags) |
 |:----------------:|:----------------------------------------:|
 |       0.8.3      | keptnsandbox/job-executor-service:0.1.0  |
+|       0.8.3      | keptnsandbox/job-executor-service:0.1.1  |
 
 ## Installation
 
@@ -338,6 +339,7 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 
 * branch away from master to a branch called `release-x.y.z` (where `x.y.z` is your version),
 * write release notes in the [releasenotes/](releasenotes/) folder,
+* update the compatibility matrix,
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
 * update the image tags for `job-executor-service` and `job-executor-service-initcontainer` in [deploy/service.yaml](deploy/service.yaml), [helm/Chart.yaml](helm/Chart.yaml), [helm/values.yaml](helm/values.yaml) and [helm/templates/configmap.yaml](helm/templates/configmap.yaml)
