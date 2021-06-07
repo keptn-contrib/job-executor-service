@@ -28,7 +28,7 @@ spec:
             - name: JOB_NAMESPACE
               value: 'keptn'
             - name: INIT_CONTAINER_IMAGE
-              value: 'keptnsandbox/job-executor-service-initcontainer'
+              value: 'keptnsandbox/job-executor-service-initcontainer:0.1.0'
         - name: distributor
           image: keptn/distributor:0.8.3
           livenessProbe:
