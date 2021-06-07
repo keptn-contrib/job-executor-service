@@ -155,7 +155,7 @@ jobs:
 
       - id: docker_build_service
         name: Docker Build Service
-        uses: yeahservice/gh-action-build-docker-image@feature/add-dockerfile-name-support
+        uses: keptn/gh-action-build-docker-image@master
         with:
           VERSION: ${{ env.VERSION }}
           IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
@@ -163,7 +163,7 @@ jobs:
 
       - id: docker_build_initcontainer
         name: Docker Build InitContainer
-        uses: yeahservice/gh-action-build-docker-image@feature/add-dockerfile-name-support
+        uses: keptn/gh-action-build-docker-image@master
         with:
           VERSION: ${{ env.VERSION }}
           IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}"
