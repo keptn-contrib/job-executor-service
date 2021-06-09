@@ -14,11 +14,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
+const envValueFromEvent = "event"
+const envValueFromSecret = "secret"
+
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
+func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -43,7 +45,7 @@ func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, 
 		return &s
 	}
 
-	jobEnv, err := prepareJobEnv(task, eventData, jsonEventData)
+	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData)
 	if err != nil {
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
@@ -51,7 +53,7 @@ func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: namespace,
+			Namespace: k8s.namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
@@ -135,7 +137,7 @@ func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, 
 		},
 	}
 
-	jobs := clientset.BatchV1().Jobs(namespace)
+	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 
 	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
 	if err != nil {
@@ -179,25 +181,32 @@ func (*k8sImpl) CreateK8sJob(clientset *kubernetes.Clientset, namespace string, 
 }
 
 // DeleteK8sJob delete a k8s job in the given namespace
-func (*k8sImpl) DeleteK8sJob(clientset *kubernetes.Clientset, namespace string, jobName string) error {
+func (k8s *k8sImpl) DeleteK8sJob(jobName string) error {
 
-	jobs := clientset.BatchV1().Jobs(namespace)
+	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
 
-func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) ([]v1.EnvVar, error) {
+func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
 	for _, env := range task.Env {
-		value, err := jsonpath.Get(env.Value, jsonEventData)
-		if err != nil {
-			return nil, fmt.Errorf("could not add env with name %v, value %v: %v", env.Name, env.Value, err)
+		var err error
+		var generatedEnv []v1.EnvVar
+
+		switch env.ValueFrom {
+		case envValueFromEvent:
+			generatedEnv, err = generateEnvFromEvent(env, jsonEventData)
+		case envValueFromSecret:
+			generatedEnv, err = k8s.generateEnvFromSecret(env)
+		default:
+			return nil, fmt.Errorf("could not add env with name %v, unknown valueFrom %v", env.Name, env.ValueFrom)
 		}
 
-		jobEnv = append(jobEnv, v1.EnvVar{
-			Name:  env.Name,
-			Value: fmt.Sprintf("%v", value),
-		})
+		if err != nil {
+			return nil, err
+		}
+		jobEnv = append(jobEnv, generatedEnv...)
 	}
 
 	jobEnv = append(jobEnv,
@@ -216,4 +225,45 @@ func prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData
 	)
 
 	return jobEnv, nil
+}
+
+func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVar, error) {
+
+	value, err := jsonpath.Get(env.Value, jsonEventData)
+	if err != nil {
+		return nil, fmt.Errorf("could not add env with name %v, value %v, valueFrom %v: %v", env.Name, env.Value, env.ValueFrom, err)
+	}
+
+	generatedEnv := []v1.EnvVar{
+		{
+			Name:  env.Name,
+			Value: fmt.Sprintf("%v", value),
+		},
+	}
+
+	return generatedEnv, nil
+}
+
+func (k8s *k8sImpl) generateEnvFromSecret(env config.Env) ([]v1.EnvVar, error) {
+
+	var generatedEnv []v1.EnvVar
+
+	secret, err := k8s.clientset.CoreV1().Secrets(k8s.namespace).Get(context.TODO(), env.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("could not add env with name %v, valueFrom %v: %v", env.Name, env.ValueFrom, err)
+	}
+
+	for key := range secret.Data {
+		generatedEnv = append(generatedEnv, v1.EnvVar{
+			Name: key,
+			ValueFrom: &v1.EnvVarSource{
+				SecretKeyRef: &v1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{Name: env.Name},
+					Key:                  key,
+				},
+			},
+		})
+	}
+
+	return generatedEnv, nil
 }

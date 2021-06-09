@@ -10,86 +10,84 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v0_2_0 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	kubernetes "k8s.io/client-go/kubernetes"
 )
 
-// MockInterface is a mock of Interface interface.
-type MockInterface struct {
+// MockK8s is a mock of K8s interface.
+type MockK8s struct {
 	ctrl     *gomock.Controller
-	recorder *MockInterfaceMockRecorder
+	recorder *MockK8sMockRecorder
 }
 
-// MockInterfaceMockRecorder is the mock recorder for MockInterface.
-type MockInterfaceMockRecorder struct {
-	mock *MockInterface
+// MockK8sMockRecorder is the mock recorder for MockK8s.
+type MockK8sMockRecorder struct {
+	mock *MockK8s
 }
 
-// NewMockInterface creates a new mock instance.
-func NewMockInterface(ctrl *gomock.Controller) *MockInterface {
-	mock := &MockInterface{ctrl: ctrl}
-	mock.recorder = &MockInterfaceMockRecorder{mock}
+// NewMockK8s creates a new mock instance.
+func NewMockK8s(ctrl *gomock.Controller) *MockK8s {
+	mock := &MockK8s{ctrl: ctrl}
+	mock.recorder = &MockK8sMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockInterface) EXPECT() *MockInterfaceMockRecorder {
+func (m *MockK8s) EXPECT() *MockK8sMockRecorder {
 	return m.recorder
 }
 
 // ConnectToCluster mocks base method.
-func (m *MockInterface) ConnectToCluster() (*kubernetes.Clientset, error) {
+func (m *MockK8s) ConnectToCluster() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectToCluster")
-	ret0, _ := ret[0].(*kubernetes.Clientset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // ConnectToCluster indicates an expected call of ConnectToCluster.
-func (mr *MockInterfaceMockRecorder) ConnectToCluster() *gomock.Call {
+func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToCluster", reflect.TypeOf((*MockInterface)(nil).ConnectToCluster))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToCluster", reflect.TypeOf((*MockK8s)(nil).ConnectToCluster))
 }
 
 // CreateK8sJob mocks base method.
-func (m *MockInterface) CreateK8sJob(clientset *kubernetes.Clientset, namespace, jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, configurationServiceURL, configurationServiceToken, initContainerImage string, jsonEventData interface{}) error {
+func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, configurationServiceURL, configurationServiceToken, initContainerImage string, jsonEventData interface{}) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateK8sJob", clientset, namespace, jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
+	ret := m.ctrl.Call(m, "CreateK8sJob", jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateK8sJob indicates an expected call of CreateK8sJob.
-func (mr *MockInterfaceMockRecorder) CreateK8sJob(clientset, namespace, jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) CreateK8sJob(jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockInterface)(nil).CreateK8sJob), clientset, namespace, jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
 }
 
 // DeleteK8sJob mocks base method.
-func (m *MockInterface) DeleteK8sJob(clientset *kubernetes.Clientset, namespace, jobName string) error {
+func (m *MockK8s) DeleteK8sJob(jobName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteK8sJob", clientset, namespace, jobName)
+	ret := m.ctrl.Call(m, "DeleteK8sJob", jobName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteK8sJob indicates an expected call of DeleteK8sJob.
-func (mr *MockInterfaceMockRecorder) DeleteK8sJob(clientset, namespace, jobName interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) DeleteK8sJob(jobName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sJob", reflect.TypeOf((*MockInterface)(nil).DeleteK8sJob), clientset, namespace, jobName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteK8sJob", reflect.TypeOf((*MockK8s)(nil).DeleteK8sJob), jobName)
 }
 
 // GetLogsOfPod mocks base method.
-func (m *MockInterface) GetLogsOfPod(clientset *kubernetes.Clientset, namespace, jobName string) (string, error) {
+func (m *MockK8s) GetLogsOfPod(jobName string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLogsOfPod", clientset, namespace, jobName)
+	ret := m.ctrl.Call(m, "GetLogsOfPod", jobName)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLogsOfPod indicates an expected call of GetLogsOfPod.
-func (mr *MockInterfaceMockRecorder) GetLogsOfPod(clientset, namespace, jobName interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) GetLogsOfPod(jobName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogsOfPod", reflect.TypeOf((*MockInterface)(nil).GetLogsOfPod), clientset, namespace, jobName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogsOfPod", reflect.TypeOf((*MockK8s)(nil).GetLogsOfPod), jobName)
 }

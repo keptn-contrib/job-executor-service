@@ -1,15 +1,19 @@
 package config
 
 import (
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"regexp"
 
 	"github.com/PaesslerAG/jsonpath"
 )
 
+const supportedAPIVersion = "v1"
+
 // Config contains the configuration of the job-executor-service (job/config.yaml)
 type Config struct {
-	Actions []Action `yaml:"actions"`
+	APIVersion *string  `yaml:"apiVersion"`
+	Actions    []Action `yaml:"actions"`
 }
 
 // Action contains a action within the config which needs to be triggered
@@ -43,17 +47,28 @@ type Task struct {
 
 // Env value from the event which will be added as env to the job
 type Env struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name      string `yaml:"name"`
+	Value     string `yaml:"value"`
+	ValueFrom string `yaml:"valueFrom"`
 }
 
 // NewConfig creates a new configuration from the provided config file content
 func NewConfig(yamlContent []byte) (*Config, error) {
 
 	config := Config{}
-	err := yaml.Unmarshal(yamlContent, &config)
+	err := yaml.UnmarshalStrict(yamlContent, &config)
 
-	return &config, err
+	if err != nil {
+		return nil, err
+	}
+
+	if config.APIVersion == nil {
+		return nil, fmt.Errorf("apiVersion must be specified")
+	} else if *config.APIVersion != supportedAPIVersion {
+		return nil, fmt.Errorf("apiVersion %v is not supported, use %v", *config.APIVersion, supportedAPIVersion)
+	}
+
+	return &config, nil
 }
 
 // IsEventMatch indicated whether a given event matches the config

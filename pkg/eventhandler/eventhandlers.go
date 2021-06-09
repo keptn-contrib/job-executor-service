@@ -57,7 +57,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	k8s := k8sutils.NewK8s()
+	k8s := k8sutils.NewK8s(eh.JobNamespace)
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
@@ -95,7 +95,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		}
 	}
 
-	clientset, err := k8s.ConnectToCluster()
+	err := k8s.ConnectToCluster()
 	if err != nil {
 		log.Printf("Error while connecting to cluster: %s\n", err.Error())
 		if !action.Silent {
@@ -116,15 +116,15 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
 
-		jobErr := k8s.CreateK8sJob(clientset, eh.JobNamespace, jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage, jsonEventData)
+		jobErr := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage, jsonEventData)
 		defer func() {
-			err = k8s.DeleteK8sJob(clientset, eh.JobNamespace, jobName)
+			err = k8s.DeleteK8sJob(jobName)
 			if err != nil {
 				log.Printf("Error while deleting job: %s\n", err.Error())
 			}
 		}()
 
-		logs, err := k8s.GetLogsOfPod(clientset, eh.JobNamespace, jobName)
+		logs, err := k8s.GetLogsOfPod(jobName)
 		if err != nil {
 			log.Printf("Error while retrieving logs: %s\n", err.Error())
 		}

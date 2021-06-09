@@ -2,12 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"gotest.tools/assert"
 )
 
 const simpleConfig = `
+apiVersion: v1
 actions:
   - name: "Run locust"
     events:
@@ -25,6 +27,7 @@ actions:
 `
 
 const complexConfig = `
+apiVersion: v1
 actions:
   - name: "Run locust"
     events:
@@ -42,6 +45,10 @@ actions:
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
+            valueFrom: event
+          - name: LocustSecret
+            value: locust-spine-token-exchange-dev
+            valueFrom: secret
 
   - name: "Run bash"
     events:
@@ -148,6 +155,22 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 2)
 	assert.Equal(t, config.Actions[1].Silent, true)
+}
+
+func TestNoApiVersion(t *testing.T) {
+
+	trimmedSimpleConfig := strings.TrimPrefix(simpleConfig, "\napiVersion: v1")
+	_, err := NewConfig([]byte(trimmedSimpleConfig))
+
+	assert.Error(t, err, "apiVersion must be specified")
+}
+
+func TestSimpleWrongApiVersion(t *testing.T) {
+
+	replacedSimpleConfig := strings.Replace(simpleConfig, "apiVersion: v1", "apiVersion: v0", 1)
+	_, err := NewConfig([]byte(replacedSimpleConfig))
+
+	assert.Error(t, err, "apiVersion v0 is not supported, use v1")
 }
 
 func TestSimpleMatch(t *testing.T) {
