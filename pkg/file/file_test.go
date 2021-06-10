@@ -10,6 +10,7 @@ import (
 )
 
 const simpleConfig = `
+apiVersion: v1
 actions:
   - name: "action"
     events:

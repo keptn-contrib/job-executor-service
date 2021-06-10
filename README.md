@@ -27,6 +27,7 @@ Just put a file into the keptn git repository (in folder `<service>/job/config.y
 * the events for which they should be triggered.
 
 ```yaml
+apiVersion: v1
 actions:
   - name: "Run locust"
     events:
@@ -49,6 +50,7 @@ actions:
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
+            valueFrom: event
 ```
 
 ### Event Matching
@@ -121,18 +123,26 @@ finished cloud event.
 
 ### Kubernetes Job Environment Variables
 
-Data from the incoming cloud event can be made available as environment variables in the job. In the `env` section of a
-task a list of environment variables can be declared, each with a `name` and a json path for the `value`.
+In the `env` section of a task, a list of environment variables can be declared, with their source either from the
+incoming cloud event (`valueFrom: event`) or from kubernetes secrets (`valueFrom: secret`).
+
+Environment variables in `cmd` can be accessed with parentheses, e.g. `"$(HOST)"`. This is required for the variable to
+be expanded in the command.
+
+#### From Events
+
+The following environment variable has the name `HOST`, and the value is whatever the given
+jsonpath `$.data.deployment.deploymentURIsLocal[0]` resolves to.
 
 ```yaml
         cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
+            valueFrom: event
 ```
 
-The environment variable appears in parentheses, "$(HOST)". This is required for the variable to be expanded in the
-command. In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
+In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
 
 ```yaml
 {
@@ -166,6 +176,37 @@ command. In the above example the json path for `HOST` would resolve into `https
   "type": "sh.keptn.event.test.triggered",
   "shkeptncontext": "138f7bf1-f027-42c4-b705-9033b5f5871e"
 }
+```
+
+#### From Kubernetes Secrets
+
+The following configuration looks up a kubernetes secret with the name `locust-secret` and all key/value pairs of the
+secret will be available as separate environment variables in the job.
+
+```yaml
+        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/$(FILE) --host $(HOST)"
+        env:
+          - name: locust-secret
+            valueFrom: secret
+```
+
+With the secret below, there will be two environment variables available in the job. `HOST` with the
+value `https://keptn.sh` and `FILE` with the value `basic.py`
+
+```shell
+kubectl -n keptn create secret generic locust-secret --from-literal=HOST=https://keptn.sh --from-literal=FILE=basic.py -oyaml --dry-run=client
+```
+
+```yaml
+apiVersion: v1
+data:
+  FILE: YmFzaWMucHk=
+  HOST: aHR0cHM6Ly9rZXB0bi5zaA==
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: locust-secret
+  namespace: keptn
 ```
 
 ### File Handling
@@ -342,7 +383,9 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * update the compatibility matrix,
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
-* update the image tags for `job-executor-service` and `job-executor-service-initcontainer` in [deploy/service.yaml](deploy/service.yaml), [helm/Chart.yaml](helm/Chart.yaml), [helm/values.yaml](helm/values.yaml) and [helm/templates/configmap.yaml](helm/templates/configmap.yaml)
+* update the image tags for `job-executor-service` and `job-executor-service-initcontainer`
+  in [deploy/service.yaml](deploy/service.yaml), [helm/Chart.yaml](helm/Chart.yaml),
+  [helm/values.yaml](helm/values.yaml) and [helm/templates/configmap.yaml](helm/templates/configmap.yaml),
 * test your service against a working Keptn installation.
 
 If any problems occur, fix them in the release branch and test them again.

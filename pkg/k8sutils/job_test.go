@@ -1,9 +1,13 @@
 package k8sutils
 
 import (
+	"context"
 	"encoding/json"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gotest.tools/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 	"keptn-sandbox/job-executor-service/pkg/config"
 	"testing"
 )
@@ -42,20 +46,12 @@ const testTriggeredEvent = `
   "shkeptncontext": "138f7bf1-f027-42c4-b705-9033b5f5871e"
 }`
 
-func TestPrepareJobEnv(t *testing.T) {
+func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 	task := config.Task{
 		Env: []config.Env{
 			{
-				Name:  "HOST",
-				Value: "$.data.deployment.deploymentURIsLocal[0]",
-			},
-			{
 				Name:  "DEPLOYMENT_STRATEGY",
-				Value: "$.data.deployment.deploymentstrategy",
-			},
-			{
-				Name:  "TEST_STRATEGY",
-				Value: "$.data.test.teststrategy",
+				Value: "$.data.deployment.undeploymentstrategy",
 			},
 		},
 	}
@@ -69,7 +65,43 @@ func TestPrepareJobEnv(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	jobEnv, err := prepareJobEnv(task, &eventData, eventAsInterface)
+	k8s := k8sImpl{}
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.ErrorContains(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
+}
+
+func TestPrepareJobEnvFromEvent(t *testing.T) {
+	task := config.Task{
+		Env: []config.Env{
+			{
+				Name:      "HOST",
+				Value:     "$.data.deployment.deploymentURIsLocal[0]",
+				ValueFrom: "event",
+			},
+			{
+				Name:      "DEPLOYMENT_STRATEGY",
+				Value:     "$.data.deployment.deploymentstrategy",
+				ValueFrom: "event",
+			},
+			{
+				Name:      "TEST_STRATEGY",
+				Value:     "$.data.test.teststrategy",
+				ValueFrom: "event",
+			},
+		},
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8s := k8sImpl{}
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
 	assert.NilError(t, err)
 
 	assert.Equal(t, jobEnv[0].Name, "HOST")
@@ -91,12 +123,13 @@ func TestPrepareJobEnv(t *testing.T) {
 	assert.Equal(t, jobEnv[5].Value, "carts")
 }
 
-func TestPrepareJobEnvWithWrongJSONPath(t *testing.T) {
+func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 	task := config.Task{
 		Env: []config.Env{
 			{
-				Name:  "DEPLOYMENT_STRATEGY",
-				Value: "$.data.deployment.undeploymentstrategy",
+				Name:      "DEPLOYMENT_STRATEGY",
+				Value:     "$.data.deployment.undeploymentstrategy",
+				ValueFrom: "event",
 			},
 		},
 	}
@@ -110,6 +143,104 @@ func TestPrepareJobEnvWithWrongJSONPath(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	_, err := prepareJobEnv(task, &eventData, eventAsInterface)
+	k8s := k8sImpl{}
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
 	assert.ErrorContains(t, err, "unknown key undeploymentstrategy")
+}
+
+func TestPrepareJobEnvFromSecret(t *testing.T) {
+	task := config.Task{
+		Env: []config.Env{
+			{
+				Name:      "locust-sockshop-dev-carts",
+				ValueFrom: "secret",
+			},
+		},
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8s := k8sImpl{
+		clientset: k8sfake.NewSimpleClientset(),
+		namespace: "keptn",
+	}
+
+	secretName := "locust-sockshop-dev-carts"
+	key1, value1 := "key1", "value1"
+	key2, value2 := "key2", "value2"
+	secretData := map[string][]byte{key1: []byte(value1), key2: []byte(value2)}
+	k8sSecret := createK8sSecretObj(secretName, k8s.namespace, secretData)
+	k8s.clientset.CoreV1().Secrets(k8s.namespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
+
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.NilError(t, err)
+
+	// env from secrets can in in any order, sort them
+	var orderedSecretEnv [2]*corev1.EnvVar
+	for index, env := range jobEnv {
+		if env.Name == key1 {
+			orderedSecretEnv[0] = &jobEnv[index]
+		} else if env.Name == key2 {
+			orderedSecretEnv[1] = &jobEnv[index]
+		}
+	}
+
+	assert.Assert(t, orderedSecretEnv[0] != nil, "env with key1 not present")
+	assert.Equal(t, orderedSecretEnv[0].Name, key1)
+	assert.Equal(t, orderedSecretEnv[0].ValueFrom.SecretKeyRef.Key, key1)
+	assert.Equal(t, orderedSecretEnv[0].ValueFrom.SecretKeyRef.Name, secretName)
+
+	assert.Assert(t, orderedSecretEnv[1] != nil, "env with key2 not present")
+	assert.Equal(t, orderedSecretEnv[1].Name, key2)
+	assert.Equal(t, orderedSecretEnv[1].ValueFrom.SecretKeyRef.Key, key2)
+	assert.Equal(t, orderedSecretEnv[1].ValueFrom.SecretKeyRef.Name, secretName)
+}
+
+func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
+	task := config.Task{
+		Env: []config.Env{
+			{
+				Name:      "locust-sockshop-dev-carts",
+				ValueFrom: "secret",
+			},
+		},
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8s := k8sImpl{
+		clientset: k8sfake.NewSimpleClientset(),
+		namespace: "keptn",
+	}
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.ErrorContains(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
+}
+
+func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: data,
+		Type: "Opaque",
+	}
 }

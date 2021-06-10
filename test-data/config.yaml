@@ -1,3 +1,4 @@
+apiVersion: v1
 actions:
   - name: "Run locust"
     events:
