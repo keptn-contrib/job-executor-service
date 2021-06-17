@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         run: job-executor-service
+        app.kubernetes.io/name: job-executor-service
+        app.kubernetes.io/version: 0.1.1
     spec:
       containers:
         - name: job-executor-service
@@ -30,7 +32,7 @@ spec:
             - name: INIT_CONTAINER_IMAGE
               value: 'keptnsandbox/job-executor-service-initcontainer:0.1.1'
         - name: distributor
-          image: keptn/distributor:0.8.3
+          image: keptn/distributor:0.8.4
           livenessProbe:
             httpGet:
               path: /health
@@ -54,6 +56,31 @@ spec:
               value: 'sh.keptn.>'
             - name: PUBSUB_RECIPIENT
               value: '127.0.0.1'
+            - name: VERSION
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/version'']'
+            - name: K8S_DEPLOYMENT_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: 'metadata.labels[''app.kubernetes.io/name'']'
+            - name: K8S_POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
       serviceAccountName: job-executor-service
 ---
 # Expose job-executor-service via Port 8080 within the cluster
