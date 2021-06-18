@@ -6,6 +6,11 @@ jobexecutorservice:
   service:
     enabled: true                            # Creates a Kubernetes Service for the job-executor-service
 
+jobexecutorserviceinitcontainer:
+  image:
+    repository: docker.io/keptnsandbox/job-executor-service-initcontainer # Container Image Name
+    tag: ""                                                               # Container Tag
+
 distributor:
   stageFilter: ""                            # Sets the stage this helm service belongs to
   serviceFilter: ""                          # Sets the service this helm service belongs to

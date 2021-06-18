@@ -4,4 +4,4 @@ metadata:
   name: job-service-config
 data:
   job_namespace: "{{ .Release.Namespace }}"
-  init_container_image: "keptnsandbox/job-executor-service-initcontainer:0.1.1"
+  init_container_image: "{{ .Values.jobexecutorserviceinitcontainer.image.repository }}:{{ .Values.jobexecutorserviceinitcontainer.image.tag | default .Chart.AppVersion }}"
