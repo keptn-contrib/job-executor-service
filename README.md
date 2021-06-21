@@ -244,7 +244,7 @@ actions:
     silent: true
 ```
 
-### Kubernetes resource quotas
+### Resource quotas for jobs
 
 The `initcontainer` and the `job` container will use the default resource quotas defined as environment variables. They
 can be set in [`deploy/service.yaml`](deploy/service.yaml):
