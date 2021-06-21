@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	v1 "k8s.io/api/core/v1"
+	"keptn-sandbox/job-executor-service/pkg/config"
 	"keptn-sandbox/job-executor-service/pkg/eventhandler"
+	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
 	"os"
 	"strings"
@@ -32,12 +35,24 @@ type envConfig struct {
 	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN"`
-	// The token of the keptn API
+	// The init container image to use
 	InitContainerImage string `envconfig:"INIT_CONTAINER_IMAGE"`
+	// Default resource limits cpu for job and init container
+	DefaultResourceLimitsCPU string `envconfig:"DEFAULT_RESOURCE_LIMITS_CPU"`
+	// Default resource limits memory for job and init container
+	DefaultResourceLimitsMemory string `envconfig:"DEFAULT_RESOURCE_LIMITS_MEMORY"`
+	// Default resource requests cpu for job and init container
+	DefaultResourceRequestsCPU string `envconfig:"DEFAULT_RESOURCE_REQUESTS_CPU"`
+	// Default resource requests memory for job and init container
+	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
 const ServiceName = "job-executor-service"
+
+// DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
+// startup from env (treat as const)
+var /* const */ DefaultResourceRequirements *v1.ResourceRequirements
 
 /**
  * Parses a Keptn Cloud Event payload (data attribute)
@@ -77,14 +92,17 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 	}
 
 	eventHandler := &eventhandler.EventHandler{
-		Keptn:        myKeptn,
-		Event:        event,
-		EventData:    eventData,
-		ServiceName:  ServiceName,
-		JobNamespace: env.JobNamespace,
-		InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
-		KeptnAPIToken:      env.KeptnAPIToken,
-		InitContainerImage: env.InitContainerImage,
+		Keptn:       myKeptn,
+		Event:       event,
+		EventData:   eventData,
+		ServiceName: ServiceName,
+		JobSettings: config.JobSettings{
+			JobNamespace: env.JobNamespace,
+			InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
+			KeptnAPIToken:               env.KeptnAPIToken,
+			InitContainerImage:          env.InitContainerImage,
+			DefaultResourceRequirements: DefaultResourceRequirements,
+		},
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888
@@ -103,6 +121,17 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 func main() {
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatalf("Failed to process env var: %s", err)
+	}
+
+	var err error
+	DefaultResourceRequirements, err = k8sutils.CreateResourceRequirements(
+		env.DefaultResourceLimitsCPU,
+		env.DefaultResourceLimitsMemory,
+		env.DefaultResourceRequestsCPU,
+		env.DefaultResourceRequestsMemory,
+	)
+	if err != nil {
+		log.Fatalf("unable to create default resource requirements: %v", err.Error())
 	}
 
 	os.Exit(_main(os.Args[1:], env))

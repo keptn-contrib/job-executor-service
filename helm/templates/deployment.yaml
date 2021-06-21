@@ -62,6 +62,26 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: init_container_image
+          - name: DEFAULT_RESOURCE_LIMITS_CPU
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: default_resource_limits_cpu
+          - name: DEFAULT_RESOURCE_LIMITS_MEMORY
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: default_resource_limits_memory
+          - name: DEFAULT_RESOURCE_REQUESTS_CPU
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: default_resource_requests_cpu
+          - name: DEFAULT_RESOURCE_REQUESTS_MEMORY
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: default_resource_requests_memory
           livenessProbe:
             httpGet:
               path: /health

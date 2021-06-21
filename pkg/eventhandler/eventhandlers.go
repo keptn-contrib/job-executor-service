@@ -14,14 +14,11 @@ import (
 
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn                                        *keptnv2.Keptn
-	Event                                        cloudevents.Event
-	EventData                                    *keptnv2.EventData
-	ServiceName                                  string
-	JobNamespace                                 string
-	InitContainerConfigurationServiceAPIEndpoint string
-	KeptnAPIToken                                string
-	InitContainerImage                           string
+	Keptn       *keptnv2.Keptn
+	Event       cloudevents.Event
+	EventData   *keptnv2.EventData
+	ServiceName string
+	JobSettings config.JobSettings
 }
 
 // HandleEvent handles all events in a generic manner
@@ -57,7 +54,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	k8s := k8sutils.NewK8s(eh.JobNamespace)
+	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
@@ -116,7 +113,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
 
-		jobErr := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.InitContainerConfigurationServiceAPIEndpoint, eh.KeptnAPIToken, eh.InitContainerImage, jsonEventData)
+		jobErr := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
 		defer func() {
 			err = k8s.DeleteK8sJob(jobName)
 			if err != nil {

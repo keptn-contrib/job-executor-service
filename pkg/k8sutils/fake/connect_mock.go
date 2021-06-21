@@ -50,17 +50,17 @@ func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 }
 
 // CreateK8sJob mocks base method.
-func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, configurationServiceURL, configurationServiceToken, initContainerImage string, jsonEventData interface{}) error {
+func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings config.JobSettings, jsonEventData interface{}) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateK8sJob", jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
+	ret := m.ctrl.Call(m, "CreateK8sJob", jobName, action, task, eventData, jobSettings, jsonEventData)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateK8sJob indicates an expected call of CreateK8sJob.
-func (mr *MockK8sMockRecorder) CreateK8sJob(jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) CreateK8sJob(jobName, action, task, eventData, jobSettings, jsonEventData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), jobName, action, task, eventData, configurationServiceURL, configurationServiceToken, initContainerImage, jsonEventData)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), jobName, action, task, eventData, jobSettings, jsonEventData)
 }
 
 // DeleteK8sJob mocks base method.
