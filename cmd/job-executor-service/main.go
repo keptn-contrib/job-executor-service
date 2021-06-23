@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	v1 "k8s.io/api/core/v1"
-	"keptn-sandbox/job-executor-service/pkg/config"
 	"keptn-sandbox/job-executor-service/pkg/eventhandler"
 	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
@@ -96,7 +95,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		Event:       event,
 		EventData:   eventData,
 		ServiceName: ServiceName,
-		JobSettings: config.JobSettings{
+		JobSettings: k8sutils.JobSettings{
 			JobNamespace: env.JobNamespace,
 			InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
 			KeptnAPIToken:               env.KeptnAPIToken,

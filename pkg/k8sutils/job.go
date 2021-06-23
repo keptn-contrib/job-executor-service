@@ -19,8 +19,17 @@ import (
 const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
 
+// JobSettings contains environment variable settings for the job
+type JobSettings struct {
+	JobNamespace                                 string
+	InitContainerConfigurationServiceAPIEndpoint string
+	KeptnAPIToken                                string
+	InitContainerImage                           string
+	DefaultResourceRequirements                  *v1.ResourceRequirements
+}
+
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings config.JobSettings, jsonEventData interface{}) error {
+func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 

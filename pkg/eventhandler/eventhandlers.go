@@ -18,7 +18,7 @@ type EventHandler struct {
 	Event       cloudevents.Event
 	EventData   *keptnv2.EventData
 	ServiceName string
-	JobSettings config.JobSettings
+	JobSettings k8sutils.JobSettings
 }
 
 // HandleEvent handles all events in a generic manner

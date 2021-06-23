@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 	"regexp"
 
 	"github.com/PaesslerAG/jsonpath"
@@ -64,15 +63,6 @@ type Resources struct {
 type ResourceList struct {
 	CPU    string `yaml:"cpu"`
 	Memory string `yaml:"memory"`
-}
-
-// JobSettings contains environment variable settings for the job
-type JobSettings struct {
-	JobNamespace                                 string
-	InitContainerConfigurationServiceAPIEndpoint string
-	KeptnAPIToken                                string
-	InitContainerImage                           string
-	DefaultResourceRequirements                  *v1.ResourceRequirements
 }
 
 // NewConfig creates a new configuration from the provided config file content
