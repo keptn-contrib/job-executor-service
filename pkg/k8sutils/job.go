@@ -19,8 +19,17 @@ import (
 const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
 
+// JobSettings contains environment variable settings for the job
+type JobSettings struct {
+	JobNamespace                                 string
+	InitContainerConfigurationServiceAPIEndpoint string
+	KeptnAPIToken                                string
+	InitContainerImage                           string
+	DefaultResourceRequirements                  *v1.ResourceRequirements
+}
+
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, configurationServiceURL string, configurationServiceToken string, initContainerImage string, jsonEventData interface{}) error {
+func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -32,7 +41,19 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	// TODO configure from outside:
 	quantity := resource.MustParse("20Mi")
 
-	// TODO resource quotas from outside
+	jobResourceRequirements := jobSettings.DefaultResourceRequirements
+	if task.Resources != nil {
+		var err error
+		jobResourceRequirements, err = CreateResourceRequirements(
+			task.Resources.Limits.CPU,
+			task.Resources.Limits.Memory,
+			task.Resources.Requests.CPU,
+			task.Resources.Requests.Memory,
+		)
+		if err != nil {
+			return fmt.Errorf("unable to create resource requirements for task %v: %v", task.Name, err.Error())
+		}
+	}
 
 	emptyDirVolume := v1.EmptyDirVolumeSource{
 		Medium:    v1.StorageMediumDefault,
@@ -67,7 +88,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
-							Image:           initContainerImage,
+							Image:           jobSettings.InitContainerImage,
 							ImagePullPolicy: v1.PullAlways,
 							VolumeMounts: []v1.VolumeMount{
 								{
@@ -78,11 +99,11 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 							Env: []v1.EnvVar{
 								{
 									Name:  "CONFIGURATION_SERVICE",
-									Value: configurationServiceURL,
+									Value: jobSettings.InitContainerConfigurationServiceAPIEndpoint,
 								},
 								{
 									Name:  "KEPTN_API_TOKEN",
-									Value: configurationServiceToken,
+									Value: jobSettings.KeptnAPIToken,
 								},
 								{
 									Name:  "KEPTN_PROJECT",
@@ -105,6 +126,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 									Value: task.Name,
 								},
 							},
+							Resources: *jobSettings.DefaultResourceRequirements,
 						},
 					},
 					Containers: []v1.Container{
@@ -118,7 +140,8 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 									MountPath: jobVolumeMountPath,
 								},
 							},
-							Env: jobEnv,
+							Env:       jobEnv,
+							Resources: *jobResourceRequirements,
 						},
 					},
 					RestartPolicy: v1.RestartPolicyNever,

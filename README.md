@@ -58,7 +58,7 @@ actions:
 The tasks of an action are executed if the event name matches. Wildcards can also be used, e.g.
 
 ```yaml
-    - name: "sh.keptn.event.*.triggered"
+- name: "sh.keptn.event.*.triggered"
 ```
 
 Would match events `sh.keptn.event.test.triggered`, `sh.keptn.event.deployment.triggered` and so on.
@@ -66,9 +66,9 @@ Would match events `sh.keptn.event.test.triggered`, `sh.keptn.event.deployment.t
 Optionally the following section can be added to an event:
 
 ```yaml
-      jsonpath:
-        property: "$.data.test.teststrategy"
-        match: "locust"
+jsonpath:
+  property: "$.data.test.teststrategy"
+  match: "locust"
 ```
 
 If the service receives an event which matches the name, and the jsonpath match expression, the specified tasks are
@@ -106,14 +106,14 @@ executed. E.g. the following cloud event would match the jsonpath above:
 The configuration contains the following section:
 
 ```yaml
-    tasks:
-      - name: "Run locust smoke tests"
-        files:
-          - locust/basic.py
-          - locust/import.py
-          - locust/locust.conf
-        image: "locustio/locust"
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+tasks:
+  - name: "Run locust smoke tests"
+    files:
+      - locust/basic.py
+      - locust/import.py
+      - locust/locust.conf
+    image: "locustio/locust"
+    cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
 ```
 
 It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of
@@ -135,11 +135,11 @@ The following environment variable has the name `HOST`, and the value is whateve
 jsonpath `$.data.deployment.deploymentURIsLocal[0]` resolves to.
 
 ```yaml
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
-        env:
-          - name: HOST
-            value: "$.data.deployment.deploymentURIsLocal[0]"
-            valueFrom: event
+cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+env:
+  - name: HOST
+    value: "$.data.deployment.deploymentURIsLocal[0]"
+    valueFrom: event
 ```
 
 In the above example the json path for `HOST` would resolve into `https://keptn.sh` for the below event
@@ -184,10 +184,10 @@ The following configuration looks up a kubernetes secret with the name `locust-s
 secret will be available as separate environment variables in the job.
 
 ```yaml
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/$(FILE) --host $(HOST)"
-        env:
-          - name: locust-secret
-            valueFrom: secret
+cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/$(FILE) --host $(HOST)"
+env:
+  - name: locust-secret
+    valueFrom: secret
 ```
 
 With the secret below, there will be two environment variables available in the job. `HOST` with the
@@ -214,10 +214,10 @@ metadata:
 Files can be added to your running tasks by specifying them in the `files` section of your tasks:
 
 ```yaml
-        files:
-          - locust/basic.py
-          - locust/import.py
-          - locust/locust.conf
+files:
+  - locust/basic.py
+  - locust/import.py
+  - locust/locust.conf
 ```
 
 This is done by using an `initcontainer` for the scheduled Kubernetes Job which prepares the `èmptyDir` volume mounted
@@ -228,7 +228,7 @@ When using these files in your container command, please make sure to reference 
 E.g.:
 
 ```yaml
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py"
+cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py"
 ```
 
 ### Silent mode
@@ -243,6 +243,64 @@ actions:
   - name: "Run locust"
     silent: true
 ```
+
+### Resource quotas for jobs
+
+The `initcontainer` and the `job` container will use the default resource quotas defined as environment variables. They
+can be set in [`deploy/service.yaml`](deploy/service.yaml):
+
+```yaml
+- name: DEFAULT_RESOURCE_LIMITS_CPU
+  value: "1"
+- name: DEFAULT_RESOURCE_LIMITS_MEMORY
+  value: "512Mi"
+- name: DEFAULT_RESOURCE_REQUESTS_CPU
+  value: "50m"
+- name: DEFAULT_RESOURCE_REQUESTS_MEMORY
+  value: "128Mi"
+```
+
+or for helm in [`helm/templates/configmap.yaml`](helm/templates/configmap.yaml):
+
+```yaml
+default_resource_limits_cpu: "1"
+default_resource_limits_memory: "512Mi"
+default_resource_requests_cpu: "50m"
+default_resource_requests_memory: "128Mi"
+```
+
+The default resource quotas can be easily overwritten for each task. Add the following block to the configuration on
+task level:
+
+```yaml
+tasks:
+  - name: "Run locust smoke tests"
+    ...
+    resources:
+      limits:
+        cpu: 1
+        memory: 512Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+```
+
+Now each job that gets spawned for the task will have the configured resource quotas. There is no need to specify all
+values, as long as the configuration makes sense for kubernetes. E.g. the following configuration
+
+```yaml
+tasks:
+  - name: "Run locust smoke tests"
+    ...
+    resources:
+      limits:
+        cpu: 1
+      requests:
+        cpu: 50m
+```
+
+would result in resource quotas for `cpu`, but in none for `memory`. If the `resources` block is present
+(even if empty), all default resource quotas are ignored for this task.
 
 ### Remote Control Plane
 
@@ -384,8 +442,8 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
 * update the image tags for `job-executor-service` and `job-executor-service-initcontainer`
-  in [deploy/service.yaml](deploy/service.yaml), [helm/Chart.yaml](helm/Chart.yaml),
-  [helm/values.yaml](helm/values.yaml) and [helm/templates/configmap.yaml](helm/templates/configmap.yaml),
+  in [`deploy/service.yaml`](deploy/service.yaml), [`helm/Chart.yaml`](helm/Chart.yaml),
+  [`helm/values.yaml`](helm/values.yaml) and [`helm/templates/configmap.yaml`](helm/templates/configmap.yaml),
 * test your service against a working Keptn installation.
 
 If any problems occur, fix them in the release branch and test them again.

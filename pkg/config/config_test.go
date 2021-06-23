@@ -2,10 +2,9 @@ package config
 
 import (
 	"encoding/json"
+	"gotest.tools/assert"
 	"strings"
 	"testing"
-
-	"gotest.tools/assert"
 )
 
 const simpleConfig = `
@@ -49,6 +48,13 @@ actions:
           - name: LocustSecret
             value: locust-spine-token-exchange-dev
             valueFrom: secret
+        resources:
+          limits:
+            cpu: 1
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 128Mi
 
   - name: "Run bash"
     events:
@@ -155,6 +161,13 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 2)
 	assert.Equal(t, config.Actions[1].Silent, true)
+
+	assert.Assert(t, config.Actions[1].Tasks[0].Resources == nil)
+
+	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Limits.CPU, "1")
+	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Limits.Memory, "512Mi")
+	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Requests.CPU, "50m")
+	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Requests.Memory, "128Mi")
 }
 
 func TestNoApiVersion(t *testing.T) {

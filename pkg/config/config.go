@@ -38,11 +38,12 @@ type JSONPath struct {
 
 // Task this is the actual task which can be triggered within an Action
 type Task struct {
-	Name  string   `yaml:"name"`
-	Files []string `yaml:"files"`
-	Image string   `yaml:"image"`
-	Cmd   string   `yaml:"cmd"`
-	Env   []Env    `yaml:"env"`
+	Name      string     `yaml:"name"`
+	Files     []string   `yaml:"files"`
+	Image     string     `yaml:"image"`
+	Cmd       string     `yaml:"cmd"`
+	Env       []Env      `yaml:"env"`
+	Resources *Resources `yaml:"resources"`
 }
 
 // Env value from the event which will be added as env to the job
@@ -50,6 +51,18 @@ type Env struct {
 	Name      string `yaml:"name"`
 	Value     string `yaml:"value"`
 	ValueFrom string `yaml:"valueFrom"`
+}
+
+// Resources defines the resource requirements of a task
+type Resources struct {
+	Limits   ResourceList `yaml:"limits"`
+	Requests ResourceList `yaml:"requests"`
+}
+
+// ResourceList contains resource requirement keys
+type ResourceList struct {
+	CPU    string `yaml:"cpu"`
+	Memory string `yaml:"memory"`
 }
 
 // NewConfig creates a new configuration from the provided config file content
