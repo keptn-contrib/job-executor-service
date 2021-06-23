@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/afero"
 	"gotest.tools/assert"
 	"keptn-sandbox/job-executor-service/pkg/keptn"
+	keptnfake "keptn-sandbox/job-executor-service/pkg/keptn/fake"
 	"testing"
 )
 
@@ -35,12 +36,12 @@ const yamlFile = `
 // This is a yaml file
 `
 
-func CreateKeptnConfigServiceMock(t *testing.T) *keptn.MockConfigService {
+func CreateKeptnConfigServiceMock(t *testing.T) *keptnfake.MockConfigService {
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	return keptn.NewMockConfigService(mockCtrl)
+	return keptnfake.NewMockConfigService(mockCtrl)
 }
 
 func TestMountFiles(t *testing.T) {
@@ -128,7 +129,7 @@ func TestMountFilesFileNotFound(t *testing.T) {
 	assert.ErrorContains(t, err, "not found")
 }
 
-func TestWithLocalFileSystem(t *testing.T) {
+func TestMountFilesWithLocalFileSystem(t *testing.T) {
 
 	fs := afero.NewMemMapFs()
 	configService := keptn.NewConfigService(true, "", "", "", nil)

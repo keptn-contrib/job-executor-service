@@ -2,19 +2,27 @@ package keptn
 
 import (
 	"fmt"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/spf13/afero"
 	"net/url"
 	"os"
 	"strings"
 )
 
-//go:generate mockgen -source=config_service.go -destination=config_service_mock.go -package=keptn ConfigService
+//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=keptn ConfigService
 
-// ConfigService provides methods to work with the keptn configuration service
+// ConfigService provides methods to retrieve and match resources from the keptn configuration service
 type ConfigService interface {
 	GetKeptnResource(fs afero.Fs, resource string) ([]byte, error)
 	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
+}
+
+//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=keptn ResourceHandler
+
+// ResourceHandler provides methods to work with the keptn configuration service
+type ResourceHandler interface {
+	GetServiceResource(project string, stage string, service string, resourceURI string) (*models.Resource, error)
+	GetAllServiceResources(project string, stage string, service string) ([]*models.Resource, error)
 }
 
 type configServiceImpl struct {
@@ -22,11 +30,11 @@ type configServiceImpl struct {
 	project            string
 	stage              string
 	service            string
-	resourceHandler    *api.ResourceHandler
+	resourceHandler    ResourceHandler
 }
 
 // NewConfigService creates and returns new ConfigService
-func NewConfigService(useLocalFileSystem bool, project string, stage string, service string, resourceHandler *api.ResourceHandler) ConfigService {
+func NewConfigService(useLocalFileSystem bool, project string, stage string, service string, resourceHandler ResourceHandler) ConfigService {
 	return &configServiceImpl{
 		useLocalFileSystem: useLocalFileSystem,
 		project:            project,
