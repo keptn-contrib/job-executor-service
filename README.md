@@ -211,18 +211,24 @@ metadata:
 
 ### File Handling
 
-Files can be added to your running tasks by specifying them in the `files` section of your tasks:
+Single files or all files in a directory can be added to your running tasks by specifying them in the `files` section of
+your tasks:
 
 ```yaml
 files:
   - locust/basic.py
   - locust/import.py
   - locust/locust.conf
+  - /helm
 ```
 
-This is done by using an `initcontainer` for the scheduled Kubernetes Job which prepares the `èmptyDir` volume mounted
-to the Kubernetes Job. Within the Job itself, the files will be available within the `keptn` folder. The naming of the
-files and the location will be preserved.
+The above settings will make the listed single files and all files in the `helm` directory and its subdirectories
+available in your task. Files can be listed with or without a starting `/`, it will be handled as absolute path for both
+cases.
+
+This setup is done by using an `initcontainer` for the scheduled Kubernetes Job which prepares the `emptyDir` volume
+mounted to the Kubernetes Job. Within the Job itself, the files will be available within the `keptn` folder. The naming
+of the files and the location will be preserved.
 
 When using these files in your container command, please make sure to reference them by prepending the `keptn` path.
 E.g.:

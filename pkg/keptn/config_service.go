@@ -3,14 +3,18 @@ package keptn
 import (
 	"fmt"
 	api "github.com/keptn/go-utils/pkg/api/utils"
+	"github.com/spf13/afero"
+	"net/url"
 	"os"
+	"strings"
 )
 
 //go:generate mockgen -source=config_service.go -destination=config_service_mock.go -package=keptn ConfigService
 
 // ConfigService provides methods to work with the keptn configuration service
 type ConfigService interface {
-	GetKeptnResource(resource string) ([]byte, error)
+	GetKeptnResource(fs afero.Fs, resource string) ([]byte, error)
+	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
 }
 
 type configServiceImpl struct {
@@ -33,15 +37,16 @@ func NewConfigService(useLocalFileSystem bool, project string, stage string, ser
 }
 
 // GetKeptnResource returns a resource from the configuration repo based on the incoming cloud events project, service and stage
-func (k *configServiceImpl) GetKeptnResource(resource string) ([]byte, error) {
+func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]byte, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	if k.useLocalFileSystem {
-		return k.getKeptnResourceFromLocal(resource)
+		return k.getKeptnResourceFromLocal(fs, resource)
 	}
 
 	// get it from KeptnBase
-	requestedResource, err := k.resourceHandler.GetServiceResource(k.project, k.stage, k.service, resource)
+	// https://github.com/keptn/keptn/issues/2707
+	requestedResource, err := k.resourceHandler.GetServiceResource(k.project, k.stage, k.service, url.QueryEscape(resource))
 
 	// return Nil in case resource couldn't be retrieved
 	if err != nil || requestedResource.ResourceContent == "" {
@@ -51,13 +56,79 @@ func (k *configServiceImpl) GetKeptnResource(resource string) ([]byte, error) {
 	return []byte(requestedResource.ResourceContent), nil
 }
 
+// GetAllKeptnResources returns a map of keptn resources (key=URI, value=content) from the configuration repo with
+// prefix 'resource' (matched with and without leading '/')
+func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error) {
+
+	// if we run in a runlocal mode we are just getting the file from the local disk
+	if k.useLocalFileSystem {
+		return k.getKeptnResourcesFromLocal(fs, resource)
+	}
+
+	// get it from KeptnBase
+	requestedResources, err := k.resourceHandler.GetAllServiceResources(k.project, k.stage, k.service)
+	if err != nil {
+		return nil, fmt.Errorf("resources not found: %s", err)
+	}
+
+	keptnResources := make(map[string][]byte)
+	for _, serviceResource := range requestedResources {
+		// match against with and without starting slash
+		resourceURIWithoutSlash := strings.Replace(*serviceResource.ResourceURI, "/", "", 1)
+		if strings.HasPrefix(*serviceResource.ResourceURI, resource) || strings.HasPrefix(resourceURIWithoutSlash, resource) {
+			keptnResourceContent, err := k.GetKeptnResource(fs, *serviceResource.ResourceURI)
+			if err != nil {
+				return nil, fmt.Errorf("could not find file %s", *serviceResource.ResourceURI)
+			}
+			keptnResources[*serviceResource.ResourceURI] = keptnResourceContent
+		}
+	}
+
+	return keptnResources, nil
+}
+
 /**
  * Retrieves a resource (=file) from the local file system. Basically checks if the file is available and if so returns it
  */
-func (k *configServiceImpl) getKeptnResourceFromLocal(resource string) ([]byte, error) {
-	_, err := os.Stat(resource)
-	if err == nil {
-		return []byte(resource), nil
+func (k *configServiceImpl) getKeptnResourceFromLocal(fs afero.Fs, resource string) ([]byte, error) {
+	_, err := fs.Stat(resource)
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+
+	content, err := afero.ReadFile(fs, resource)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+/**
+* Retrieves a resource (=file or all files of a directory) from the local file system. Basically checks if the file/directory
+  is available and if so returns it or its files
+*/
+func (k *configServiceImpl) getKeptnResourcesFromLocal(fs afero.Fs, resource string) (map[string][]byte, error) {
+	resources := make(map[string][]byte)
+	err := afero.Walk(fs, resource, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		content, err := k.getKeptnResourceFromLocal(fs, path)
+		if err != nil {
+			return err
+		}
+		resources[path] = content
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resources, nil
 }

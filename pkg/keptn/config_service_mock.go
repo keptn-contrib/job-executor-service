@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	afero "github.com/spf13/afero"
 )
 
 // MockConfigService is a mock of ConfigService interface.
@@ -33,17 +34,32 @@ func (m *MockConfigService) EXPECT() *MockConfigServiceMockRecorder {
 	return m.recorder
 }
 
-// GetKeptnResource mocks base method.
-func (m *MockConfigService) GetKeptnResource(resource string) ([]byte, error) {
+// GetAllKeptnResources mocks base method.
+func (m *MockConfigService) GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeptnResource", resource)
+	ret := m.ctrl.Call(m, "GetAllKeptnResources", fs, resource)
+	ret0, _ := ret[0].(map[string][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllKeptnResources indicates an expected call of GetAllKeptnResources.
+func (mr *MockConfigServiceMockRecorder) GetAllKeptnResources(fs, resource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeptnResources", reflect.TypeOf((*MockConfigService)(nil).GetAllKeptnResources), fs, resource)
+}
+
+// GetKeptnResource mocks base method.
+func (m *MockConfigService) GetKeptnResource(fs afero.Fs, resource string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeptnResource", fs, resource)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetKeptnResource indicates an expected call of GetKeptnResource.
-func (mr *MockConfigServiceMockRecorder) GetKeptnResource(resource interface{}) *gomock.Call {
+func (mr *MockConfigServiceMockRecorder) GetKeptnResource(fs, resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeptnResource", reflect.TypeOf((*MockConfigService)(nil).GetKeptnResource), resource)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeptnResource", reflect.TypeOf((*MockConfigService)(nil).GetKeptnResource), fs, resource)
 }

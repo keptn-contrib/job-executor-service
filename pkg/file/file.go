@@ -2,29 +2,24 @@ package file
 
 import (
 	"fmt"
+	"github.com/spf13/afero"
 	"keptn-sandbox/job-executor-service/pkg/config"
 	"keptn-sandbox/job-executor-service/pkg/keptn"
 	"log"
-	"net/url"
 	"path/filepath"
-
-	"github.com/spf13/afero"
 )
 
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
-	// https://github.com/keptn/keptn/issues/2707
-	resource, err := configService.GetKeptnResource(url.QueryEscape("job/config.yaml"))
+	resource, err := configService.GetKeptnResource(fs, "job/config.yaml")
 	if err != nil {
-		log.Printf("Could not find config for job-executor-service")
-		return err
+		return fmt.Errorf("could not find config for job-executor-service: %v", err)
 	}
 
 	configuration, err := config.NewConfig(resource)
 	if err != nil {
-		log.Printf("Could not parse config: %s", err)
-		return err
+		return fmt.Errorf("could not parse config: %s", err)
 	}
 
 	found, action := configuration.FindActionByName(actionName)
@@ -37,44 +32,49 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 		return fmt.Errorf("no task found with name '%s'", taskName)
 	}
 
-	for _, fileName := range task.Files {
+	for _, resourcePath := range task.Files {
+		fileNotFound := true
 
-		resource, err = configService.GetKeptnResource(url.QueryEscape(fileName))
+		allServiceResources, err := configService.GetAllKeptnResources(fs, resourcePath)
 		if err != nil {
-			log.Printf("Could not find file %s for task %s", fileName, taskName)
-			return err
+			return fmt.Errorf("could not retrieve resources for task '%v': %v", taskName, err)
 		}
 
-		// Our mount starts with /keptn
-		dir := filepath.Join("/keptn", filepath.Dir(fileName))
-		fullFilePath := filepath.Join("/keptn", fileName)
+		for resourceURI, resourceContent := range allServiceResources {
 
-		err := fs.MkdirAll(dir, 0700)
-		if err != nil {
-			log.Printf("Could not create directory %s for file %s", dir, fileName)
-			return err
-		}
+			// Our mount starts with /keptn
+			dir := filepath.Join("/keptn", filepath.Dir(resourceURI))
+			fullFilePath := filepath.Join("/keptn", resourceURI)
 
-		file, err := fs.Create(fullFilePath)
-		if err != nil {
-			log.Printf("Could not create file %s", fileName)
-			return err
-		}
-
-		_, err = file.Write(resource)
-		defer func() {
-			err = file.Close()
+			err := fs.MkdirAll(dir, 0700)
 			if err != nil {
-				log.Printf("Could not close file %s", file.Name())
+				return fmt.Errorf("could not create directory %s for file %s: %v", dir, resourceURI, err)
 			}
-		}()
 
-		if err != nil {
-			log.Printf("Could not write to file %s", fileName)
-			return err
+			file, err := fs.Create(fullFilePath)
+			if err != nil {
+				return fmt.Errorf("could not create file %s: %v", resourceURI, err)
+			}
+
+			_, err = file.Write(resourceContent)
+			defer func() {
+				err = file.Close()
+				if err != nil {
+					log.Printf("could not close file %s: %v", file.Name(), err)
+				}
+			}()
+
+			if err != nil {
+				return fmt.Errorf("could not write to file %s: %v", fullFilePath, err)
+			}
+
+			log.Printf("successfully moved file %s to %s", resourceURI, fullFilePath)
+			fileNotFound = false
 		}
 
-		log.Printf("Successfully moved file %s to %s", fileName, fullFilePath)
+		if fileNotFound {
+			return fmt.Errorf("could not find file or directory %s for task %s", resourcePath, taskName)
+		}
 	}
 
 	return nil
