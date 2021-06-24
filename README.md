@@ -332,6 +332,7 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 |:----------------:|:----------------------------------------:|
 |       0.8.3      | keptnsandbox/job-executor-service:0.1.0  |
 |       0.8.3      | keptnsandbox/job-executor-service:0.1.1  |
+|       0.8.4      | keptnsandbox/job-executor-service:0.1.2  |
 
 ## Installation
 
@@ -449,7 +450,8 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * verify that your image was built and pushed to DockerHub with the right tags,
 * update the image tags for `job-executor-service` and `job-executor-service-initcontainer`
   in [`deploy/service.yaml`](deploy/service.yaml), [`helm/Chart.yaml`](helm/Chart.yaml),
-  [`helm/values.yaml`](helm/values.yaml) and [`helm/templates/configmap.yaml`](helm/templates/configmap.yaml),
+  [`helm/values.yaml`](helm/values.yaml), [`helm/templates/configmap.yaml`](helm/templates/configmap.yaml) and
+  the `app.kubernetes.io/version` in [`deploy/service.yaml`](deploy/service.yaml)
 * test your service against a working Keptn installation.
 
 If any problems occur, fix them in the release branch and test them again.
