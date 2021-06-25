@@ -27,7 +27,7 @@ Just put a file into the keptn git repository (in folder `<service>/job/config.y
 * the events for which they should be triggered.
 
 ```yaml
-apiVersion: v1
+apiVersion: v2
 actions:
   - name: "Run locust"
     events:
@@ -46,7 +46,15 @@ actions:
           - locust/import.py
           - locust/locust.conf
         image: "locustio/locust"
-        cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+        cmd:
+          - locust
+        args:
+          - '--config'
+          - /keptn/locust/locust.conf
+          - '-f'
+          - /keptn/locust/basic.py
+          - '--host'
+          - $(HOST)
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
@@ -113,7 +121,15 @@ tasks:
       - locust/import.py
       - locust/locust.conf
     image: "locustio/locust"
-    cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+    cmd:
+      - locust
+    args:
+      - '--config'
+      - /keptn/locust/locust.conf
+      - '-f'
+      - /keptn/locust/basic.py
+      - '--host'
+      - $(HOST)
 ```
 
 It contains the tasks which should be executed as Kubernetes job. The service schedules a different job for each of
@@ -135,7 +151,15 @@ The following environment variable has the name `HOST`, and the value is whateve
 jsonpath `$.data.deployment.deploymentURIsLocal[0]` resolves to.
 
 ```yaml
-cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)"
+cmd:
+  - locust
+args:
+  - '--config'
+  - /keptn/locust/locust.conf
+  - '-f'
+  - /keptn/locust/basic.py
+  - '--host'
+  - $(HOST)
 env:
   - name: HOST
     value: "$.data.deployment.deploymentURIsLocal[0]"
@@ -184,7 +208,15 @@ The following configuration looks up a kubernetes secret with the name `locust-s
 secret will be available as separate environment variables in the job.
 
 ```yaml
-cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/$(FILE) --host $(HOST)"
+cmd:
+  - locust
+args:
+  - '--config'
+  - /keptn/locust/locust.conf
+  - '-f'
+  - /keptn/locust/$(FILE)
+  - '--host'
+  - $(HOST)
 env:
   - name: locust-secret
     valueFrom: secret
@@ -234,7 +266,12 @@ When using these files in your container command, please make sure to reference 
 E.g.:
 
 ```yaml
-cmd: "locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py"
+cmd:
+  - locust
+  - '--config'
+  - /keptn/locust/locust.conf
+  - '-f'
+  - /keptn/locust/basic.py
 ```
 
 ### Silent mode
@@ -328,11 +365,12 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 
 ## Compatibility Matrix
 
-| Keptn Version    | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptnsandbox/job-executor-service/tags) |
-|:----------------:|:----------------------------------------:|
-|       0.8.3      | keptnsandbox/job-executor-service:0.1.0  |
-|       0.8.3      | keptnsandbox/job-executor-service:0.1.1  |
-|       0.8.4      | keptnsandbox/job-executor-service:0.1.2  |
+| Keptn Version | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptnsandbox/job-executor-service/tags) | Config version |
+| :-----------: | :--------------------------------------------------------------------------------------------------: | :------------: |
+|     0.8.3     |                               keptnsandbox/job-executor-service:0.1.0                                |       -        |
+|     0.8.3     |                               keptnsandbox/job-executor-service:0.1.1                                |       -        |
+|     0.8.4     |                               keptnsandbox/job-executor-service:0.1.2                                |       v1       |
+|     0.8.4     |                               keptnsandbox/job-executor-service:0.1.3                                |       v2       |
 
 ## Installation
 

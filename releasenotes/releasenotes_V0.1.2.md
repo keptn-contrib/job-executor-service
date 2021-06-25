@@ -11,3 +11,4 @@ Compatible with Keptn 0.8.4
 ## Fixed Issues
 
 ## Known Limitations
+* Uniform registration for remote execution planes over https doesn't work

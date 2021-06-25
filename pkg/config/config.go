@@ -8,7 +8,7 @@ import (
 	"github.com/PaesslerAG/jsonpath"
 )
 
-const supportedAPIVersion = "v1"
+const supportedAPIVersion = "v2"
 
 // Config contains the configuration of the job-executor-service (job/config.yaml)
 type Config struct {
@@ -41,7 +41,8 @@ type Task struct {
 	Name      string     `yaml:"name"`
 	Files     []string   `yaml:"files"`
 	Image     string     `yaml:"image"`
-	Cmd       string     `yaml:"cmd"`
+	Cmd       []string   `yaml:"cmd"`
+	Args      []string   `yaml:"args"`
 	Env       []Env      `yaml:"env"`
 	Resources *Resources `yaml:"resources"`
 }

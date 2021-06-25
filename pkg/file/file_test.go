@@ -11,7 +11,7 @@ import (
 )
 
 const simpleConfig = `
-apiVersion: v1
+apiVersion: v2
 actions:
   - name: "action"
     events:
@@ -25,7 +25,10 @@ actions:
           - /helm/values.yaml
           - locust
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/basic.py"
+        cmd:
+          - locust
+          - '-f'
+          - /keptn/locust/basic.py
 `
 
 const pythonFile = `

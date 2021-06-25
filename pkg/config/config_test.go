@@ -8,7 +8,7 @@ import (
 )
 
 const simpleConfig = `
-apiVersion: v1
+apiVersion: v2
 actions:
   - name: "Run locust"
     events:
@@ -22,11 +22,14 @@ actions:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py"
+        cmd:
+          - locust
+          - '-f'
+          - /keptn/locust/locustfile.py
 `
 
 const complexConfig = `
-apiVersion: v1
+apiVersion: v2
 actions:
   - name: "Run locust"
     events:
@@ -40,7 +43,13 @@ actions:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/locustfile.py --host=$HOST"
+        cmd:
+          - locust
+        args:
+          - '-f'
+          - /keptn/locust/locustfile.py
+          - '--host'
+          - $(HOST)
         env:
           - name: HOST
             value: "$.data.deployment.deploymentURIsLocal[0]"
@@ -71,12 +80,18 @@ actions:
     tasks:
       - name: "Run static world"
         image: "bash"
-        cmd: "echo static"
+        cmd: 
+          - echo
+        args:
+          - static
       - name: "Run hello world"
         files: 
           - hello/hello-world.txt
         image: "bash"
-        cmd: "cat /keptn/hello/heppo-world.txt | echo"
+        cmd: 
+          - cat
+        args:
+          - /keptn/hello/heppo-world.txt
     silent: true
 `
 
@@ -152,6 +167,11 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, len(config.Actions), 1)
 	assert.Equal(t, config.Actions[0].Silent, false)
+
+	assert.Equal(t, len(config.Actions[0].Tasks[0].Cmd), 3)
+	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[0], "locust")
+	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[1], "-f")
+	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[2], "/keptn/locust/locustfile.py")
 }
 
 func TestComplexConfigUnmarshalling(t *testing.T) {
@@ -168,11 +188,19 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Limits.Memory, "512Mi")
 	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Requests.CPU, "50m")
 	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Requests.Memory, "128Mi")
+
+	assert.Equal(t, len(config.Actions[0].Tasks[0].Cmd), 1)
+	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[0], "locust")
+	assert.Equal(t, len(config.Actions[0].Tasks[0].Args), 4)
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[0], "-f")
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[1], "/keptn/locust/locustfile.py")
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[2], "--host")
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[3], "$(HOST)")
 }
 
 func TestNoApiVersion(t *testing.T) {
 
-	trimmedSimpleConfig := strings.TrimPrefix(simpleConfig, "\napiVersion: v1")
+	trimmedSimpleConfig := strings.TrimPrefix(simpleConfig, "\napiVersion: v2")
 	_, err := NewConfig([]byte(trimmedSimpleConfig))
 
 	assert.Error(t, err, "apiVersion must be specified")
@@ -180,10 +208,10 @@ func TestNoApiVersion(t *testing.T) {
 
 func TestSimpleWrongApiVersion(t *testing.T) {
 
-	replacedSimpleConfig := strings.Replace(simpleConfig, "apiVersion: v1", "apiVersion: v0", 1)
+	replacedSimpleConfig := strings.Replace(simpleConfig, "apiVersion: v2", "apiVersion: v0", 1)
 	_, err := NewConfig([]byte(replacedSimpleConfig))
 
-	assert.Error(t, err, "apiVersion v0 is not supported, use v1")
+	assert.Error(t, err, "apiVersion v0 is not supported, use v2")
 }
 
 func TestSimpleMatch(t *testing.T) {

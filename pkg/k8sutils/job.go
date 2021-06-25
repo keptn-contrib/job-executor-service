@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"keptn-sandbox/job-executor-service/pkg/config"
-	"strings"
 	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -81,7 +80,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 				Spec: v1.PodSpec{
 					SecurityContext: &v1.PodSecurityContext{
 						RunAsUser:    convert(1000),
-						RunAsGroup:   convert(3000),
+						RunAsGroup:   convert(2000),
 						FSGroup:      convert(2000),
 						RunAsNonRoot: &runAsNonRoot,
 					},
@@ -133,7 +132,8 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 						{
 							Name:    jobName,
 							Image:   task.Image,
-							Command: strings.Split(task.Cmd, " "),
+							Command: task.Cmd,
+							Args:    task.Args,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
