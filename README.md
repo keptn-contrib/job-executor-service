@@ -268,6 +268,7 @@ E.g.:
 ```yaml
 cmd:
   - locust
+args:
   - '--config'
   - /keptn/locust/locust.conf
   - '-f'

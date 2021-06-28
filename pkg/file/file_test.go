@@ -27,6 +27,7 @@ actions:
         image: "locustio/locust"
         cmd:
           - locust
+        args:
           - '-f'
           - /keptn/locust/basic.py
 `
