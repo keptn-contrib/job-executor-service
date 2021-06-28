@@ -169,10 +169,11 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 	assert.Equal(t, len(config.Actions), 1)
 	assert.Equal(t, config.Actions[0].Silent, false)
 
-	assert.Equal(t, len(config.Actions[0].Tasks[0].Cmd), 3)
+	assert.Equal(t, len(config.Actions[0].Tasks[0].Cmd), 1)
 	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[0], "locust")
-	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[1], "-f")
-	assert.Equal(t, config.Actions[0].Tasks[0].Cmd[2], "/keptn/locust/locustfile.py")
+	assert.Equal(t, len(config.Actions[0].Tasks[0].Args), 2)
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[0], "-f")
+	assert.Equal(t, config.Actions[0].Tasks[0].Args[1], "/keptn/locust/locustfile.py")
 }
 
 func TestComplexConfigUnmarshalling(t *testing.T) {
