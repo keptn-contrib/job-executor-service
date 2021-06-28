@@ -119,7 +119,6 @@ jobs:
         run: go test -coverprofile=coverage.txt -covermode=atomic -v ./...
         working-directory: .
 
-
   ############################################################################
   # Build Docker Image                                                      #
   ############################################################################
