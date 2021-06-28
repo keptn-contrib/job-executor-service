@@ -35,6 +35,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
 	if err != nil {
+		// TODO we can't send a finished event with the error here, utilize the uniform logging instead?
 		log.Printf("Could not find config for job-executor-service: %s", err.Error())
 		return err
 	}

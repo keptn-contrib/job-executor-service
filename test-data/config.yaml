@@ -1,31 +1,40 @@
 apiVersion: v1
 actions:
-  - name: "Run locust"
+  - name: Run locust
     events:
-      - name: "sh.keptn.event.test.triggered"
+      - name: sh.keptn.event.test.triggered
         jsonpath:
-          property: "$.data.test.teststrategy"
-          match: "locust"
+          property: $.data.test.teststrategy
+          match: locust
     tasks:
-      - name: "Run locust smoke tests"
+      - name: Run locust smoke tests
         files:
           - locust/basic.py
           - locust/import.py
-        image: "locustio/locust"
-        cmd: "locust -f /keptn/locust/basic.py"
-
-  - name: "Run Bash"
+        image: locustio/locust
+        cmd:
+          - locust
+        args:
+          - '-f'
+          - /keptn/locust/basic.py
+  - name: Run Bash
     events:
-      - name: "sh.keptn.event.action.triggered"
+      - name: sh.keptn.event.action.triggered
         jsonpath:
-          property: "$.data.action.action"
-          match: "hello"
+          property: $.data.action.action
+          match: hello
     tasks:
-      - name: "Run static world"
-        image: "bash"
-        cmd: "echo static"
-      - name: "Run hello world"
+      - name: Run static world
+        image: bash
+        cmd:
+          - echo
+        args:
+          - static
+      - name: Run hello world
         files:
           - hello/hello-world.txt
-        image: "bash"
-        cmd: "cat /keptn/hello/hello-world.txt | echo"
+        image: bash
+        cmd:
+          - cat
+        args:
+          - /keptn/hello/hello-world.txt
