@@ -70,7 +70,3 @@ nodeSelector: { }                                # Node selector configuration
 tolerations: [ ]                                 # Tolerations for the pods
 
 affinity: { }                                    # Affinity rules
-
-# TODO resource quotas of job
-
-
