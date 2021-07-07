@@ -241,6 +241,34 @@ metadata:
   namespace: keptn
 ```
 
+#### From string literal
+
+It sometimes makes sense to provide a static string value as an environment
+variable. This can be done by specifying a `string` as the `valueFrom` value.
+The value of the environment variable can then be specified by the `value`
+property.
+
+Here an example
+
+```yaml
+cmd:
+  - locust
+args:
+  - '--config'
+  - /keptn/locust/locust.conf
+  - '-f'
+  - /keptn/locust/$(FILE)
+  - '--host'
+  - $(HOST)
+env:
+  - name: DATA_DIR
+    valueFrom: string
+    value: /tmp/data
+```
+
+This makes the `DATA_DIR` env variable with the value `/tmp/data`
+available to the cmd.
+
 ### File Handling
 
 Single files or all files in a directory can be added to your running tasks by specifying them in the `files` section of

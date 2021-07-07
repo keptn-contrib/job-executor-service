@@ -17,6 +17,7 @@ import (
 
 const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
+const envValueFromString = "string"
 
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
@@ -222,6 +223,8 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 			generatedEnv, err = generateEnvFromEvent(env, jsonEventData)
 		case envValueFromSecret:
 			generatedEnv, err = k8s.generateEnvFromSecret(env)
+		case envValueFromString:
+			generatedEnv = generateEnvFromString(env)
 		default:
 			return nil, fmt.Errorf("could not add env with name %v, unknown valueFrom %v", env.Name, env.ValueFrom)
 		}
@@ -265,6 +268,15 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 	}
 
 	return generatedEnv, nil
+}
+
+func generateEnvFromString(env config.Env) []v1.EnvVar {
+	return []v1.EnvVar{
+		{
+			Name:  env.Name,
+			Value: env.Value,
+		},
+	}
 }
 
 func (k8s *k8sImpl) generateEnvFromSecret(env config.Env) ([]v1.EnvVar, error) {
