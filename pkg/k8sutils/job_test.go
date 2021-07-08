@@ -230,6 +230,41 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 	assert.ErrorContains(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
 }
 
+func TestPrepareJobEnvFromString(t *testing.T) {
+	envName := "test-event"
+	value := "test"
+	task := config.Task{
+		Env: []config.Env{
+			{
+				Name:      envName,
+				Value:     value,
+				ValueFrom: "string",
+			},
+		},
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8s := k8sImpl{
+		clientset: k8sfake.NewSimpleClientset(),
+		namespace: "keptn",
+	}
+
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	assert.NilError(t, err)
+
+	assert.Assert(t, len(jobEnv) == 4, "expected `jobEnv` to be 4, but was %d", len(jobEnv))
+	assert.Equal(t, jobEnv[0].Name, envName)
+	assert.Equal(t, jobEnv[0].Value, value)
+}
+
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
