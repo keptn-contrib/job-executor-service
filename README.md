@@ -61,6 +61,29 @@ actions:
             valueFrom: event
 ```
 
+### Specifying the working directory
+
+Since all files are hosted by default under `/keptn` and some tools only operate on the current
+working directory, it is also possible to switch the working directory of the container.
+This can be achieved by setting the `workingDirectory` property in a task object.
+
+Here an example:
+```yaml
+apiVersion: v2
+actions:
+  - name: "Print files"
+    events:
+      - name: "sh.keptn.event.sample.triggered"
+    tasks:
+      - name: "Show files in bin"
+        image: "alpine"
+        workingDirectory: "/bin"
+        cmd:
+          - ls
+```
+
+In this example, the `ls` command will be run in the `/bin` folder.
+
 ### Event Matching
 
 The tasks of an action are executed if the event name matches. Wildcards can also be used, e.g.

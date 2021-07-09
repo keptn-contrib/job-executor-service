@@ -134,9 +134,9 @@ func TestStartK8s(t *testing.T) {
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Return(jobName1, nil).Times(1)
+		gomock.Any()).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Return(jobName2, nil).Times(1)
+		gomock.Any()).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any()).Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)
@@ -179,9 +179,9 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Return(jobName1, nil).Times(1)
+		gomock.Any()).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Return(jobName2, nil).Times(1)
+		gomock.Any()).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any()).Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)

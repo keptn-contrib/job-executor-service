@@ -29,9 +29,8 @@ type JobSettings struct {
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
-// and returns the name of the job created
 func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-	jobSettings JobSettings, jsonEventData interface{}) (string, error) {
+	jobSettings JobSettings, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -53,7 +52,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 			task.Resources.Requests.Memory,
 		)
 		if err != nil {
-			return "", fmt.Errorf("unable to create resource requirements for task %v: %v", task.Name, err.Error())
+			return fmt.Errorf("unable to create resource requirements for task %v: %v", task.Name, err.Error())
 		}
 	}
 
@@ -70,7 +69,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 
 	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData)
 	if err != nil {
-		return "", fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
+		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
 	jobSpec := &batchv1.Job{
@@ -133,10 +132,11 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 					},
 					Containers: []v1.Container{
 						{
-							Name:    jobName,
-							Image:   task.Image,
-							Command: task.Cmd,
-							Args:    task.Args,
+							Name:       jobName,
+							Image:      task.Image,
+							Command:    task.Cmd,
+							Args:       task.Args,
+							WorkingDir: task.WorkingDir,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
@@ -165,12 +165,13 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 
 	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 
-	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
+	_, err = jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
+
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return job.Name, nil
+	return nil
 }
 
 func (k8s *k8sImpl) AwaitK8sJobDone(jobName string) error {

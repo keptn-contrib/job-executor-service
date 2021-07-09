@@ -114,7 +114,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
 
-		jobName, err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
+		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
 
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err)

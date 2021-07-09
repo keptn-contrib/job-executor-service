@@ -19,7 +19,7 @@ type k8sImpl struct {
 type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-		jobSettings JobSettings, jsonEventData interface{}) (string, error)
+		jobSettings JobSettings, jsonEventData interface{}) error
 	AwaitK8sJobDone(jobName string) error
 	DeleteK8sJob(jobName string) error
 	GetLogsOfPod(jobName string) (string, error)
