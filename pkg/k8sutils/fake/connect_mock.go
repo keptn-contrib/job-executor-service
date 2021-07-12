@@ -36,6 +36,20 @@ func (m *MockK8s) EXPECT() *MockK8sMockRecorder {
 	return m.recorder
 }
 
+// AwaitK8sJobDone mocks base method.
+func (m *MockK8s) AwaitK8sJobDone(jobName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AwaitK8sJobDone", jobName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AwaitK8sJobDone indicates an expected call of AwaitK8sJobDone.
+func (mr *MockK8sMockRecorder) AwaitK8sJobDone(jobName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitK8sJobDone", reflect.TypeOf((*MockK8s)(nil).AwaitK8sJobDone), jobName)
+}
+
 // ConnectToCluster mocks base method.
 func (m *MockK8s) ConnectToCluster() error {
 	m.ctrl.T.Helper()
@@ -51,11 +65,12 @@ func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 }
 
 // CreateK8sJob mocks base method.
-func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings k8sutils.JobSettings, jsonEventData interface{}) error {
+func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings k8sutils.JobSettings, jsonEventData interface{}) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateK8sJob", jobName, action, task, eventData, jobSettings, jsonEventData)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateK8sJob indicates an expected call of CreateK8sJob.

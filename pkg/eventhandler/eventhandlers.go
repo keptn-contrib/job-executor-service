@@ -114,13 +114,24 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
 
-		jobErr := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
+		jobName, err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
+
+		if err != nil {
+			log.Printf("Error while creating job: %s\n", err)
+			if !action.Silent {
+				sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, "")
+			}
+			return
+		}
+
 		defer func() {
 			err = k8s.DeleteK8sJob(jobName)
 			if err != nil {
 				log.Printf("Error while deleting job: %s\n", err.Error())
 			}
 		}()
+
+		jobErr := k8s.AwaitK8sJobDone(jobName)
 
 		logs, err := k8s.GetLogsOfPod(jobName)
 		if err != nil {
@@ -163,14 +174,21 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 }
 
 func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error, logs string) {
+	var message string
+
+	if logs != "" {
+		message = fmt.Sprintf("Job %s failed: %s\n\nLogs: \n%s", jobName, err, logs)
+	} else {
+		message = fmt.Sprintf("Job %s failed: %s", jobName, err)
+	}
 
 	_, err = myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
 		Status:  keptnv2.StatusErrored,
 		Result:  keptnv2.ResultFailed,
-		Message: fmt.Sprintf("Job %s failed: %s\n\nLogs: \n%s", jobName, err.Error(), logs),
+		Message: message,
 	}, serviceName)
 
 	if err != nil {
-		log.Printf("Error while sending started event: %s\n", err.Error())
+		log.Printf("Error while sending started event: %s\n", err)
 	}
 }
