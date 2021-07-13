@@ -14,11 +14,12 @@ actions:
     events:
       - name: "sh.keptn.event.test.triggered"
         jsonpath:
-          property: "$.test.teststrategy" 
+          property: "$.test.teststrategy"
           match: "health"
     tasks:
       - name: "Run locust smoke tests"
-        files: 
+        workingDir: "/bin"
+        files:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
@@ -36,11 +37,11 @@ actions:
     events:
       - name: "sh.keptn.event.test.triggered"
         jsonpath:
-          property: "$.test.teststrategy" 
+          property: "$.test.teststrategy"
           match: "locust"
     tasks:
       - name: "Run locust smoke tests"
-        files: 
+        files:
           - locust/basic.py
           - locust/import.py
         image: "locustio/locust"
@@ -69,11 +70,11 @@ actions:
   - name: "Run bash"
     events:
       - name: "sh.keptn.event.action.triggered"
-        jsonpath: 
+        jsonpath:
           property: "$.action.action"
           match: "hello"
       - name: "sh.keptn.event.action.triggered"
-        jsonpath: 
+        jsonpath:
           property: "$.action.action"
           match: "goodbye"
       - name: "sh.keptn.event.action.started"
@@ -81,15 +82,15 @@ actions:
     tasks:
       - name: "Run static world"
         image: "bash"
-        cmd: 
+        cmd:
           - echo
         args:
           - static
       - name: "Run hello world"
-        files: 
+        files:
           - hello/hello-world.txt
         image: "bash"
-        cmd: 
+        cmd:
           - cat
         args:
           - /keptn/hello/heppo-world.txt
@@ -174,6 +175,7 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 	assert.Equal(t, len(config.Actions[0].Tasks[0].Args), 2)
 	assert.Equal(t, config.Actions[0].Tasks[0].Args[0], "-f")
 	assert.Equal(t, config.Actions[0].Tasks[0].Args[1], "/keptn/locust/locustfile.py")
+	assert.Equal(t, config.Actions[0].Tasks[0].WorkingDir, "/bin")
 }
 
 func TestComplexConfigUnmarshalling(t *testing.T) {

@@ -38,13 +38,14 @@ type JSONPath struct {
 
 // Task this is the actual task which can be triggered within an Action
 type Task struct {
-	Name      string     `yaml:"name"`
-	Files     []string   `yaml:"files"`
-	Image     string     `yaml:"image"`
-	Cmd       []string   `yaml:"cmd"`
-	Args      []string   `yaml:"args"`
-	Env       []Env      `yaml:"env"`
-	Resources *Resources `yaml:"resources"`
+	Name       string     `yaml:"name"`
+	Files      []string   `yaml:"files"`
+	Image      string     `yaml:"image"`
+	Cmd        []string   `yaml:"cmd"`
+	Args       []string   `yaml:"args"`
+	Env        []Env      `yaml:"env"`
+	Resources  *Resources `yaml:"resources"`
+	WorkingDir string     `yaml:"workingDir"`
 }
 
 // Env value from the event which will be added as env to the job

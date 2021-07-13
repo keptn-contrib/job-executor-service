@@ -3,13 +3,14 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
+	"keptn-sandbox/job-executor-service/pkg/config"
+	"testing"
+
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gotest.tools/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
-	"keptn-sandbox/job-executor-service/pkg/config"
-	"testing"
 )
 
 const testTriggeredEvent = `
@@ -263,6 +264,62 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 	assert.Assert(t, len(jobEnv) == 4, "expected `jobEnv` to be 4, but was %d", len(jobEnv))
 	assert.Equal(t, jobEnv[0].Name, envName)
 	assert.Equal(t, jobEnv[0].Value, value)
+}
+
+func TestSetWorkingDir(t *testing.T) {
+	jobName := "test-job-1"
+	namespace := "keptn"
+	workingDir := "/test/dir"
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	k8s := k8sImpl{
+		clientset: k8sClientSet,
+		namespace: "keptn",
+	}
+
+	err := k8s.CreateK8sJob(jobName, &config.Action{
+		Name: jobName,
+	}, config.Task{
+		Name:       jobName,
+		Image:      "alpine",
+		Cmd:        []string{"ls"},
+		WorkingDir: workingDir,
+	}, &eventData, JobSettings{
+		JobNamespace: namespace,
+		DefaultResourceRequirements: &corev1.ResourceRequirements{
+			Limits:   make(corev1.ResourceList),
+			Requests: make(corev1.ResourceList),
+		},
+	}, "")
+
+	assert.NilError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	assert.NilError(t, err)
+
+	var container *corev1.Container
+
+	for _, c := range job.Spec.Template.Spec.Containers {
+		if c.Name == jobName {
+			container = new(corev1.Container)
+			*container = c
+			break
+		}
+	}
+
+	assert.Assert(t, container != nil, "No container called `%s` found", jobName)
+	assert.Equal(t, container.WorkingDir, workingDir)
+
 }
 
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {

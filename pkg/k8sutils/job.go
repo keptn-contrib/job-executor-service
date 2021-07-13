@@ -28,8 +28,9 @@ type JobSettings struct {
 	DefaultResourceRequirements                  *v1.ResourceRequirements
 }
 
-// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task and waits until the job finishes
-func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings, jsonEventData interface{}) error {
+// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
+func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
+	jobSettings JobSettings, jsonEventData interface{}) error {
 
 	var backOffLimit int32 = 0
 
@@ -131,10 +132,11 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 					},
 					Containers: []v1.Container{
 						{
-							Name:    jobName,
-							Image:   task.Image,
-							Command: task.Cmd,
-							Args:    task.Args,
+							Name:       jobName,
+							Image:      task.Image,
+							Command:    task.Cmd,
+							Args:       task.Args,
+							WorkingDir: task.WorkingDir,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
@@ -163,10 +165,17 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 
 	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 
-	job, err := jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
+	_, err = jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
+
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (k8s *k8sImpl) AwaitK8sJobDone(jobName string) error {
+	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 
 	// TODO timeout from outside
 	// 60 times with 5 seconds wait time => 5 minutes
@@ -181,7 +190,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 			return fmt.Errorf("max poll count reached for job %s. Timing out after 5 minutes", jobName)
 		}
 
-		job, err = jobs.Get(context.TODO(), job.Name, metav1.GetOptions{})
+		job, err := jobs.Get(context.TODO(), jobName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -201,7 +210,6 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 
 		time.Sleep(pollIntervalInSeconds * time.Second)
 	}
-
 }
 
 // DeleteK8sJob delete a k8s job in the given namespace
