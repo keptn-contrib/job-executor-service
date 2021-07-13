@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  lint_build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      - name: Run make
+        run: make -C lint
+      - name: Upload Linux
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/job-lint-linux-amd64
+          asset_name: job-lint-linux-amd64
+          asset_content_type: binary/octet-stream
+      - name: Upload Windows
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/job-lint-windows-amd64
+          asset_name: job-lint-windows-amd64
+          asset_content_type: binary/octet-stream
+      - name: Upload Darwin
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./bin/job-lint-darwin-amd64
+          asset_name: job-lint-darwin-amd64
+          asset_content_type: binary/octet-stream
