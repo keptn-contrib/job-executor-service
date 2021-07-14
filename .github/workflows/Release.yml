@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
       - name: Run make
-        run: make -C lint
+        run: make build-lint
       - name: Upload Linux
         uses: actions/upload-release-asset@v1.0.2
         env:
