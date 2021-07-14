@@ -174,13 +174,9 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	return nil
 }
 
-func (k8s *k8sImpl) AwaitK8sJobDone(jobName string) error {
+func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int) error {
 	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
 
-	// TODO timeout from outside
-	// 60 times with 5 seconds wait time => 5 minutes
-	const maxPollCount = 60
-	const pollIntervalInSeconds = 5
 	currentPollCount := 0
 
 	for {
@@ -208,7 +204,7 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string) error {
 			}
 		}
 
-		time.Sleep(pollIntervalInSeconds * time.Second)
+		time.Sleep(time.Duration(pollIntervalInSeconds) * time.Second)
 	}
 }
 
