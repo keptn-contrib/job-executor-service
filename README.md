@@ -597,8 +597,7 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
 * update the image tags for `job-executor-service` and `job-executor-service-initcontainer`
-  in [`deploy/service.yaml`](deploy/service.yaml), [`helm/Chart.yaml`](helm/Chart.yaml),
-  [`helm/values.yaml`](helm/values.yaml), [`helm/templates/configmap.yaml`](helm/templates/configmap.yaml) and
+  in [`deploy/service.yaml`](deploy/service.yaml), [`helm/Chart.yaml`](helm/Chart.yaml) and
   the `app.kubernetes.io/version` in [`deploy/service.yaml`](deploy/service.yaml)
 * test your service against a working Keptn installation.
 

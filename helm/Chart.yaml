@@ -1,6 +1,6 @@
 apiVersion: v2
-appVersion: 0.1.2
+appVersion: 0.1.3
 description: Helm Chart for the keptn job-executor-service
 name: job-executor-service
 type: application
-version: 0.1.2
+version: 0.1.3
