@@ -66,6 +66,7 @@ actions:
           requests:
             cpu: 50m
             memory: 128Mi
+        maxPollDuration: 1000
 
   - name: "Run bash"
     events:
@@ -200,6 +201,7 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 	assert.Equal(t, config.Actions[0].Tasks[0].Args[1], "/keptn/locust/locustfile.py")
 	assert.Equal(t, config.Actions[0].Tasks[0].Args[2], "--host")
 	assert.Equal(t, config.Actions[0].Tasks[0].Args[3], "$(HOST)")
+	assert.Equal(t, *config.Actions[0].Tasks[0].MaxPollDuration, 1000)
 }
 
 func TestNoApiVersion(t *testing.T) {

@@ -119,11 +119,13 @@ func TestStartK8s(t *testing.T) {
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
+	maxPollDuration := 1006
 	action := config.Action{
 		Name: "Run locust",
 		Tasks: []config.Task{
 			{
-				Name: "Run locust smoked ham tests",
+				Name:            "Run locust smoked ham tests",
+				MaxPollDuration: &maxPollDuration,
 			},
 			{
 				Name: "Run locust healthy snack tests",
@@ -137,7 +139,8 @@ func TestStartK8s(t *testing.T) {
 		gomock.Any()).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 		gomock.Any()).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any()).Times(2)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 202, 5).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)
 	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1)).Times(1)
@@ -182,7 +185,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 		gomock.Any()).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 		gomock.Any()).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any()).Times(2)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5).Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)
 	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1)).Times(1)

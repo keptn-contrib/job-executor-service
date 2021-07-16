@@ -63,11 +63,12 @@ actions:
 
 ### Specifying the working directory
 
-Since all files are hosted by default under `/keptn` and some tools only operate on the current
-working directory, it is also possible to switch the working directory of the container.
-This can be achieved by setting the `workingDirectory` property in a task object.
+Since all files are hosted by default under `/keptn` and some tools only operate on the current working directory, it is
+also possible to switch the working directory of the container. This can be achieved by setting the `workingDirectory`
+property in a task object.
 
 Here an example:
+
 ```yaml
 apiVersion: v2
 actions:
@@ -266,9 +267,8 @@ metadata:
 
 #### From string literal
 
-It sometimes makes sense to provide a static string value as an environment
-variable. This can be done by specifying a `string` as the `valueFrom` value.
-The value of the environment variable can then be specified by the `value`
+It sometimes makes sense to provide a static string value as an environment variable. This can be done by specifying
+a `string` as the `valueFrom` value. The value of the environment variable can then be specified by the `value`
 property.
 
 Here an example
@@ -396,6 +396,19 @@ tasks:
 
 would result in resource quotas for `cpu`, but in none for `memory`. If the `resources` block is present
 (even if empty), all default resource quotas are ignored for this task.
+
+### Poll duration for jobs
+
+The default settings allow a job to run for 5 min until the job executor service cancels the task execution. The default
+value can be overwritten for each task and is declared as seconds. The setting below would result in a poll duration of
+20 minutes for this specific task:
+
+```yaml
+tasks:
+  - name: "Run locust smoke tests"
+    ...
+    maxPollDuration: 1200
+```
 
 ### Remote Control Plane
 

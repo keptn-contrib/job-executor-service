@@ -6,10 +6,16 @@ import (
 	"keptn-sandbox/job-executor-service/pkg/config"
 	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
+	"math"
 	"strconv"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+)
+
+const (
+	pollIntervalInSeconds = 5
+	defaultMaxPollCount   = 60
 )
 
 // EventHandler contains all information needed to process an event
@@ -131,7 +137,11 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			}
 		}()
 
-		jobErr := k8s.AwaitK8sJobDone(jobName)
+		maxPollCount := defaultMaxPollCount
+		if task.MaxPollDuration != nil {
+			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
+		}
+		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds)
 
 		logs, err := k8s.GetLogsOfPod(jobName)
 		if err != nil {

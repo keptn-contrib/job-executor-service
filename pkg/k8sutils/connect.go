@@ -20,7 +20,7 @@ type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
 		jobSettings JobSettings, jsonEventData interface{}) error
-	AwaitK8sJobDone(jobName string) error
+	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int) error
 	DeleteK8sJob(jobName string) error
 	GetLogsOfPod(jobName string) (string, error)
 }
