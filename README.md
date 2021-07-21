@@ -97,7 +97,7 @@ actions:
 ### Specifying the working directory
 
 Since all files are hosted by default under `/keptn` and some tools only operate on the current working directory, it is
-also possible to switch the working directory of the container. This can be achieved by setting the `workingDirectory`
+also possible to switch the working directory of the container. This can be achieved by setting the `workingDir`
 property in a task object.
 
 Here an example:
@@ -111,7 +111,7 @@ actions:
     tasks:
       - name: "Show files in bin"
         image: "alpine"
-        workingDirectory: "/bin"
+        workingDir: "/bin"
         cmd:
           - ls
 ```
