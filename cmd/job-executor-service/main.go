@@ -44,6 +44,8 @@ type envConfig struct {
 	DefaultResourceRequestsCPU string `envconfig:"DEFAULT_RESOURCE_REQUESTS_CPU"`
 	// Default resource requests memory for job and init container
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
+	// Respond with .finished event if no configuration found
+	AlwaysSendFinishedEvent string `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -101,7 +103,12 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 			KeptnAPIToken:               env.KeptnAPIToken,
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,
+			AlwaysSendFinishedEvent:     false,
 		},
+	}
+
+	if env.AlwaysSendFinishedEvent == "true" {
+		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888

@@ -26,6 +26,7 @@ type JobSettings struct {
 	KeptnAPIToken                                string
 	InitContainerImage                           string
 	DefaultResourceRequirements                  *v1.ResourceRequirements
+	AlwaysSendFinishedEvent                      bool
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
