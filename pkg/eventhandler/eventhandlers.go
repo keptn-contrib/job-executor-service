@@ -27,6 +27,11 @@ type EventHandler struct {
 	JobSettings k8sutils.JobSettings
 }
 
+type jobLogs struct {
+	name string
+	logs string
+}
+
 // HandleEvent handles all events in a generic manner
 func (eh *EventHandler) HandleEvent() error {
 
@@ -43,6 +48,11 @@ func (eh *EventHandler) HandleEvent() error {
 	if err != nil {
 		// TODO we can't send a finished event with the error here, utilize the uniform logging instead?
 		log.Printf("Could not find config for job-executor-service: %s", err.Error())
+
+		if eh.JobSettings.AlwaysSendFinishedEvent {
+			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil)
+		}
+
 		return err
 	}
 
@@ -108,10 +118,6 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		return
 	}
 
-	type jobLogs struct {
-		name string
-		logs string
-	}
 	allJobLogs := []jobLogs{}
 
 	for index, task := range action.Tasks {
@@ -165,21 +171,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	log.Printf("Successfully finished processing of event: %s\n", eh.Event.ID())
 
 	if !action.Silent {
-		message := ""
-		for _, jobLogs := range allJobLogs {
-			message += fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s\n\n", jobLogs.name, jobLogs.logs)
-		}
-
-		_, err := eh.Keptn.SendTaskFinishedEvent(&keptnv2.EventData{
-			Status:  keptnv2.StatusSucceeded,
-			Result:  keptnv2.ResultPass,
-			Message: message,
-		}, eh.ServiceName)
-
-		if err != nil {
-			log.Printf("Error while sending finished event: %s\n", err.Error())
-			return
-		}
+		sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, allJobLogs)
 	}
 }
 
@@ -200,5 +192,25 @@ func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName str
 
 	if err != nil {
 		log.Printf("Error while sending started event: %s\n", err)
+	}
+}
+
+func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs []jobLogs) {
+	var message string
+
+	for _, jobLogs := range jobLogs {
+		message += fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s\n\n", jobLogs.name, jobLogs.logs)
+	}
+
+	_, err := myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
+
+		Status:  keptnv2.StatusSucceeded,
+		Result:  keptnv2.ResultPass,
+		Message: message,
+	}, serviceName)
+
+	if err != nil {
+		log.Printf("Error while sending finished event: %s\n", err.Error())
+		return
 	}
 }
