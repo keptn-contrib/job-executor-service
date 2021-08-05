@@ -46,10 +46,13 @@ func (eh *EventHandler) HandleEvent() error {
 
 	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
 	if err != nil {
-		// TODO we can't send a finished event with the error here, utilize the uniform logging instead?
 		log.Printf("Could not find config for job-executor-service: %s", err.Error())
 
 		if eh.JobSettings.AlwaysSendFinishedEvent {
+			_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
+			if err != nil {
+				log.Printf("Error while sending started event: %s\n", err.Error())
+			}
 			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil)
 		}
 
