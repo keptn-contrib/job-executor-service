@@ -259,6 +259,27 @@ In the above example the json path for `HOST` would resolve into `https://keptn.
 }
 ```
 
+The Job executor service also allows you to format the event data in different formats including `JSON` and `YAML` using the `as` keyword. This can be useful when working with the whole event or an object with multiple fields.
+
+```yaml
+cmd:
+  - locust
+args:
+  - '--config'
+  - /keptn/locust/locust.conf
+  - '-f'
+  - /keptn/locust/basic.py
+  - '--host'
+  - $(HOST)
+env:
+  - name: EVENT
+    value: "$"
+    valueFrom: event
+    as: json
+```
+
+If the `as` keyword is omitted the job executor defaults to `string` for a single value and `JSON` for a `map` type.
+
 #### From Kubernetes Secrets
 
 The following configuration looks up a kubernetes secret with the name `locust-secret` and all key/value pairs of the
