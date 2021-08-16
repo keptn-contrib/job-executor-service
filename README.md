@@ -550,6 +550,7 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 |     0.8.3     |                               keptnsandbox/job-executor-service:0.1.1                                |       -        |
 |     0.8.4     |                               keptnsandbox/job-executor-service:0.1.2                                |       v1       |
 |     0.8.6     |                               keptnsandbox/job-executor-service:0.1.3                                |       v2       |
+|     0.8.7     |                               keptnsandbox/job-executor-service:0.1.4                                |       v2       |
 
 ## Installation
 
