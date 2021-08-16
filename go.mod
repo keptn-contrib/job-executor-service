@@ -5,7 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go v0.82.0 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1
-	github.com/cloudevents/sdk-go/v2 v2.4.1
+	github.com/cloudevents/sdk-go/v2 v2.5.0
 	github.com/golang/mock v1.6.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
