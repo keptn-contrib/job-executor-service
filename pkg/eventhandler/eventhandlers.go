@@ -98,6 +98,8 @@ func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{},
 	eventAsInterface["time"] = eh.Event.Time()
 	eventAsInterface["source"] = eh.Event.Source()
 	eventAsInterface["data"] = eventDataAsInterface
+	eventAsInterface["specversion"] = eh.Event.SpecVersion()
+	eventAsInterface["type"] = eh.Event.Type()
 
 	return eventAsInterface, nil
 }

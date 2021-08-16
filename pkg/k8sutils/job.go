@@ -2,10 +2,13 @@ package k8sutils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"reflect"
 	"time"
+	"log"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
@@ -264,6 +267,26 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 	if err != nil {
 		return nil, fmt.Errorf("could not add env with name %v, value %v, valueFrom %v: %v", env.Name, env.Value, env.ValueFrom, err)
 	}
+
+	if reflect.ValueOf(value).Kind() == reflect.Map {
+		log.Println("Values is map")
+
+		jsonString, err := json.Marshal(value)
+
+		if err != nil {
+			log.Printf("Error converting event to JSON: %e",err)
+		}
+
+		value = string(jsonString[:])
+	} 
+
+	jsonString, err := json.Marshal(value)
+
+	if err != nil {
+		fmt.Printf("Error converting event to JSON: %e",err)
+	}
+	fmt.Printf("Converted Event: %s \n", jsonString)
+
 
 	generatedEnv := []v1.EnvVar{
 		{
