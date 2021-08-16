@@ -51,9 +51,10 @@ type Task struct {
 
 // Env value from the event which will be added as env to the job
 type Env struct {
-	Name      string `yaml:"name"`
-	Value     string `yaml:"value"`
-	ValueFrom string `yaml:"valueFrom"`
+	Name       string `yaml:"name"`
+	Value      string `yaml:"value"`
+	ValueFrom  string `yaml:"valueFrom"`
+	Formatting string `yaml:"as"`
 }
 
 // Resources defines the resource requirements of a task
