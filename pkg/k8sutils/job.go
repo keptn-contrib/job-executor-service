@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"strconv"
 	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -184,7 +185,11 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 
 		currentPollCount++
 		if currentPollCount > maxPollCount {
-			return fmt.Errorf("max poll count reached for job %s. Timing out after 5 minutes", jobName)
+			duration, err := time.ParseDuration(strconv.Itoa(maxPollCount * pollIntervalInSeconds) + "s")
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("max poll count reached for job %s. Timing out after %s", jobName, duration)
 		}
 
 		job, err := jobs.Get(context.TODO(), jobName, metav1.GetOptions{})
