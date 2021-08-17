@@ -3,15 +3,15 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"gopkg.in/yaml.v2"
 	"keptn-sandbox/job-executor-service/pkg/config"
 	"reflect"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
-	"log"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
@@ -235,7 +235,7 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 
 		switch env.ValueFrom {
 		case envValueFromEvent:
-			generatedEnv, err = generateEnvFromEvent(env, jsonEventData, env.Formatting)
+			generatedEnv, err = generateEnvFromEvent(env, jsonEventData)
 		case envValueFromSecret:
 			generatedEnv, err = k8s.generateEnvFromSecret(env)
 		case envValueFromString:
@@ -268,39 +268,30 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 	return jobEnv, nil
 }
 
-func generateEnvFromEvent(env config.Env, jsonEventData interface{}, formatting string) ([]v1.EnvVar, error) {
+func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVar, error) {
 
 	value, err := jsonpath.Get(env.Value, jsonEventData)
 	if err != nil {
 		return nil, fmt.Errorf("could not add env with name %v, value %v, valueFrom %v: %v", env.Name, env.Value, env.ValueFrom, err)
 	}
 
-	if strings.EqualFold(formatting, "json") {
+	if strings.EqualFold(env.Formatting, "json") || reflect.ValueOf(value).Kind() == reflect.Map {
 		jsonString, err := json.Marshal(value)
 
 		if err != nil {
-			log.Printf("Error converting environment variable value to JSON: %e",err)
+			fmt.Sprintf("Error converting environment variable value to JSON: %e",err)
+			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to JSON: %e",err))
 		}
 
 		value = string(jsonString[:])
-	} else if strings.EqualFold(formatting, "yaml") {
+	} else if strings.EqualFold(env.Formatting, "yaml") {
 		yamlString, err := yaml.Marshal(value)
 
 		if err != nil {
-			log.Printf("Error converting environment variable value to YAML: %e",err)
+			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to YAML: %e",err))
 		}
 
 		value = string(yamlString[:])
-	} else if reflect.ValueOf(value).Kind() == reflect.Map {
-		log.Println("Values is map")
-
-		jsonString, err := json.Marshal(value)
-
-		if err != nil {
-			log.Printf("Error converting environment variable value to JSON: %e",err)
-		}
-
-		value = string(jsonString[:])
 	}
 
 	generatedEnv := []v1.EnvVar{
