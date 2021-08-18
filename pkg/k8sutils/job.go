@@ -2,10 +2,15 @@ package k8sutils
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
+	"gopkg.in/yaml.v2"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -268,6 +273,25 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 	value, err := jsonpath.Get(env.Value, jsonEventData)
 	if err != nil {
 		return nil, fmt.Errorf("could not add env with name %v, value %v, valueFrom %v: %v", env.Name, env.Value, env.ValueFrom, err)
+	}
+
+	if strings.EqualFold(env.Formatting, "json") || reflect.ValueOf(value).Kind() == reflect.Map {
+		jsonString, err := json.Marshal(value)
+
+		if err != nil {
+			fmt.Sprintf("Error converting environment variable value to JSON: %e",err)
+			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to JSON: %e",err))
+		}
+
+		value = string(jsonString[:])
+	} else if strings.EqualFold(env.Formatting, "yaml") {
+		yamlString, err := yaml.Marshal(value)
+
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to YAML: %e",err))
+		}
+
+		value = string(yamlString[:])
 	}
 
 	generatedEnv := []v1.EnvVar{
