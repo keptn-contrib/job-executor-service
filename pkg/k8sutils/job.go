@@ -3,7 +3,6 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
 	"gopkg.in/yaml.v2"
@@ -190,7 +189,7 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 
 		currentPollCount++
 		if currentPollCount > maxPollCount {
-			duration, err := time.ParseDuration(strconv.Itoa(maxPollCount * pollIntervalInSeconds) + "s")
+			duration, err := time.ParseDuration(strconv.Itoa(maxPollCount*pollIntervalInSeconds) + "s")
 			if err != nil {
 				return err
 			}
@@ -272,26 +271,25 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 
 	value, err := jsonpath.Get(env.Value, jsonEventData)
 	if err != nil {
-		return nil, fmt.Errorf("could not add env with name %v, value %v, valueFrom %v: %v", env.Name, env.Value, env.ValueFrom, err)
+		return nil, fmt.Errorf("could not add env with name '%v', value '%v', valueFrom '%v': %v", env.Name, env.Value, env.ValueFrom, err)
 	}
 
-	if strings.EqualFold(env.Formatting, "json") || reflect.ValueOf(value).Kind() == reflect.Map {
-		jsonString, err := json.Marshal(value)
-
-		if err != nil {
-			fmt.Sprintf("Error converting environment variable value to JSON: %e",err)
-			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to JSON: %e",err))
-		}
-
-		value = string(jsonString[:])
-	} else if strings.EqualFold(env.Formatting, "yaml") {
+	if strings.EqualFold(env.Formatting, "yaml") {
 		yamlString, err := yaml.Marshal(value)
 
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Error converting environment variable value to YAML: %e",err))
+			return nil, fmt.Errorf("could not convert env with name '%v', value '%v', valueFrom '%v' to YAML: %v", env.Name, env.Value, env.ValueFrom, err)
 		}
 
 		value = string(yamlString[:])
+	} else if strings.EqualFold(env.Formatting, "json") || reflect.ValueOf(value).Kind() == reflect.Map {
+		jsonString, err := json.Marshal(value)
+
+		if err != nil {
+			return nil, fmt.Errorf("could not convert env with name '%v', value '%v', valueFrom '%v' to JSON: %v", env.Name, env.Value, env.ValueFrom, err)
+		}
+
+		value = string(jsonString[:])
 	}
 
 	generatedEnv := []v1.EnvVar{
