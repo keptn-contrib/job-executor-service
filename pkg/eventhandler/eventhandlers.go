@@ -8,6 +8,8 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
+	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -32,6 +34,11 @@ type jobLogs struct {
 	logs string
 }
 
+type dataForFinishedEvent struct {
+	start time.Time
+	end time.Time
+}
+
 // HandleEvent handles all events in a generic manner
 func (eh *EventHandler) HandleEvent() error {
 
@@ -53,7 +60,7 @@ func (eh *EventHandler) HandleEvent() error {
 			if err != nil {
 				log.Printf("Error while sending started event: %s\n", err.Error())
 			}
-			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil)
+			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil, dataForFinishedEvent{})
 		}
 
 		return err
@@ -124,6 +131,9 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	}
 
 	allJobLogs := []jobLogs{}
+	additionalFinishedEventData := dataForFinishedEvent{
+		start: time.Now(),
+	}
 
 	for index, task := range action.Tasks {
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
@@ -179,10 +189,12 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		})
 	}
 
+	additionalFinishedEventData.end = time.Now()
+
 	log.Printf("Successfully finished processing of event: %s\n", eh.Event.ID())
 
 	if !action.Silent {
-		sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, allJobLogs)
+		sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, allJobLogs, additionalFinishedEventData)
 	}
 }
 
@@ -206,22 +218,41 @@ func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName str
 	}
 }
 
-func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs []jobLogs) {
+func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs []jobLogs, data dataForFinishedEvent) {
 	var message string
 
 	for _, jobLogs := range jobLogs {
 		message += fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s\n\n", jobLogs.name, jobLogs.logs)
 	}
 
-	_, err := myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
+	eventData := &keptnv2.EventData{
 
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
 		Message: message,
-	}, serviceName)
+	}
+
+	var err error
+
+	if isTestEvent(myKeptn.CloudEvent.Type()) && !data.start.IsZero() && !data.end.IsZero() {
+		event := &keptnv2.TestFinishedEventData{
+			Test: keptnv2.TestFinishedDetails{
+				Start: data.start.Format(time.RFC3339),
+				End:   data.end.Format(time.RFC3339),
+			},
+			EventData: *eventData,
+		}
+		_, err = myKeptn.SendTaskFinishedEvent(event, serviceName)
+	} else {
+		_, err = myKeptn.SendTaskFinishedEvent(eventData, serviceName)
+	}
 
 	if err != nil {
 		log.Printf("Error while sending finished event: %s\n", err.Error())
 		return
 	}
+}
+
+func isTestEvent(eventName string) bool {
+	return strings.HasPrefix(eventName, "sh.keptn.event.test.")
 }
