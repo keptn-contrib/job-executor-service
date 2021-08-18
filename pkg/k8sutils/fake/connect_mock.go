@@ -37,7 +37,7 @@ func (m *MockK8s) EXPECT() *MockK8sMockRecorder {
 }
 
 // AwaitK8sJobDone mocks base method.
-func (m *MockK8s) AwaitK8sJobDone(jobName string, maxPollDuration, pollIntervalInSeconds int) error {
+func (m *MockK8s) AwaitK8sJobDone(jobName string, maxPollDuration, pollIntervalInSeconds int, namespace string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AwaitK8sJobDone", jobName, maxPollDuration, pollIntervalInSeconds)
 	ret0, _ := ret[0].(error)
@@ -45,7 +45,7 @@ func (m *MockK8s) AwaitK8sJobDone(jobName string, maxPollDuration, pollIntervalI
 }
 
 // AwaitK8sJobDone indicates an expected call of AwaitK8sJobDone.
-func (mr *MockK8sMockRecorder) AwaitK8sJobDone(jobName, maxPollDuration, pollIntervalInSeconds interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) AwaitK8sJobDone(jobName, maxPollDuration, pollIntervalInSeconds interface{}, namespace string) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitK8sJobDone", reflect.TypeOf((*MockK8s)(nil).AwaitK8sJobDone), jobName, maxPollDuration, pollIntervalInSeconds)
 }

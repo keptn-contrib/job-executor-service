@@ -158,7 +158,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		if task.MaxPollDuration != nil {
 			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
 		}
-		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds)
+		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
 
 		logs, err := k8s.GetLogsOfPod(jobName)
 		if err != nil {

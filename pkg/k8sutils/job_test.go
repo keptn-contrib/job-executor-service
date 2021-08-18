@@ -364,6 +364,48 @@ func TestSetCustomNamespace(t *testing.T) {
 	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
 }
 
+func TestSetEmptyNamespace(t *testing.T) {
+	jobName := "test-job-1"
+	namespace := ""
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	k8s := k8sImpl{
+		clientset: k8sClientSet,
+		namespace: namespace,
+	}
+
+	err := k8s.CreateK8sJob(jobName, &config.Action{
+		Name: jobName,
+	}, config.Task{
+		Name:       jobName,
+		Image:      "alpine",
+		Cmd:        []string{"ls"},
+	}, &eventData, JobSettings{
+		JobNamespace: namespace,
+		DefaultResourceRequirements: &corev1.ResourceRequirements{
+			Limits:   make(corev1.ResourceList),
+			Requests: make(corev1.ResourceList),
+		},
+	}, "", namespace)
+
+	assert.NilError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	assert.NilError(t, err)
+
+	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
+}
+
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{

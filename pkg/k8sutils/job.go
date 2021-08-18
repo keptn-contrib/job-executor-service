@@ -184,8 +184,11 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	return nil
 }
 
-func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int) error {
-	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
+func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string) error {
+	if namespace == "" {
+		namespace = k8s.namespace
+	}
+		jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
 	currentPollCount := 0
 
