@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"strings"
 	"testing"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -32,8 +33,8 @@ const testTriggeredEvent = `
     },
     "message": "",
     "project": "sockshop",
-    "stage": "dev",
     "service": "carts",
+    "stage": "dev",
     "status": "succeeded",
     "test": {
       "teststrategy": "health"
@@ -89,6 +90,17 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 				Value:     "$.data.test.teststrategy",
 				ValueFrom: "event",
 			},
+			{
+				Name:      "DATA_JSON",
+				Value:     "$.data.deployment",
+				ValueFrom: "event",
+			},
+			{
+				Name:       "DATA_YAML",
+				Value:      "$.data.deployment.deploymentURIsLocal",
+				ValueFrom:  "event",
+				Formatting: "yaml",
+			},
 		},
 	}
 
@@ -114,14 +126,41 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	assert.Equal(t, jobEnv[2].Name, "TEST_STRATEGY")
 	assert.Equal(t, jobEnv[2].Value, "health")
 
-	assert.Equal(t, jobEnv[3].Name, "KEPTN_PROJECT")
-	assert.Equal(t, jobEnv[3].Value, "sockshop")
+	testTriggeredEventJSON := `
+{
+  "deploymentNames": [
+    "user_managed"
+  ],
+  "deploymentURIsLocal": [
+    "https://keptn.sh",
+    "https://keptn2.sh"
+  ],
+  "deploymentURIsPublic": [
+    ""
+  ],
+  "deploymentstrategy": "user_managed",
+  "gitCommit": "eb5fc3d5253b1845d3d399c880c329374bbbb30e"
+}`
+	testTriggeredEventJSON = strings.ReplaceAll(testTriggeredEventJSON, " ", "")
+	testTriggeredEventJSON = strings.ReplaceAll(testTriggeredEventJSON, "\n", "")
 
-	assert.Equal(t, jobEnv[4].Name, "KEPTN_STAGE")
-	assert.Equal(t, jobEnv[4].Value, "dev")
+	assert.Equal(t, jobEnv[3].Name, "DATA_JSON")
+	assert.Equal(t, jobEnv[3].Value, testTriggeredEventJSON)
 
-	assert.Equal(t, jobEnv[5].Name, "KEPTN_SERVICE")
-	assert.Equal(t, jobEnv[5].Value, "carts")
+	testTriggeredEventYaml := `- https://keptn.sh
+- https://keptn2.sh
+`
+	assert.Equal(t, jobEnv[4].Name, "DATA_YAML")
+	assert.Equal(t, jobEnv[4].Value, testTriggeredEventYaml)
+
+	assert.Equal(t, jobEnv[5].Name, "KEPTN_PROJECT")
+	assert.Equal(t, jobEnv[5].Value, "sockshop")
+
+	assert.Equal(t, jobEnv[6].Name, "KEPTN_STAGE")
+	assert.Equal(t, jobEnv[6].Value, "dev")
+
+	assert.Equal(t, jobEnv[7].Name, "KEPTN_SERVICE")
+	assert.Equal(t, jobEnv[7].Value, "carts")
 }
 
 func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
