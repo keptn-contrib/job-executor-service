@@ -65,7 +65,7 @@ func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 }
 
 // CreateK8sJob mocks base method.
-func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings k8sutils.JobSettings, jsonEventData interface{}) error {
+func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateK8sJob", jobName, action, task, eventData, jobSettings, jsonEventData)
 	ret0, _ := ret[0].(error)

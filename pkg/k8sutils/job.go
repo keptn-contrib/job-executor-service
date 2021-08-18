@@ -37,7 +37,7 @@ type JobSettings struct {
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-	jobSettings JobSettings, jsonEventData interface{}) error {
+	jobSettings JobSettings, jsonEventData interface{}, namespace string) error {
 
 	var backOffLimit int32 = 0
 
@@ -79,10 +79,13 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
+	if namespace != "" {
+		namespace = k8s.namespace
+	}
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: k8s.namespace,
+			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
