@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"strconv"
+	"strings"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -91,7 +92,7 @@ func (eh *EventHandler) handleGithubAction(configuration *config.Config) error {
 
 	for _, action := range configuration.Actions {
 		for _, step := range action.Steps {
-			githubProjectName := step.Uses
+			githubProjectName := eh.getGithubProjectName(step.Uses)
 
 			// TODO call the functionality from Thomas (build and push image)
 			imageLocation := "TODO"
@@ -119,6 +120,15 @@ func (eh *EventHandler) handleGithubAction(configuration *config.Config) error {
 		}
 	}
 	return nil
+}
+
+func (eh *EventHandler) getGithubProjectName(uses string) string {
+	githubProjectName := uses
+	index := strings.LastIndex(githubProjectName, "@")
+	if index > 0 {
+		githubProjectName = githubProjectName[:index]
+	}
+	return githubProjectName
 }
 
 func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{}, error) {
