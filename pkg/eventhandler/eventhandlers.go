@@ -94,15 +94,28 @@ func (eh *EventHandler) handleGithubAction(configuration *config.Config) error {
 			githubProjectName := step.Uses
 
 			// TODO call the functionality from Thomas (build and push image)
+			imageLocation := "TODO"
 
-			err, action := github.GetActionYaml(githubProjectName)
+			err, githubAction := github.GetActionYaml(githubProjectName)
 			if err != nil {
 				return err
 			}
 
-			// TODO call the functionality from Dominik (argument matching of action)
+			args, err := github.PrepareArgs(step.With, githubAction.Inputs, githubAction.Runs.Args)
+			if err != nil {
+				return err
+			}
 
-			// TODO map back the step to a regular task
+			task := config.Task{
+				Name:  githubAction.Name,
+				Files: nil,
+				Image: imageLocation,
+				Cmd:   nil,
+				Args:  args,
+				Env:   nil,
+			}
+
+			action.Tasks = append(action.Tasks, task)
 		}
 	}
 	return nil

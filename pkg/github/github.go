@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func prepareArgs(with map[string]string, inputs map[string]model.Input, args []string) ([]string, error) {
+func PrepareArgs(with map[string]string, inputs map[string]model.Input, args []string) ([]string, error) {
 	var filledArgs []string
 
 	for inputKey, inputValue := range inputs {
