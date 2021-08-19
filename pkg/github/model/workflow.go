@@ -38,12 +38,12 @@ type Strategy struct {
 	RawMatrix         yaml.Node `yaml:"matrix"`
 }
 
-// Default settings that will apply to all steps in the job or workflow
+// Defaults settings that will apply to all steps in the job or workflow
 type Defaults struct {
 	Run RunDefaults `yaml:"run"`
 }
 
-// Defaults for all run steps in the job or workflow
+// RunDefaults for all run steps in the job or workflow
 type RunDefaults struct {
 	Shell            string `yaml:"shell"`
 	WorkingDirectory string `yaml:"working-directory"`

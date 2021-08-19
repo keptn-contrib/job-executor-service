@@ -83,13 +83,23 @@ func (eh *EventHandler) HandleEvent() error {
 		return err
 	}
 
-
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
 }
 
 func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, configuration *config.Config) error {
+
+	_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
+	if err != nil {
+		return fmt.Errorf("Error while sending started event: %s\n", err.Error())
+	}
+
+	err = k8s.ConnectToCluster()
+	if err != nil {
+		return fmt.Errorf("Error while connecting to cluster: %s\n", err.Error())
+		sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
+	}
 
 	for _, action := range configuration.Actions {
 		for _, step := range action.Steps {
