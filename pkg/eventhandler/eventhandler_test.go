@@ -196,3 +196,10 @@ func TestStartK8sJobSilent(t *testing.T) {
 	err = fakeEventSender.AssertSentEventTypes([]string{})
 	assert.NilError(t, err)
 }
+
+func TestGetGithubProjectName(t *testing.T) {
+
+	eh := EventHandler{}
+	assert.Equal(t, "aquasecurity/trivy-action", eh.getGithubProjectName("aquasecurity/trivy-action@master"))
+	assert.Equal(t, "aquasecurity/trivy-action", eh.getGithubProjectName("aquasecurity/trivy-action"))
+}
