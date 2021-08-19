@@ -38,7 +38,7 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry
 							Env: []v1.EnvVar{
 								{
 									Name:  "GOOGLE_APPLICATION_CREDENTIALS",
-									Value: "/kaniko/config.json",
+									Value: "/secret/config.json",
 								},
 							},
 							Args: []string{
@@ -48,7 +48,7 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      "gcr-secret",
-									MountPath: "/kaniko",
+									MountPath: "/secret",
 								},
 								{
 									Name:      "workspace",
