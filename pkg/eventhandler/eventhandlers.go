@@ -75,26 +75,42 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
-	err = eh.handleGithubAction(configuration)
+	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
+	err = eh.handleGithubAction(k8s, configuration)
 	if err != nil {
-		log.Printf("An error occurred while handling GitHub action")
+		log.Printf("An error occurred while handling GitHub action: %s", err)
 		return err
 	}
 
-	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
+
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) handleGithubAction(configuration *config.Config) error {
+func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, configuration *config.Config) error {
 
 	for _, action := range configuration.Actions {
 		for _, step := range action.Steps {
 			githubProjectName := step.Uses
 
 			// TODO call the functionality from Thomas (build and push image)
-			imageLocation := "TODO"
+			imageLocation, err := k8s.CreateImageBuilder(step.Name, step, eh.JobSettings.ContainerRegistry)
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+				err = k8s.DeleteK8sJob(step.Name)
+				if err != nil {
+					log.Printf("Error while deleting job: %s\n", err.Error())
+				}
+			}()
+
+			jobErr := k8s.AwaitK8sJobDone(step.Name, defaultMaxPollCount, pollIntervalInSeconds)
+			if jobErr != nil {
+				log.Println(err)
+			}
 
 			err, githubAction := github.GetActionYaml(githubProjectName)
 			if err != nil {
