@@ -42,8 +42,10 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry
 								},
 							},
 							Args: []string{
-								"--destination " + imageRegistryPath,
-								"--context git://github.com/" + step.Uses,
+								"--destination",
+								imageRegistryPath,
+								"--context",
+								"git://github.com/" + step.Uses,
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{
