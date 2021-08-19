@@ -6,6 +6,7 @@ package fake
 
 import (
 	config "keptn-sandbox/job-executor-service/pkg/config"
+	model "keptn-sandbox/job-executor-service/pkg/github/model"
 	k8sutils "keptn-sandbox/job-executor-service/pkg/k8sutils"
 	reflect "reflect"
 
@@ -62,6 +63,21 @@ func (m *MockK8s) ConnectToCluster() error {
 func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToCluster", reflect.TypeOf((*MockK8s)(nil).ConnectToCluster))
+}
+
+// CreateImageBuilder mocks base method.
+func (m *MockK8s) CreateImageBuilder(jobName string, step model.Step, registry string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateImageBuilder", jobName, step, registry)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateImageBuilder indicates an expected call of CreateImageBuilder.
+func (mr *MockK8sMockRecorder) CreateImageBuilder(jobName, step, registry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateImageBuilder", reflect.TypeOf((*MockK8s)(nil).CreateImageBuilder), jobName, step, registry)
 }
 
 // CreateK8sJob mocks base method.

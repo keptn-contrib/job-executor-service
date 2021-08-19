@@ -24,7 +24,7 @@ func TestPrepareArgs(t *testing.T) {
 		},
 	}
 	args := []string{"-a ${{ inputs.scan-type }}", "-b ${{ inputs.format }}", "-c ${{ inputs.template }}"}
-	k8sArgs, err := prepareArgs(with, inputs, args)
+	k8sArgs, err := PrepareArgs(with, inputs, args)
 	assert.NilError(t, err)
 	log.Printf("%v", k8sArgs)
 }
@@ -38,6 +38,6 @@ func TestPrepareArgs_RequiredInput(t *testing.T) {
 		},
 	}
 	args := []string{"-a ${{ inputs.scan-type }}"}
-	_, err := prepareArgs(with, inputs, args)
+	_, err := PrepareArgs(with, inputs, args)
 	assert.Error(t, err, "required input 'scan-type' not provided")
 }
