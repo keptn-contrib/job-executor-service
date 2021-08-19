@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/github"
 	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
 	"math"
@@ -74,9 +75,36 @@ func (eh *EventHandler) HandleEvent() error {
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
+	err = eh.handleGithubAction(configuration)
+	if err != nil {
+		log.Printf("An error occurred while handling GitHub action")
+		return err
+	}
+
 	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
+	return nil
+}
+
+func (eh *EventHandler) handleGithubAction(configuration *config.Config) error {
+
+	for _, action := range configuration.Actions {
+		for _, step := range action.Steps {
+			githubProjectName := step.Uses
+
+			// TODO call the functionality from Thomas (build and push image)
+
+			err, action := github.GetActionYaml(githubProjectName)
+			if err != nil {
+				return err
+			}
+
+			// TODO call the functionality from Dominik (argument matching of action)
+
+			// TODO map back the step to a regular task
+		}
+	}
 	return nil
 }
 

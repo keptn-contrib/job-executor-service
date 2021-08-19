@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"keptn-sandbox/job-executor-service/pkg/github/model"
 	"regexp"
 
 	"github.com/PaesslerAG/jsonpath"
@@ -18,10 +19,11 @@ type Config struct {
 
 // Action contains a action within the config which needs to be triggered
 type Action struct {
-	Name   string  `yaml:"name"`
-	Events []Event `yaml:"events"`
-	Tasks  []Task  `yaml:"tasks"`
-	Silent bool    `yaml:"silent"`
+	Name   string       `yaml:"name"`
+	Events []Event      `yaml:"events"`
+	Tasks  []Task       `yaml:"tasks"`
+	Silent bool         `yaml:"silent"`
+	Steps  []model.Step `yaml:"steps"`
 }
 
 // Event defines a keptn event which determines if an Action should be triggered
@@ -85,7 +87,20 @@ func NewConfig(yamlContent []byte) (*Config, error) {
 		return nil, fmt.Errorf("apiVersion %v is not supported, use %v", *config.APIVersion, supportedAPIVersion)
 	}
 
-	return &config, nil
+	err = config.checkConfigs()
+
+	return &config, err
+}
+
+func (c *Config) checkConfigs() error {
+
+	// check if the actions don't contain steps and tasks -> that should not be valid
+	for _, action := range c.Actions {
+		if len(action.Steps) > 0 && len(action.Tasks) > 0 {
+			return fmt.Errorf("action %v contains steps and tasks", action.Name)
+		}
+	}
+	return nil
 }
 
 // IsEventMatch indicated whether a given event matches the config
