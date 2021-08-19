@@ -77,18 +77,20 @@ func (eh *EventHandler) HandleEvent() error {
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
 
 	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
-	err = eh.handleGithubAction(k8s, configuration)
+	err = eh.handleGithubAction(k8s, action)
 	if err != nil {
 		log.Printf("An error occurred while handling GitHub action: %s", err)
 		return err
 	}
+
+	fmt.Errorf("action: %v", *action)
 
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, configuration *config.Config) error {
+func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, action *config.Action) error {
 
 	_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
 	if err != nil {
@@ -101,49 +103,50 @@ func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, configuration *conf
 		sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
 	}
 
-	for _, action := range configuration.Actions {
-		for _, step := range action.Steps {
-			githubProjectName := eh.getGithubProjectName(step.Uses)
+	for _, step := range action.Steps {
+		githubProjectName := eh.getGithubProjectName(step.Uses)
 
-			// TODO call the functionality from Thomas (build and push image)
-			imageLocation, err := k8s.CreateImageBuilder(step.Name, step, eh.JobSettings.ContainerRegistry)
-			if err != nil {
-				return err
-			}
-
-			defer func() {
-				err = k8s.DeleteK8sJob(step.Name)
-				if err != nil {
-					log.Printf("Error while deleting job: %s\n", err.Error())
-				}
-			}()
-
-			jobErr := k8s.AwaitK8sJobDone(step.Name, defaultMaxPollCount, pollIntervalInSeconds)
-			if jobErr != nil {
-				log.Println(err)
-			}
-
-			err, githubAction := github.GetActionYaml(githubProjectName)
-			if err != nil {
-				return err
-			}
-
-			args, err := github.PrepareArgs(step.With, githubAction.Inputs, githubAction.Runs.Args)
-			if err != nil {
-				return err
-			}
-
-			task := config.Task{
-				Name:  githubAction.Name,
-				Files: nil,
-				Image: imageLocation,
-				Cmd:   nil,
-				Args:  args,
-				Env:   nil,
-			}
-
-			action.Tasks = append(action.Tasks, task)
+		// TODO using step.Name here is a bad idea because it can contain whitespaces etc.
+		imageLocation, err := k8s.CreateImageBuilder(step.Name, step, eh.JobSettings.ContainerRegistry)
+		log.Printf("imageLocation: %v", imageLocation)
+		if err != nil {
+			return err
 		}
+
+		defer func() {
+			err = k8s.DeleteK8sJob(step.Name)
+			if err != nil {
+				log.Printf("Error while deleting job: %s\n", err.Error())
+			}
+		}()
+
+		jobErr := k8s.AwaitK8sJobDone(step.Name, defaultMaxPollCount, pollIntervalInSeconds)
+		if jobErr != nil {
+			log.Println(err)
+		}
+
+		err, githubAction := github.GetActionYaml(githubProjectName)
+		if err != nil {
+			return err
+		}
+
+		args, err := github.PrepareArgs(step.With, githubAction.Inputs, githubAction.Runs.Args)
+		if err != nil {
+			return err
+		}
+
+		task := config.Task{
+			Name:  githubAction.Name,
+			Files: nil,
+			Image: imageLocation,
+			Cmd:   nil,
+			Args:  args,
+			Env:   nil,
+		}
+
+		log.Printf("task: %+v", task)
+
+		action.Tasks = append(action.Tasks, task)
 	}
 	return nil
 }
