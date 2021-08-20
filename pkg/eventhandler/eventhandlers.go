@@ -75,35 +75,32 @@ func (eh *EventHandler) HandleEvent() error {
 	}
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
+	log.Printf("action: %+v", *action)
 
 	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
+	err = k8s.ConnectToCluster()
+	if err != nil {
+		log.Printf("Error while connecting to cluster: %s\n", err)
+		return err
+	}
+
 	err = eh.handleGithubAction(k8s, action)
 	if err != nil {
 		log.Printf("An error occurred while handling GitHub action: %s", err)
 		return err
 	}
 
-	fmt.Errorf("action: %v", *action)
-
+	log.Printf("executing action: %+v", *action)
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
 }
 
 func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, action *config.Action) error {
-
-	_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
-	if err != nil {
-		return fmt.Errorf("Error while sending started event: %s\n", err.Error())
-	}
-
-	err = k8s.ConnectToCluster()
-	if err != nil {
-		return fmt.Errorf("Error while connecting to cluster: %s\n", err.Error())
-		sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
-	}
-
 	for _, step := range action.Steps {
+
+		log.Printf("Handling step: %+v", step)
+
 		githubProjectName := eh.getGithubProjectName(step.Uses)
 
 		// TODO using step.Name here is a bad idea because it can contain whitespaces etc.
@@ -192,15 +189,6 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			log.Printf("Error while sending started event: %s\n", err.Error())
 			return
 		}
-	}
-
-	err := k8s.ConnectToCluster()
-	if err != nil {
-		log.Printf("Error while connecting to cluster: %s\n", err.Error())
-		if !action.Silent {
-			sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
-		}
-		return
 	}
 
 	allJobLogs := []jobLogs{}
