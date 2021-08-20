@@ -46,6 +46,8 @@ spec:
               value: "50m"
             - name: DEFAULT_RESOURCE_REQUESTS_MEMORY
               value: "128Mi"
+            - name: CONTAINER_REGISTRY
+              value: "TODO"
         - name: distributor
           image: keptn/distributor:0.8.4
           livenessProbe:

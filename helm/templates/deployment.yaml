@@ -82,6 +82,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: default_resource_requests_memory
+          - name: CONTAINER_REGISTRY
+            valueFrom:
+             configMapKeyRef:
+               name: job-service-config
+               key: container_registry
           livenessProbe:
             httpGet:
               path: /health
