@@ -5,7 +5,6 @@ import (
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"k8s.io/client-go/kubernetes"
 	"keptn-sandbox/job-executor-service/pkg/config"
-	"keptn-sandbox/job-executor-service/pkg/github/model"
 )
 
 // k8sImpl is used to interact with kubernetes jobs
@@ -24,7 +23,7 @@ type K8s interface {
 	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int) error
 	DeleteK8sJob(jobName string) error
 	GetLogsOfPod(jobName string) (string, error)
-	CreateImageBuilder(jobName string, step model.Step, registry string) (string, error)
+	CreateImageBuilder(jobName string, githubProjectName string, registry string) (string, error)
 }
 
 // NewK8s creates and returns new K8s

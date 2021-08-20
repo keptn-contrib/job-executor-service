@@ -104,7 +104,7 @@ func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, action *config.Acti
 		githubProjectName := eh.getGithubProjectName(step.Uses)
 
 		// TODO using step.Name here is a bad idea because it can contain whitespaces etc.
-		imageLocation, err := k8s.CreateImageBuilder(step.Name, step, eh.JobSettings.ContainerRegistry)
+		imageLocation, err := k8s.CreateImageBuilder(step.Name, githubProjectName, eh.JobSettings.ContainerRegistry)
 		log.Printf("imageLocation: %v", imageLocation)
 		if err != nil {
 			return err

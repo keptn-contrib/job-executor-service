@@ -5,10 +5,9 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"keptn-sandbox/job-executor-service/pkg/github/model"
 )
 
-func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry string) (string, error) {
+func (k8s *k8sImpl) CreateImageBuilder(jobName string, githubProjectName string, registry string) (string, error) {
 
 	var backOffLimit int32 = 0
 
@@ -16,7 +15,7 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry
 		return &s
 	}
 
-	imageRegistryPath := registry + "/" + step.Uses
+	imageRegistryPath := registry + "/" + githubProjectName
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -45,7 +44,7 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, step model.Step, registry
 								"--destination",
 								imageRegistryPath,
 								"--context",
-								"git://github.com/" + step.Uses,
+								"git://github.com/" + githubProjectName,
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{
