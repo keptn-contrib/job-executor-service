@@ -25,11 +25,6 @@ func (k8s *k8sImpl) CreateImageBuilder(jobName string, githubProjectName string,
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					SecurityContext: &v1.PodSecurityContext{
-						RunAsUser:  convert(1000),
-						RunAsGroup: convert(2000),
-						FSGroup:    convert(2000),
-					},
 					Containers: []v1.Container{
 						{
 							Name:  jobName,
