@@ -27,6 +27,11 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 		return fmt.Errorf("no action found with name '%s'", actionName)
 	}
 
+	if len(action.Steps) >= 0 {
+		log.Printf("mounting files for github actions is not supported")
+		return nil
+	}
+
 	found, task := action.FindTaskByName(taskName)
 	if !found {
 		return fmt.Errorf("no task found with name '%s'", taskName)

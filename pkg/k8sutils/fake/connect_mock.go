@@ -64,6 +64,21 @@ func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectToCluster", reflect.TypeOf((*MockK8s)(nil).ConnectToCluster))
 }
 
+// CreateImageBuilder mocks base method.
+func (m *MockK8s) CreateImageBuilder(jobName, githubProjectName, registry string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateImageBuilder", jobName, githubProjectName, registry)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateImageBuilder indicates an expected call of CreateImageBuilder.
+func (mr *MockK8sMockRecorder) CreateImageBuilder(jobName, githubProjectName, registry interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateImageBuilder", reflect.TypeOf((*MockK8s)(nil).CreateImageBuilder), jobName, githubProjectName, registry)
+}
+
 // CreateK8sJob mocks base method.
 func (m *MockK8s) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *v0_2_0.EventData, jobSettings k8sutils.JobSettings, jsonEventData interface{}) error {
 	m.ctrl.T.Helper()

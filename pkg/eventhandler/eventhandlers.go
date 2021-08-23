@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/github"
 	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	"log"
 	"math"
 	"strconv"
+	"strings"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -73,11 +75,86 @@ func (eh *EventHandler) HandleEvent() error {
 	}
 
 	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
+	log.Printf("action: %+v", *action)
 
 	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
+	err = k8s.ConnectToCluster()
+	if err != nil {
+		log.Printf("Error while connecting to cluster: %s\n", err)
+		return err
+	}
+
+	err = eh.handleGithubAction(k8s, action)
+	if err != nil {
+		log.Printf("An error occurred while handling GitHub action: %s", err)
+		return err
+	}
+
+	log.Printf("executing action: %+v", *action)
 	eh.startK8sJob(k8s, action, eventAsInterface)
 
 	return nil
+}
+
+func (eh *EventHandler) handleGithubAction(k8s k8sutils.K8s, action *config.Action) error {
+	for _, step := range action.Steps {
+
+		log.Printf("Handling step: %+v", step)
+
+		githubProjectName := eh.getGithubProjectName(step.Uses)
+
+		// TODO using step.Name here is a bad idea because it can contain whitespaces etc.
+		imageLocation, err := k8s.CreateImageBuilder(step.Name, githubProjectName, eh.JobSettings.ContainerRegistry)
+		log.Printf("imageLocation: %v", imageLocation)
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			err = k8s.DeleteK8sJob(step.Name)
+			if err != nil {
+				log.Printf("Error while deleting job: %s\n", err.Error())
+			}
+		}()
+
+		jobErr := k8s.AwaitK8sJobDone(step.Name, defaultMaxPollCount, pollIntervalInSeconds)
+		if jobErr != nil {
+			log.Println(err)
+		}
+
+		err, githubAction := github.GetActionYaml(githubProjectName)
+		if err != nil {
+			return err
+		}
+
+		args, err := github.PrepareArgs(step.With, githubAction.Inputs, githubAction.Runs.Args)
+		if err != nil {
+			return err
+		}
+
+		task := config.Task{
+			Name:  githubAction.Name,
+			Files: nil,
+			Image: imageLocation,
+			Cmd:   nil,
+			Args:  args,
+			Env:   nil,
+		}
+
+		log.Printf("task: %+v", task)
+
+		action.Tasks = append(action.Tasks, task)
+	}
+	return nil
+}
+
+func (eh *EventHandler) getGithubProjectName(uses string) string {
+	githubProjectName := uses
+	index := strings.LastIndex(githubProjectName, "@")
+	if index > 0 {
+		githubProjectName = githubProjectName[:index]
+	}
+	return githubProjectName
 }
 
 func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{}, error) {
@@ -112,15 +189,6 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			log.Printf("Error while sending started event: %s\n", err.Error())
 			return
 		}
-	}
-
-	err := k8s.ConnectToCluster()
-	if err != nil {
-		log.Printf("Error while connecting to cluster: %s\n", err.Error())
-		if !action.Silent {
-			sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
-		}
-		return
 	}
 
 	allJobLogs := []jobLogs{}

@@ -23,6 +23,7 @@ type K8s interface {
 	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int) error
 	DeleteK8sJob(jobName string) error
 	GetLogsOfPod(jobName string) (string, error)
+	CreateImageBuilder(jobName string, githubProjectName string, registry string) (string, error)
 }
 
 // NewK8s creates and returns new K8s
