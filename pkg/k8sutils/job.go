@@ -32,7 +32,7 @@ type JobSettings struct {
 	InitContainerImage                           string
 	DefaultResourceRequirements                  *v1.ResourceRequirements
 	AlwaysSendFinishedEvent                      bool
-	ContainerRegistry							 string
+	ContainerRegistry                            string
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
@@ -69,10 +69,10 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	}
 	automountServiceAccountToken := false
 
-	runAsNonRoot := true
+	/*runAsNonRoot := true
 	convert := func(s int64) *int64 {
 		return &s
-	}
+	}*/
 
 	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData)
 	if err != nil {
@@ -87,12 +87,12 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-					SecurityContext: &v1.PodSecurityContext{
+					/*SecurityContext: &v1.PodSecurityContext{
 						RunAsUser:    convert(1000),
 						RunAsGroup:   convert(2000),
 						FSGroup:      convert(2000),
 						RunAsNonRoot: &runAsNonRoot,
-					},
+					},*/
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
