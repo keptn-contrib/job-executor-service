@@ -235,6 +235,11 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
+	// set the global timezone for testing
+	local, err := time.LoadLocation("UTC")
+	assert.NilError(t, err)
+	time.Local = local
+
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes([]string{
@@ -247,9 +252,6 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
 			eventData := &keptnv2.TestFinishedEventData{}
 			cloudEvent.DataAs(eventData)
-			toime := time.Now()
-			zone, offset := toime.Zone()
-			fmt.Println(zone, offset)
 
 			dateLayout := "2006-01-02T15:04:05Z"
 			_, err := time.Parse(dateLayout, eventData.Test.Start)
