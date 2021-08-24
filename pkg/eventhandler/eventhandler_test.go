@@ -247,8 +247,11 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
 			eventData := &keptnv2.TestFinishedEventData{}
 			cloudEvent.DataAs(eventData)
+			toime := time.Now()
+			zone, offset := toime.Zone()
+			fmt.Println(zone, offset)
 
-			dateLayout := "2006-01-02T15:04:05+02:00"
+			dateLayout := "2006-01-02T15:04:05Z"
 			_, err := time.Parse(dateLayout, eventData.Test.Start)
 			assert.NilError(t, err)
 			_, err = time.Parse(dateLayout, eventData.Test.End)
