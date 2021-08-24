@@ -19,6 +19,7 @@
         - [Poll duration for jobs](#poll-duration-for-jobs)
         - [Job namespace](#job-namespace)
         - [Remote Control Plane](#remote-control-plane)
+        - [Additional Event Data](#additional-event-data)
     - [How to validate a job configuration](#how-to-validate-a-job-configuration)
     - [Endless Possibilities](#endless-possibilities)
     - [Credits](#credits)
@@ -45,13 +46,13 @@ container as a Kubernetes Job orchestrated by keptn.
 The job-executor-service aims to tackle several current pain points with the current approach of services running in the
 keptn ecosystem:
 
-| Problem | Solution |
-|----------------|----------------|
-| Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on the Kubernetes cluster. | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), they just consume resources while the task is executed. |
-| Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The code of the new keptn service needs to be written and maintained. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.  |
-| Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed. | The Job Executor Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.  |
-| Keptn services are usually opinionized on how your framework execution looks like. E.g. the locust service just executes three different (statically named) files depending on the test strategy in the shipyard. It is not possible to write tests consisting of multiply files. | This service provides the possibility to write any specified file from the keptn git repository into a mounted folder (`/keptn`) of the Kubernetes job. This is done by a initcontainer running before the specified image. |
-| Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature. | The Job Executor Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
+| Problem                                                                                                                                                                                                                                                                                                                                        | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Keptn services are constantly running while listening for cloud events coming in over NATS. This consumes unnecessary resources on the Kubernetes cluster.                                                                                                                                                                                     | By running the defined keptn tasks as short-lived workloads (Kubernetes Jobs), they just consume resources while the task is executed.                                                                                                                                                                                                                                                                                                              |
+| Whenever some new functionality should be triggered by keptn, a new keptn service needs to be written. It usually wraps the functionality of the wanted framework and executes it under the hood. The downside: The code of the new keptn service needs to be written and maintained. This effort scales linearly with the amount of services. | This service can execute any framework with just a few lines of yaml configuration. No need to write or maintain any new code.                                                                                                                                                                                                                                                                                                                      |
+| Keptn services usually filter for a static list of events the trigger the included functionality. This is not configurable. Whenever the service should listen to a new event, the code of the service needs to be changed.                                                                                                                    | The Job Executor Service provides the means to trigger a task execution for any keptn event. This is done by matching a jsonpath to the received event payload.                                                                                                                                                                                                                                                                                     |
+| Keptn services are usually opinionized on how your framework execution looks like. E.g. the locust service just executes three different (statically named) files depending on the test strategy in the shipyard. It is not possible to write tests consisting of multiply files.                                                              | This service provides the possibility to write any specified file from the keptn git repository into a mounted folder (`/keptn`) of the Kubernetes job. This is done by a initcontainer running before the specified image.                                                                                                                                                                                                                         |
+| Support for new functionality in keptn needs to be added to each keptn service individually. E.g. the new secret functionality needs to be included into all of the services running in the keptn execution plane. This slows down the availability of this new feature.                                                                       | The Job Executor Service is a single service which provides the means to run any workload orchestrated by keptn. So, it is possible to support new functionality of keptn just once in this service - and all workloads profit from it. E.g. in the case of the secret functionality, one just needs to support it in this service and suddenly all the triggered Kubernetes Jobs have the correct secrets attached to it as environment variables. |
 
 ## How?
 
@@ -488,6 +489,34 @@ tasks:
 If you are using the service in a remote control plane setup make sure the distributor is configured to forward all
 events used in the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment
 configuration to fit your needs.
+
+### Additional Event Data
+
+In some cases it is required that the events returned by the job executor service contains additional data, so that the
+following tasks defined in the keptn sequence can do their job. E.g. the lighthouse service needs a `start` and `end`
+timestamp to do an evaluation.
+
+The job executor service currently adds the following data to specific event types:
+
+* Incoming `sh.keptn.event.test.triggered`
+    * Outgoing `sh.keptn.event.test.finished` events contain a `start` and `end` timestamp, marking the beginning and
+      the end time of the job responsible for handling the event
+      ```json
+      {
+        "type": "sh.keptn.event.test.finished",
+        "data": {
+          "project": "sockshop",
+          "stage": "dev",
+          "service": "carts",
+          "result": "pass",
+          "status": "succeeded",
+          "test": {
+            "start": "2021-08-24T16:10:25+00:00",
+            "end": "2021-08-24T16:10:30+00:00"
+          }
+        }
+      }
+      ```
 
 ## How to validate a job configuration
 

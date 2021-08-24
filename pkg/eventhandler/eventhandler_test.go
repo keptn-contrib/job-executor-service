@@ -203,3 +203,56 @@ func TestStartK8sJobSilent(t *testing.T) {
 	err = fakeEventSender.AssertSentEventTypes([]string{})
 	assert.NilError(t, err)
 }
+
+func TestStartK8s_TestFinishedEvent(t *testing.T) {
+	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	assert.NilError(t, err)
+
+	eventData := &keptnv2.EventData{}
+	myKeptn.CloudEvent.DataAs(eventData)
+	eh := EventHandler{
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+	}
+	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+
+	action := config.Action{
+		Name: "Run locust",
+		Tasks: []config.Task{
+			{
+				Name: "Run locust healthy snack tests",
+			},
+		},
+	}
+
+	k8sMock := createK8sMock(t)
+	k8sMock.EXPECT().ConnectToCluster().Times(1)
+	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
+
+	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
+
+	err = fakeEventSender.AssertSentEventTypes([]string{
+		keptnv2.GetStartedEventType(keptnv2.TestTaskName),
+		keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
+	})
+	assert.NilError(t, err)
+
+	for _, cloudEvent := range fakeEventSender.SentEvents {
+		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
+			eventData := &keptnv2.TestFinishedEventData{}
+			cloudEvent.DataAs(eventData)
+
+			dateLayout := "2006-01-02T15:04:05+02:00"
+			_, err := time.Parse(dateLayout, eventData.Test.Start)
+			assert.NilError(t, err)
+			_, err = time.Parse(dateLayout, eventData.Test.End)
+			assert.NilError(t, err)
+		}
+	}
+}

@@ -8,7 +8,6 @@ import (
 	"log"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
@@ -130,7 +129,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		return
 	}
 
-	allJobLogs := []jobLogs{}
+	var allJobLogs []jobLogs
 	additionalFinishedEventData := dataForFinishedEvent{
 		start: time.Now(),
 	}
@@ -234,7 +233,7 @@ func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs [
 
 	var err error
 
-	if isTestEvent(myKeptn.CloudEvent.Type()) && !data.start.IsZero() && !data.end.IsZero() {
+	if isTestTriggeredEvent(myKeptn.CloudEvent.Type()) && !data.start.IsZero() && !data.end.IsZero() {
 		event := &keptnv2.TestFinishedEventData{
 			Test: keptnv2.TestFinishedDetails{
 				Start: data.start.Format(time.RFC3339),
@@ -253,6 +252,6 @@ func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs [
 	}
 }
 
-func isTestEvent(eventName string) bool {
-	return strings.HasPrefix(eventName, "sh.keptn.event.test.")
+func isTestTriggeredEvent(eventName string) bool {
+	return eventName == keptnv2.GetTriggeredEventType(keptnv2.TestTaskName)
 }
