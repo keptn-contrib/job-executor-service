@@ -13,6 +13,7 @@ import (
 	"gotest.tools/assert"
 	"io/ioutil"
 	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-sandbox/job-executor-service/pkg/k8sutils"
 	k8sutilsfake "keptn-sandbox/job-executor-service/pkg/k8sutils/fake"
 	"testing"
 	"time"
@@ -106,6 +107,8 @@ func TestInitializeEventPayloadAsInterface(t *testing.T) {
 }
 
 func TestStartK8s(t *testing.T) {
+	jobNamespace1 := "keptn"
+	jobNamespace2 := "keptn-2"
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	assert.NilError(t, err)
 
@@ -116,6 +119,9 @@ func TestStartK8s(t *testing.T) {
 		Keptn:       myKeptn,
 		EventData:   eventData,
 		Event:       *event,
+		JobSettings: k8sutils.JobSettings{
+			JobNamespace: jobNamespace1,
+		},
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
@@ -129,6 +135,7 @@ func TestStartK8s(t *testing.T) {
 			},
 			{
 				Name: "Run locust healthy snack tests",
+				Namespace:       jobNamespace2,
 			},
 		},
 	}
@@ -136,15 +143,15 @@ func TestStartK8s(t *testing.T) {
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Times(1)
+		gomock.Any(), jobNamespace1).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 202, 5).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5).Times(1)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1)).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2)).Times(1)
+		gomock.Any(), jobNamespace2).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 202, 5, jobNamespace1).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5, jobNamespace2).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), jobNamespace1).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
@@ -182,14 +189,14 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Times(1)
+		gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any()).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5).Times(2)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1)).Times(1)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2)).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1)).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2)).Times(1)
+		gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5, "").Times(2)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 

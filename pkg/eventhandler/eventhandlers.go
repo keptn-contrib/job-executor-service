@@ -131,7 +131,13 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
 
-		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData)
+		namespace := eh.JobSettings.JobNamespace
+
+		if len(task.Namespace) > 0 {
+			namespace = task.Namespace
+		}
+
+		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData, namespace)
 
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err)
@@ -142,7 +148,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		}
 
 		defer func() {
-			err = k8s.DeleteK8sJob(jobName)
+			err = k8s.DeleteK8sJob(jobName, namespace)
 			if err != nil {
 				log.Printf("Error while deleting job: %s\n", err.Error())
 			}
@@ -152,9 +158,9 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		if task.MaxPollDuration != nil {
 			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
 		}
-		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds)
+		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
 
-		logs, err := k8s.GetLogsOfPod(jobName)
+		logs, err := k8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {
 			log.Printf("Error while retrieving logs: %s\n", err.Error())
 		}

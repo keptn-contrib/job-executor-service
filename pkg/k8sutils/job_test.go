@@ -14,6 +14,7 @@ import (
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
+const testNamespace = "keptn"
 const testTriggeredEvent = `
 {
   "data": {
@@ -68,7 +69,7 @@ func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := k8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.ErrorContains(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
 }
 
@@ -114,7 +115,7 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := k8sImpl{}
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.NilError(t, err)
 
 	assert.Equal(t, jobEnv[0].Name, "HOST")
@@ -184,7 +185,7 @@ func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := k8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.ErrorContains(t, err, "unknown key undeploymentstrategy")
 }
 
@@ -209,17 +210,16 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 
 	k8s := k8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
-		namespace: "keptn",
 	}
 
 	secretName := "locust-sockshop-dev-carts"
 	key1, value1 := "key1", "value1"
 	key2, value2 := "key2", "value2"
 	secretData := map[string][]byte{key1: []byte(value1), key2: []byte(value2)}
-	k8sSecret := createK8sSecretObj(secretName, k8s.namespace, secretData)
-	k8s.clientset.CoreV1().Secrets(k8s.namespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
+	k8sSecret := createK8sSecretObj(secretName, testNamespace, secretData)
+	k8s.clientset.CoreV1().Secrets(testNamespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.NilError(t, err)
 
 	// env from secrets can in in any order, sort them
@@ -264,9 +264,8 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 
 	k8s := k8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
-		namespace: "keptn",
 	}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.ErrorContains(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
 }
 
@@ -294,10 +293,9 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 
 	k8s := k8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
-		namespace: "keptn",
 	}
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface)
+	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.NilError(t, err)
 
 	assert.Assert(t, len(jobEnv) == 4, "expected `jobEnv` to be 4, but was %d", len(jobEnv))
@@ -307,7 +305,6 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 
 func TestSetWorkingDir(t *testing.T) {
 	jobName := "test-job-1"
-	namespace := "keptn"
 	workingDir := "/test/dir"
 
 	eventData := keptnv2.EventData{
@@ -323,7 +320,6 @@ func TestSetWorkingDir(t *testing.T) {
 
 	k8s := k8sImpl{
 		clientset: k8sClientSet,
-		namespace: "keptn",
 	}
 
 	err := k8s.CreateK8sJob(jobName, &config.Action{
@@ -334,16 +330,16 @@ func TestSetWorkingDir(t *testing.T) {
 		Cmd:        []string{"ls"},
 		WorkingDir: workingDir,
 	}, &eventData, JobSettings{
-		JobNamespace: namespace,
+		JobNamespace: testNamespace,
 		DefaultResourceRequirements: &corev1.ResourceRequirements{
 			Limits:   make(corev1.ResourceList),
 			Requests: make(corev1.ResourceList),
 		},
-	}, "")
+	}, "", testNamespace)
 
 	assert.NilError(t, err)
 
-	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 	assert.NilError(t, err)
 
 	var container *corev1.Container
@@ -359,6 +355,88 @@ func TestSetWorkingDir(t *testing.T) {
 	assert.Assert(t, container != nil, "No container called `%s` found", jobName)
 	assert.Equal(t, container.WorkingDir, workingDir)
 
+}
+
+func TestSetCustomNamespace(t *testing.T) {
+	jobName := "test-job-1"
+	namespace := "my-custom-namespace"
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	k8s := k8sImpl{
+		clientset: k8sClientSet,
+	}
+
+	err := k8s.CreateK8sJob(jobName, &config.Action{
+		Name: jobName,
+	}, config.Task{
+		Name:       jobName,
+		Image:      "alpine",
+		Cmd:        []string{"ls"},
+	}, &eventData, JobSettings{
+		JobNamespace: namespace,
+		DefaultResourceRequirements: &corev1.ResourceRequirements{
+			Limits:   make(corev1.ResourceList),
+			Requests: make(corev1.ResourceList),
+		},
+	}, "", namespace)
+
+	assert.NilError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	assert.NilError(t, err)
+
+	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
+}
+
+func TestSetEmptyNamespace(t *testing.T) {
+	jobName := "test-job-1"
+	namespace := ""
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	k8s := k8sImpl{
+		clientset: k8sClientSet,
+	}
+
+	err := k8s.CreateK8sJob(jobName, &config.Action{
+		Name: jobName,
+	}, config.Task{
+		Name:       jobName,
+		Image:      "alpine",
+		Cmd:        []string{"ls"},
+	}, &eventData, JobSettings{
+		JobNamespace: namespace,
+		DefaultResourceRequirements: &corev1.ResourceRequirements{
+			Limits:   make(corev1.ResourceList),
+			Requests: make(corev1.ResourceList),
+		},
+	}, "", namespace)
+
+	assert.NilError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	assert.NilError(t, err)
+
+	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
 }
 
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {

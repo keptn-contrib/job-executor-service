@@ -47,6 +47,7 @@ type Task struct {
 	Resources       *Resources `yaml:"resources"`
 	WorkingDir      string     `yaml:"workingDir"`
 	MaxPollDuration *int       `yaml:"maxPollDuration"`
+	Namespace       string     `yaml:"namespace"`
 }
 
 // Env value from the event which will be added as env to the job

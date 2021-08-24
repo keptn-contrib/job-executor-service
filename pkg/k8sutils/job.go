@@ -36,7 +36,7 @@ type JobSettings struct {
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-	jobSettings JobSettings, jsonEventData interface{}) error {
+	jobSettings JobSettings, jsonEventData interface{}, namespace string) error {
 
 	var backOffLimit int32 = 0
 
@@ -73,7 +73,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		return &s
 	}
 
-	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData)
+	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData, namespace)
 	if err != nil {
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
@@ -81,7 +81,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
-			Namespace: k8s.namespace,
+			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
@@ -169,7 +169,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		},
 	}
 
-	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
+	jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
 	_, err = jobs.Create(context.TODO(), jobSpec, metav1.CreateOptions{})
 
@@ -180,8 +180,8 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 	return nil
 }
 
-func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int) error {
-	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
+func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string) error {
+		jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
 	currentPollCount := 0
 
@@ -219,13 +219,13 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 }
 
 // DeleteK8sJob delete a k8s job in the given namespace
-func (k8s *k8sImpl) DeleteK8sJob(jobName string) error {
+func (k8s *k8sImpl) DeleteK8sJob(jobName string, namespace string) error {
 
-	jobs := k8s.clientset.BatchV1().Jobs(k8s.namespace)
+	jobs := k8s.clientset.BatchV1().Jobs(namespace)
 	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
 
-func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}) ([]v1.EnvVar, error) {
+func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}, namespace string) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
 	for _, env := range task.Env {
@@ -236,7 +236,7 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 		case envValueFromEvent:
 			generatedEnv, err = generateEnvFromEvent(env, jsonEventData)
 		case envValueFromSecret:
-			generatedEnv, err = k8s.generateEnvFromSecret(env)
+			generatedEnv, err = k8s.generateEnvFromSecret(env, namespace)
 		case envValueFromString:
 			generatedEnv = generateEnvFromString(env)
 		default:
@@ -311,11 +311,11 @@ func generateEnvFromString(env config.Env) []v1.EnvVar {
 	}
 }
 
-func (k8s *k8sImpl) generateEnvFromSecret(env config.Env) ([]v1.EnvVar, error) {
+func (k8s *k8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v1.EnvVar, error) {
 
 	var generatedEnv []v1.EnvVar
 
-	secret, err := k8s.clientset.CoreV1().Secrets(k8s.namespace).Get(context.TODO(), env.Name, metav1.GetOptions{})
+	secret, err := k8s.clientset.CoreV1().Secrets(namespace).Get(context.TODO(), env.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not add env with name %v, valueFrom %v: %v", env.Name, env.ValueFrom, err)
 	}

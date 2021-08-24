@@ -9,13 +9,13 @@ import (
 )
 
 // GetLogsOfPod returns the k8s logs of a job in a namespace
-func (k8s *k8sImpl) GetLogsOfPod(jobName string) (string, error) {
+func (k8s *k8sImpl) GetLogsOfPod(jobName string, namespace string) (string, error) {
 
 	// TODO include the logs of the initcontainer
 
 	podLogOpts := v1.PodLogOptions{}
 
-	list, err := k8s.clientset.CoreV1().Pods(k8s.namespace).List(context.TODO(), metav1.ListOptions{
+	list, err := k8s.clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "job-name=" + jobName,
 	})
 	if err != nil {
@@ -26,7 +26,7 @@ func (k8s *k8sImpl) GetLogsOfPod(jobName string) (string, error) {
 
 	for _, pod := range list.Items {
 
-		req := k8s.clientset.CoreV1().Pods(k8s.namespace).GetLogs(pod.Name, &podLogOpts)
+		req := k8s.clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &podLogOpts)
 		podLogs, err := req.Stream(context.TODO())
 		if err != nil {
 			return "", err

@@ -10,7 +10,6 @@ import (
 // k8sImpl is used to interact with kubernetes jobs
 type k8sImpl struct {
 	clientset kubernetes.Interface
-	namespace string
 }
 
 //go:generate mockgen -source=connect.go -destination=fake/connect_mock.go -package=fake Interface
@@ -19,15 +18,15 @@ type k8sImpl struct {
 type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-		jobSettings JobSettings, jsonEventData interface{}) error
-	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int) error
-	DeleteK8sJob(jobName string) error
-	GetLogsOfPod(jobName string) (string, error)
+		jobSettings JobSettings, jsonEventData interface{}, namespace string) error
+	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int, namespace string) error
+	DeleteK8sJob(jobName string, namespace string) error
+	GetLogsOfPod(jobName string, namespace string) (string, error)
 }
 
 // NewK8s creates and returns new K8s
 func NewK8s(namespace string) K8s {
-	return &k8sImpl{namespace: namespace}
+	return &k8sImpl{}
 }
 
 // ConnectToCluster returns the k8s Clientset
