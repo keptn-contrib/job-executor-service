@@ -12,11 +12,12 @@
         - [Kubernetes Job Environment Variables](#kubernetes-job-environment-variables)
             - [From Events](#from-events)
             - [From Kubernetes Secrets](#from-kubernetes-secrets)
-            - [From string literal](#from-string-literal)
+            - [From String Literal](#from-string-literal)
         - [File Handling](#file-handling)
         - [Silent mode](#silent-mode)
         - [Resource quotas for jobs](#resource-quotas-for-jobs)
         - [Poll duration for jobs](#poll-duration-for-jobs)
+        - [Job namespace](#job-namespace)
         - [Remote Control Plane](#remote-control-plane)
     - [How to validate a job configuration](#how-to-validate-a-job-configuration)
     - [Endless Possibilities](#endless-possibilities)
@@ -73,7 +74,7 @@ actions:
           property: "$.data.test.teststrategy"
           match: "load"
     tasks:
-      - name: "Run locust smoke tests"
+      - name: "Run locust tests"
         files:
           - locust/basic.py
           - locust/import.py
@@ -172,7 +173,7 @@ The configuration contains the following section:
 
 ```yaml
 tasks:
-  - name: "Run locust smoke tests"
+  - name: "Run locust tests"
     files:
       - locust/basic.py
       - locust/import.py
@@ -259,7 +260,8 @@ In the above example the json path for `HOST` would resolve into `https://keptn.
 }
 ```
 
-The Job executor service also allows you to format the event data in different formats including `JSON` and `YAML` using the `as` keyword. This can be useful when working with the whole event or an object with multiple fields.
+The Job executor service also allows you to format the event data in different formats including `JSON` and `YAML` using
+the `as` keyword. This can be useful when working with the whole event or an object with multiple fields.
 
 ```yaml
 cmd:
@@ -284,6 +286,8 @@ If the `as` keyword is omitted the job executor defaults to `string` for a singl
 
 The following configuration looks up a kubernetes secret with the name `locust-secret` and all key/value pairs of the
 secret will be available as separate environment variables in the job.
+
+The kubernetes secret is always looked up in the [namespace](#job-namespace) the respective task runs in.
 
 ```yaml
 cmd:
@@ -319,7 +323,7 @@ metadata:
   namespace: keptn
 ```
 
-#### From string literal
+#### From String Literal
 
 It sometimes makes sense to provide a static string value as an environment variable. This can be done by specifying
 a `string` as the `valueFrom` value. The value of the environment variable can then be specified by the `value`
@@ -423,7 +427,7 @@ task level:
 
 ```yaml
 tasks:
-  - name: "Run locust smoke tests"
+  - name: "Run locust tests"
     ...
     resources:
       limits:
@@ -439,7 +443,7 @@ values, as long as the configuration makes sense for kubernetes. E.g. the follow
 
 ```yaml
 tasks:
-  - name: "Run locust smoke tests"
+  - name: "Run locust tests"
     ...
     resources:
       limits:
@@ -459,9 +463,24 @@ value can be overwritten for each task and is declared as seconds. The setting b
 
 ```yaml
 tasks:
-  - name: "Run locust smoke tests"
+  - name: "Run locust tests"
     ...
     maxPollDuration: 1200
+```
+
+### Job namespace
+
+By default the jobs run in the `keptn` namespace. This can be configured with the `JOB_NAMESPACE` environment variable.
+If you want to run your jobs in a different namespace than the job executor runs in, make sure a kubernetes role is
+configured so that the job executor can deploy jobs to it.
+
+In addition, for each task the default namespace can be overwritten in the following way:
+
+```yaml
+tasks:
+  - name: "Run locust tests"
+    ...
+    namespace: carts
 ```
 
 ### Remote Control Plane
