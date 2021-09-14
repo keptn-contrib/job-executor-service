@@ -11,8 +11,15 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+
       - name: Run make
         run: make build-lint
+
+      - name: Package helm
+        uses: WyriHaximus/github-action-helm3@v2
+        with:
+          exec: helm package helm
+
       - name: Upload Linux
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -20,8 +27,9 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-linux-amd64
-          asset_name: job-lint-linux-amd64
+          asset_name: job-lint-linux-amd64-${{ env.VERSION }}
           asset_content_type: binary/octet-stream
+
       - name: Upload Windows
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -29,8 +37,9 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-windows-amd64
-          asset_name: job-lint-windows-amd64
+          asset_name: job-lint-windows-amd64-${{ env.VERSION }}
           asset_content_type: binary/octet-stream
+
       - name: Upload Darwin
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -38,5 +47,15 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-darwin-amd64
-          asset_name: job-lint-darwin-amd64
+          asset_name: job-lint-darwin-amd64-${{ env.VERSION }}
+          asset_content_type: binary/octet-stream
+
+      - name: Upload Helm Chart
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./job-executor-service-${{ env.VERSION }}.tgz
+          asset_name: job-executor-service-${{ env.VERSION }}.tgz
           asset_content_type: binary/octet-stream
