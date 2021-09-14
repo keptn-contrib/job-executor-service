@@ -15,11 +15,11 @@ spec:
       labels:
         run: job-executor-service
         app.kubernetes.io/name: job-executor-service
-        app.kubernetes.io/version: 0.1.3
+        app.kubernetes.io/version: 0.1.4
     spec:
       containers:
         - name: job-executor-service
-          image: keptnsandbox/job-executor-service:0.1.3
+          image: keptnsandbox/job-executor-service:0.1.4
           ports:
             - containerPort: 8080
           resources:
@@ -37,7 +37,7 @@ spec:
             - name: JOB_NAMESPACE
               value: 'keptn'
             - name: INIT_CONTAINER_IMAGE
-              value: 'keptnsandbox/job-executor-service-initcontainer:0.1.3'
+              value: 'keptnsandbox/job-executor-service-initcontainer:0.1.4'
             - name: DEFAULT_RESOURCE_LIMITS_CPU
               value: "1"
             - name: DEFAULT_RESOURCE_LIMITS_MEMORY
@@ -46,8 +46,10 @@ spec:
               value: "50m"
             - name: DEFAULT_RESOURCE_REQUESTS_MEMORY
               value: "128Mi"
+            - name: ALWAYS_SEND_FINISHED_EVENT
+              value: false
         - name: distributor
-          image: keptn/distributor:0.8.4
+          image: keptn/distributor:0.9.0
           livenessProbe:
             httpGet:
               path: /health

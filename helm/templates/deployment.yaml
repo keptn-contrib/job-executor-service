@@ -82,6 +82,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: default_resource_requests_memory
+          - name: ALWAYS_SEND_FINISHED_EVENT
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: always_send_finished_event
           livenessProbe:
             httpGet:
               path: /health
