@@ -46,8 +46,10 @@ spec:
               value: "50m"
             - name: DEFAULT_RESOURCE_REQUESTS_MEMORY
               value: "128Mi"
+            - name: ALWAYS_SEND_FINISHED_EVENT
+              value: false
         - name: distributor
-          image: keptn/distributor:0.8.7
+          image: keptn/distributor:0.9.0
           livenessProbe:
             httpGet:
               path: /health

@@ -15,11 +15,12 @@
             - [From String Literal](#from-string-literal)
         - [File Handling](#file-handling)
         - [Silent mode](#silent-mode)
-        - [Resource quotas for jobs](#resource-quotas-for-jobs)
-        - [Poll duration for jobs](#poll-duration-for-jobs)
+        - [Resource quotas](#resource-quotas)
+        - [Poll duration](#poll-duration)
         - [Job namespace](#job-namespace)
-        - [Remote Control Plane](#remote-control-plane)
+        - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
         - [Additional Event Data](#additional-event-data)
+        - [Remote Control Plane](#remote-control-plane)
     - [How to validate a job configuration](#how-to-validate-a-job-configuration)
     - [Endless Possibilities](#endless-possibilities)
     - [Credits](#credits)
@@ -398,7 +399,7 @@ actions:
     silent: true
 ```
 
-### Resource quotas for jobs
+### Resource quotas
 
 The `initcontainer` and the `job` container will use the default resource quotas defined as environment variables. They
 can be set in [`deploy/service.yaml`](deploy/service.yaml):
@@ -456,7 +457,7 @@ tasks:
 would result in resource quotas for `cpu`, but in none for `memory`. If the `resources` block is present
 (even if empty), all default resource quotas are ignored for this task.
 
-### Poll duration for jobs
+### Poll duration
 
 The default settings allow a job to run for 5 min until the job executor service cancels the task execution. The default
 value can be overwritten for each task and is declared as seconds. The setting below would result in a poll duration of
@@ -484,11 +485,15 @@ tasks:
     namespace: carts
 ```
 
-### Remote Control Plane
+### Send start/finished event if the job config.yaml can't be found
 
-If you are using the service in a remote control plane setup make sure the distributor is configured to forward all
-events used in the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment
-configuration to fit your needs.
+By default, the job executor service does not send any started/finished events if can't find its `config.yaml` in the
+keptn repository. In the case it is desired that the job executor service sends a start/finished event with the
+respective error, just set the following environment variable on the pod to true:
+
+```yaml
+ALWAYS_SEND_FINISHED_EVENT = true
+```
 
 ### Additional Event Data
 
@@ -517,6 +522,12 @@ The job executor service currently adds the following data to specific event typ
         }
       }
       ```
+
+### Remote Control Plane
+
+If you are using the service in a remote control plane setup make sure the distributor is configured to forward all
+events used in the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment
+configuration to fit your needs.
 
 ## How to validate a job configuration
 
@@ -550,7 +561,7 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 |     0.8.3     |                               keptnsandbox/job-executor-service:0.1.1                                |       -        |
 |     0.8.4     |                               keptnsandbox/job-executor-service:0.1.2                                |       v1       |
 |     0.8.6     |                               keptnsandbox/job-executor-service:0.1.3                                |       v2       |
-|     0.8.7     |                               keptnsandbox/job-executor-service:0.1.4                                |       v2       |
+|     0.9.0     |                               keptnsandbox/job-executor-service:0.1.4                                |       v2       |
 
 ## Installation
 
@@ -666,7 +677,7 @@ To make use of the built-in automation using GH Actions for releasing a new vers
 * update the compatibility matrix,
 * check the output of GH Actions builds for the release branch,
 * verify that your image was built and pushed to DockerHub with the right tags,
-* update the image tags for `job-executor-service` and `job-executor-service-initcontainer`
+* update the image tags for `job-executor-service`, `job-executor-service-initcontainer` and `distributor`
   in [`deploy/service.yaml`](deploy/service.yaml), [`helm/Chart.yaml`](helm/Chart.yaml) and
   the `app.kubernetes.io/version` in [`deploy/service.yaml`](deploy/service.yaml)
 * test your service against a working Keptn installation.
