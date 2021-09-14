@@ -1,0 +1,20 @@
+{
+  "type": "sh.keptn.event.test.triggered",
+  "specversion": "1.0",
+  "source": "test-events",
+  "id": "f2b878d3-03c0-4e8f-bc3f-454bc1b3d79b",
+  "time": "2021-08-24T08:01:55.484Z",
+  "contenttype": "application/json",
+  "shkeptncontext": "08735340-6f9e-4b32-97ff-3b6c292bc50i",
+  "shkeptnspecversion": "0.2.3",
+  "data": {
+    "project": "sockshop",
+    "stage": "dev",
+    "service": "carts",
+    "result": "pass",
+    "status": "succeeded",
+    "test": {
+      "teststrategy": "health"
+    }
+  }
+}
