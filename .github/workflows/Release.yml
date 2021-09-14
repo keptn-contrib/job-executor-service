@@ -27,7 +27,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-linux-amd64
-          asset_name: job-lint-linux-amd64-${{ env.VERSION }}
+          asset_name: job-lint-linux-amd64-${{ github.event.release.tag_name }}
           asset_content_type: binary/octet-stream
 
       - name: Upload Windows
@@ -37,7 +37,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-windows-amd64
-          asset_name: job-lint-windows-amd64-${{ env.VERSION }}
+          asset_name: job-lint-windows-amd64-${{ github.event.release.tag_name }}
           asset_content_type: binary/octet-stream
 
       - name: Upload Darwin
@@ -47,7 +47,7 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./bin/job-lint-darwin-amd64
-          asset_name: job-lint-darwin-amd64-${{ env.VERSION }}
+          asset_name: job-lint-darwin-amd64-${{ github.event.release.tag_name }}
           asset_content_type: binary/octet-stream
 
       - name: Upload Helm Chart
@@ -56,6 +56,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./job-executor-service-${{ env.VERSION }}.tgz
-          asset_name: job-executor-service-${{ env.VERSION }}.tgz
+          asset_path: ./job-executor-service-${{ github.event.release.tag_name }}.tgz
+          asset_name: job-executor-service-${{ github.event.release.tag_name }}.tgz
           asset_content_type: binary/octet-stream
