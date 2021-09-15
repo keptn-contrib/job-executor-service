@@ -97,6 +97,12 @@ actions:
             valueFrom: event
 ```
 
+The easiest way to add the `config.yaml` to the keptn git repository is to use the keptn cli:
+
+```shell
+keptn add-resource --project=myproject --service=myservice --stage=mystage --resource=config.yaml --resourceUri=job/config.yaml
+```
+
 ### Specifying the working directory
 
 Since all files are hosted by default under `/keptn` and some tools only operate on the current working directory, it is
