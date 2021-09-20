@@ -21,7 +21,7 @@ The following table lists the configurable parameters of the job-executor-servic
 | `distributor.image.repository` | Container image name | `"docker.io/keptn/distributor"` |
 | `distributor.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `distributor.image.tag` | Container tag | `""` |
-| `remoteControlPlane.enabled` | Enables remote execution plane mode | `false` |
+| `remoteControlPlane.enabled` | Enables remote execution plane mode | `true` |
 | `remoteControlPlane.api.protocol` | Used protocol (http, https | `"https"` |
 | `remoteControlPlane.api.hostname` | Hostname of the control plane cluster (and port) | `""` |
 | `remoteControlPlane.api.apiValidateTls` | Defines if the control plane certificate should be validated | `true` |
