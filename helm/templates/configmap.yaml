@@ -9,4 +9,4 @@ data:
   default_resource_limits_memory: "512Mi"
   default_resource_requests_cpu: "50m"
   default_resource_requests_memory: "128Mi"
-  always_send_finished_event: false
+  always_send_finished_event: "false"
