@@ -21,6 +21,6 @@ require (
 	gotest.tools v2.2.0+incompatible
 	honnef.co/go/tools v0.1.3 // indirect
 	k8s.io/api v0.22.1
-	k8s.io/apimachinery v0.22.1
+	k8s.io/apimachinery v0.22.3
 	k8s.io/client-go v0.22.1
 )
