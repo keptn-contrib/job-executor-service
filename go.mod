@@ -1,4 +1,4 @@
-module keptn-sandbox/job-executor-service
+module keptn-contrib/job-executor-service
 
 go 1.16
 

@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"errors"
-	v1 "k8s.io/api/core/v1"
-	"keptn-sandbox/job-executor-service/pkg/eventhandler"
-	"keptn-sandbox/job-executor-service/pkg/k8sutils"
+	"keptn-contrib/job-executor-service/pkg/eventhandler"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	"log"
 	"os"
 	"strings"
+
+	v1 "k8s.io/api/core/v1"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	"github.com/kelseyhightower/envconfig"

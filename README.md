@@ -1,7 +1,7 @@
 # Job Executor Service
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-sandbox/job-executor-service)
-[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-sandbox/job-executor-service)](https://goreportcard.com/report/github.com/keptn-sandbox/job-executor-service)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/job-executor-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/job-executor-service)](https://goreportcard.com/report/github.com/keptn-contrib/job-executor-service)
 
 - [Job Executor Service](#job-executor-service)
     - [Why?](#why)
@@ -561,13 +561,13 @@ The credits of this service heavily go to @thschue and @yeahservice who original
 
 ## Compatibility Matrix
 
-| Keptn Version | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptnsandbox/job-executor-service/tags) | Config version |
+| Keptn Version | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptncontrib/job-executor-service/tags) | Config version |
 | :-----------: | :--------------------------------------------------------------------------------------------------: | :------------: |
-|     0.8.3     |                               keptnsandbox/job-executor-service:0.1.0                                |       -        |
-|     0.8.3     |                               keptnsandbox/job-executor-service:0.1.1                                |       -        |
-|     0.8.4     |                               keptnsandbox/job-executor-service:0.1.2                                |       v1       |
-|     0.8.6     |                               keptnsandbox/job-executor-service:0.1.3                                |       v2       |
-|     0.9.0     |                               keptnsandbox/job-executor-service:0.1.4                                |       v2       |
+|     0.8.3     |                               keptncontrib/job-executor-service:0.1.0                                |       -        |
+|     0.8.3     |                               keptncontrib/job-executor-service:0.1.1                                |       -        |
+|     0.8.4     |                               keptncontrib/job-executor-service:0.1.2                                |       v1       |
+|     0.8.6     |                               keptncontrib/job-executor-service:0.1.3                                |       v2       |
+|     0.9.0     |                               keptncontrib/job-executor-service:0.1.4                                |       v2       |
 
 ## Installation
 
@@ -596,7 +596,7 @@ Adapt and use the following command in case you want to up- or downgrade your in
 the `$VERSION` placeholder):
 
 ```console
-kubectl -n keptn set image deployment/job-executor-service job-executor-service=keptnsandbox/job-executor-service:$VERSION --record
+kubectl -n keptn set image deployment/job-executor-service job-executor-service=keptncontrib/job-executor-service:$VERSION --record
 ```
 
 ### Uninstall
@@ -626,10 +626,10 @@ the [Golang community](https://github.com/golang/go/wiki/CodeReviewComments).
 
 * Build the binary: `go build -ldflags '-linkmode=external' -v -o job-executor-service`
 * Run tests: `go test -race -v ./...`
-* Build the docker image: `docker build . -t keptnsandbox/job-executor-service:dev` (Note: Ensure that you use the
+* Build the docker image: `docker build . -t keptncontrib/job-executor-service:dev` (Note: Ensure that you use the
   correct DockerHub account/organization)
-* Run the docker image locally: `docker run --rm -it -p 8080:8080 keptnsandbox/job-executor-service:dev`
-* Push the docker image to DockerHub: `docker push keptnsandbox/job-executor-service:dev` (Note: Ensure that you use the
+* Run the docker image locally: `docker run --rm -it -p 8080:8080 keptncontrib/job-executor-service:dev`
+* Push the docker image to DockerHub: `docker push keptncontrib/job-executor-service:dev` (Note: Ensure that you use the
   correct DockerHub account/organization)
 * Deploy the service using `kubectl`: `kubectl apply -f deploy/`
 * Delete/undeploy the service using `kubectl`: `kubectl delete -f deploy/`
@@ -666,7 +666,7 @@ You can find the details in [.github/workflows/tests.yml](.github/workflows/test
 This repo uses GH Actions and Workflows to test the code and automatically build docker images.
 
 Docker Images are automatically pushed based on the configuration done in [.ci_env](.ci_env) and the
-two [GitHub Secrets](https://github.com/keptn-sandbox/job-executor-service/settings/secrets/actions)
+two [GitHub Secrets](https://github.com/keptn-contrib/job-executor-service/settings/secrets/actions)
 
 * `REGISTRY_USER` - your DockerHub username
 * `REGISTRY_PASSWORD` - a DockerHub [access token](https://hub.docker.com/settings/security) (alternatively, your
@@ -693,7 +693,7 @@ If any problems occur, fix them in the release branch and test them again.
 Once you have confirmed that everything works and your version is ready to go, you should
 
 * create a new release on the release branch using
-  the [GitHub releases page](https://github.com/keptn-sandbox/job-executor-service/releases), and
+  the [GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases), and
 * merge any changes from the release branch back to the master branch.
 
 ## License

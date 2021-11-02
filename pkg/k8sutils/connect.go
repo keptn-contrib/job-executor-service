@@ -1,10 +1,11 @@
 package k8sutils
 
 import (
+	"keptn-contrib/job-executor-service/pkg/config"
+
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"k8s.io/client-go/kubernetes"
-	"keptn-sandbox/job-executor-service/pkg/config"
 )
 
 // k8sImpl is used to interact with kubernetes jobs

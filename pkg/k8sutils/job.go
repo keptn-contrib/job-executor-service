@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/PaesslerAG/jsonpath"
-	"gopkg.in/yaml.v2"
-	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PaesslerAG/jsonpath"
+	"gopkg.in/yaml.v2"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
@@ -181,7 +182,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 }
 
 func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string) error {
-		jobs := k8s.clientset.BatchV1().Jobs(namespace)
+	jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
 	currentPollCount := 0
 

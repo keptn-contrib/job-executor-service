@@ -3,8 +3,8 @@ package eventhandler
 import (
 	"encoding/json"
 	"fmt"
-	"keptn-sandbox/job-executor-service/pkg/config"
-	"keptn-sandbox/job-executor-service/pkg/k8sutils"
+	"keptn-contrib/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	"log"
 	"math"
 	"strconv"
@@ -35,7 +35,7 @@ type jobLogs struct {
 
 type dataForFinishedEvent struct {
 	start time.Time
-	end time.Time
+	end   time.Time
 }
 
 // HandleEvent handles all events in a generic manner

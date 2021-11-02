@@ -2,11 +2,12 @@ package file
 
 import (
 	"fmt"
-	"github.com/spf13/afero"
-	"keptn-sandbox/job-executor-service/pkg/config"
-	"keptn-sandbox/job-executor-service/pkg/keptn"
+	"keptn-contrib/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/keptn"
 	"log"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
 
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn

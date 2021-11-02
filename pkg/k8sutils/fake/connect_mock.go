@@ -5,8 +5,8 @@
 package fake
 
 import (
-	config "keptn-sandbox/job-executor-service/pkg/config"
-	k8sutils "keptn-sandbox/job-executor-service/pkg/k8sutils"
+	config "keptn-contrib/job-executor-service/pkg/config"
+	k8sutils "keptn-contrib/job-executor-service/pkg/k8sutils"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"

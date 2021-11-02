@@ -1,6 +1,6 @@
 jobexecutorservice:
   image:
-    repository: docker.io/keptnsandbox/job-executor-service # Container Image Name
+    repository: docker.io/keptncontrib/job-executor-service # Container Image Name
     pullPolicy: Always                       # Kubernetes Image Pull Policy
     tag: ""                                  # Container Tag
   service:
@@ -8,7 +8,7 @@ jobexecutorservice:
 
 jobexecutorserviceinitcontainer:
   image:
-    repository: docker.io/keptnsandbox/job-executor-service-initcontainer # Container Image Name
+    repository: docker.io/keptncontrib/job-executor-service-initcontainer # Container Image Name
     tag: ""                                                               # Container Tag
 
 distributor:

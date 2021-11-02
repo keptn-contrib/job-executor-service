@@ -9,11 +9,11 @@ build-lint:
 	GOOS=darwin GOARCH=amd64 go build -o bin/job-lint-darwin-amd64 ./cmd/job-executor-service-lint
 
 build-docker-service:
-	@echo "Building docker image keptnsandbox/job-executor-service:$(TAG)"
-	docker build . -f Dockerfile -t keptnsandbox/job-executor-service:$(TAG)
+	@echo "Building docker image keptncontrib/job-executor-service:$(TAG)"
+	docker build . -f Dockerfile -t keptncontrib/job-executor-service:$(TAG)
 
 build-docker-initcontainer:
-	@echo "Building docker image keptnsandbox/job-executor-service-initcontainer:$(TAG)"
-	docker build . -f initcontainer.Dockerfile -t keptnsandbox/job-executor-service-initcontainer:$(TAG)
+	@echo "Building docker image keptncontrib/job-executor-service-initcontainer:$(TAG)"
+	docker build . -f initcontainer.Dockerfile -t keptncontrib/job-executor-service-initcontainer:$(TAG)
 
 build-docker: build-docker-service build-docker-initcontainer
