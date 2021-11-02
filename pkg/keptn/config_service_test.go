@@ -1,13 +1,14 @@
 package keptn
 
 import (
+	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
+	"net/url"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/spf13/afero"
 	"gotest.tools/assert"
-	keptnfake "keptn-sandbox/job-executor-service/pkg/keptn/fake"
-	"net/url"
-	"testing"
 )
 
 func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockResourceHandler {

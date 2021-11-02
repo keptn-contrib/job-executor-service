@@ -2,7 +2,7 @@ package main
 
 import (
 	"io/ioutil"
-	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"log"
 	"os"
 )

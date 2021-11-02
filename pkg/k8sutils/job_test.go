@@ -3,7 +3,7 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
-	"keptn-sandbox/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"strings"
 	"testing"
 
@@ -379,9 +379,9 @@ func TestSetCustomNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(jobName, &config.Action{
 		Name: jobName,
 	}, config.Task{
-		Name:       jobName,
-		Image:      "alpine",
-		Cmd:        []string{"ls"},
+		Name:  jobName,
+		Image: "alpine",
+		Cmd:   []string{"ls"},
 	}, &eventData, JobSettings{
 		JobNamespace: namespace,
 		DefaultResourceRequirements: &corev1.ResourceRequirements{
@@ -420,9 +420,9 @@ func TestSetEmptyNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(jobName, &config.Action{
 		Name: jobName,
 	}, config.Task{
-		Name:       jobName,
-		Image:      "alpine",
-		Cmd:        []string{"ls"},
+		Name:  jobName,
+		Image: "alpine",
+		Cmd:   []string{"ls"},
 	}, &eventData, JobSettings{
 		JobNamespace: namespace,
 		DefaultResourceRequirements: &corev1.ResourceRequirements{

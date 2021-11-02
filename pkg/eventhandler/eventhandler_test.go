@@ -3,6 +3,13 @@ package eventhandler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"keptn-contrib/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
+	k8sutilsfake "keptn-contrib/job-executor-service/pkg/k8sutils/fake"
+	"testing"
+	"time"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding/spec"
 	"github.com/cloudevents/sdk-go/v2/event"
@@ -11,12 +18,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
 	"gotest.tools/assert"
-	"io/ioutil"
-	"keptn-sandbox/job-executor-service/pkg/config"
-	"keptn-sandbox/job-executor-service/pkg/k8sutils"
-	k8sutilsfake "keptn-sandbox/job-executor-service/pkg/k8sutils/fake"
-	"testing"
-	"time"
 )
 
 const testEvent = `
@@ -134,8 +135,8 @@ func TestStartK8s(t *testing.T) {
 				MaxPollDuration: &maxPollDuration,
 			},
 			{
-				Name: "Run locust healthy snack tests",
-				Namespace:       jobNamespace2,
+				Name:      "Run locust healthy snack tests",
+				Namespace: jobNamespace2,
 			},
 		},
 	}

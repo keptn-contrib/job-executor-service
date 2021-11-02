@@ -1,8 +1,8 @@
 package main
 
 import (
-	"keptn-sandbox/job-executor-service/pkg/file"
-	"keptn-sandbox/job-executor-service/pkg/keptn"
+	"keptn-contrib/job-executor-service/pkg/file"
+	"keptn-contrib/job-executor-service/pkg/keptn"
 	"log"
 	"net/url"
 	"os"

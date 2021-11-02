@@ -2,12 +2,13 @@ package file
 
 import (
 	"errors"
+	"keptn-contrib/job-executor-service/pkg/keptn"
+	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/spf13/afero"
 	"gotest.tools/assert"
-	"keptn-sandbox/job-executor-service/pkg/keptn"
-	keptnfake "keptn-sandbox/job-executor-service/pkg/keptn/fake"
-	"testing"
 )
 
 const simpleConfig = `

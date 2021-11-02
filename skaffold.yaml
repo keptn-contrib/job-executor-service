@@ -2,7 +2,7 @@ apiVersion: skaffold/v1beta13
 kind: Config
 build:
   artifacts:
-    - image: keptnsandbox/job-executor-service
+    - image: keptncontrib/job-executor-service
       docker:
         dockerfile: Dockerfile
         buildArgs:
