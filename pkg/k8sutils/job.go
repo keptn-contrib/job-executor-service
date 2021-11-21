@@ -87,6 +87,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
+
 					SecurityContext: &v1.PodSecurityContext{
 						RunAsUser:    convert(1000),
 						RunAsGroup:   convert(2000),
@@ -167,6 +168,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 				},
 			},
 			BackoffLimit: &backOffLimit,
+			TTLSecondsAfterFinished: task.TTLSecondsAfterFinished,
 		},
 	}
 
