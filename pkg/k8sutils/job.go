@@ -81,7 +81,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 
 	var TTLSecondsAfterFinished *int32
 	if task.TTLSecondsAfterFinished == nil {
-		*TTLSecondsAfterFinished = 600
+		*TTLSecondsAfterFinished = 21600
 	} else {
 		TTLSecondsAfterFinished = task.TTLSecondsAfterFinished
 	}
