@@ -79,11 +79,11 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
-	var TTLSecondsAfterFinished *int32
+	var TTLSecondsAfterFinished int32
 	if task.TTLSecondsAfterFinished == nil {
-		*TTLSecondsAfterFinished = 21600
+		TTLSecondsAfterFinished = 21600
 	} else {
-		TTLSecondsAfterFinished = task.TTLSecondsAfterFinished
+		TTLSecondsAfterFinished = *task.TTLSecondsAfterFinished
 	}
 
 	jobSpec := &batchv1.Job{
@@ -175,7 +175,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 				},
 			},
 			BackoffLimit: &backOffLimit,
-			TTLSecondsAfterFinished: TTLSecondsAfterFinished,
+			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
 		},
 	}
 
