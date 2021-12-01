@@ -79,6 +79,13 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
+	var TTLSecondsAfterFinished int32
+	if task.TTLSecondsAfterFinished == nil {
+		TTLSecondsAfterFinished = 21600
+	} else {
+		TTLSecondsAfterFinished = *task.TTLSecondsAfterFinished
+	}
+
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
@@ -87,6 +94,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
+
 					SecurityContext: &v1.PodSecurityContext{
 						RunAsUser:    convert(1000),
 						RunAsGroup:   convert(2000),
@@ -167,6 +175,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 				},
 			},
 			BackoffLimit: &backOffLimit,
+			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
 		},
 	}
 
