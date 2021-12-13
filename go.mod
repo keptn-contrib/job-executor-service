@@ -9,7 +9,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.9.0
+	github.com/keptn/go-utils v0.10.0
 	github.com/keptn/kubernetes-utils v0.9.0
 	github.com/spf13/afero v1.6.0
 	go.uber.org/multierr v1.6.0 // indirect
