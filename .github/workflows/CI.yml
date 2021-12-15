@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.4.0
         with:
           fetch-depth: 0 # need to checkout "all commits" for certain features to work (e.g., get all changed files)
 
@@ -97,43 +97,29 @@ jobs:
   ############################################################################
   # Unit tests                                                               #
   ############################################################################
-  unit-tests:
+  test:
     name: Unit Tests
     needs: prepare_ci_run
     runs-on: ubuntu-20.04
     steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16.2
-      - name: Checkout Code
+      - name: Check out repository
         uses: actions/checkout@v2
-
-      - name: Load CI Environment from .ci_env
-        id: load_ci_env
-        uses: c-py/action-dotenv-to-setenv@v3
-        with:
-          env-file: .ci_env
-
-      - name: Test
-        run: go test -coverprofile=coverage.txt -covermode=atomic -v ./...
-        working-directory: .
+      - name: Unit tests
+        uses: ./.github/actions/unit-tests
 
   ############################################################################
   # Build Docker Image                                                      #
   ############################################################################
   docker_build:
-    needs: [prepare_ci_run, unit-tests]
+    needs: [prepare_ci_run]
     name: Docker Build
     runs-on: ubuntu-20.04
     env:
-      BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
       VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
-      DATETIME: ${{ needs.prepare_ci_run.outputs.DATE }}${{ needs.prepare_ci_run.outputs.TIME }}
-      GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
+      DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.4.0
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -141,49 +127,91 @@ jobs:
         with:
           env-file: .ci_env
 
-      - id: docker_login
-        name: Docker Login
-        # only run docker login on pushes; also for PRs, but only if this is not a fork
-        if: (github.event_name == 'push') || (github.event.pull_request.head.repo.full_name == github.repository)
-        # note: GH does not allow to access secrets for PRs from a forked repositories due to security reasons
-        # that's fine, but it means we can't push images to dockerhub
-        uses: docker/login-action@v1
+      - name: Docker Build
+        id: docker_build
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.3.0
         with:
-          username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+          TAGS: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}.${{ env.DATETIME }}
+          BUILD_ARGS: |
+            version=${{ env.VERSION }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          PUSH: ${{(github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)}}
 
-      - id: docker_build_service
-        name: Docker Build Service
-        uses: keptn/gh-action-build-docker-image@master
+      - name: Docker Build Initcontainer
+        id: docker_build_initcontainer
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.3.0
         with:
-          VERSION: ${{ env.VERSION }}
-          IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
-          DATETIME: ${{ env.DATETIME }}
-
-      - id: docker_build_initcontainer
-        name: Docker Build InitContainer
-        uses: keptn/gh-action-build-docker-image@master
-        with:
-          VERSION: ${{ env.VERSION }}
-          IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}"
-          DATETIME: ${{ env.DATETIME }}
-          FILE: ${{ env.DOCKERFILE_INITCONTAINER }}
-
-      - id: create_docker_build_report
-        name: Create Docker Build Report
-        run: |
-          echo "The following Docker Images have been built: " > docker_build_report_final.txt
-          cat docker_build_report.txt >> docker_build_report_final.txt || echo "* No images have been built or uploaded" >> docker_build_report_final.txt
-          echo "---"
-          cat docker_build_report_final.txt
+          TAGS: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}.${{ env.DATETIME }}
+          BUILD_ARGS: |
+            version=${{ env.VERSION }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          DOCKERFILE: ${{ env.DOCKERFILE_INITCONTAINER }}
+          PUSH: ${{(github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository)}}
 
       - id: report_docker_build_to_pr
-        # Comment the docker build report to the PR
-        # This only works for PRs coming from inside of the repo, not from forks
         name: Report Docker Build to PR
-        if: (github.event_name == 'pull_request') && (github.event.pull_request.head.repo.full_name == github.repository)
-        uses: marocchino/sticky-pull-request-comment@v2
+        if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+        uses: marocchino/sticky-pull-request-comment@v2.2.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          path: docker_build_report_final.txt
           recreate: true
+          header: test
+          message: |
+            The following Docker Images have been built:
+            * ${{ fromJSON(steps.docker_build.outputs.BUILD_METADATA)['image.name'] }}
+            * ${{ fromJSON(steps.docker_build_initcontainer.outputs.BUILD_METADATA)['image.name'] }}
+
+
+  helm_chart_build:
+    needs: [prepare_ci_run, docker_build]
+    name: Build Helm Charts
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+      DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.4.0
+
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - name: Build Helm Charts
+        id: build_helm_charts
+        run: ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}"
+
+      - name: Upload Helm Chart as an artifact
+        id: upload_helm_chart
+        uses: actions/upload-artifact@v2
+        with:
+          name: helm-charts
+          path: installer/*.tgz
+
+  linter_build:
+    needs: [prepare_ci_run]
+    name: Build Linter
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Run make
+        run: make build-lint
+
+      - name: Upload Linter binaries as an artifact
+        id: upload_helm_chart
+        uses: actions/upload-artifact@v2
+        with:
+          name: linter
+          path: bin/job-lint-*
