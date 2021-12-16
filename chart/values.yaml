@@ -1,10 +1,10 @@
-jobexecutorservice:
-  image:
-    repository: docker.io/keptncontrib/job-executor-service # Container Image Name
-    pullPolicy: Always                       # Kubernetes Image Pull Policy
-    tag: ""                                  # Container Tag
-  service:
-    enabled: true                            # Creates a Kubernetes Service for the job-executor-service
+replicaCount: 1
+
+image:
+  repository: docker.io/keptncontrib/job-executor-service
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
 
 jobexecutorserviceinitcontainer:
   image:
@@ -21,20 +21,13 @@ distributor:
     tag: "0.10.0"                             # Container Tag
 
 remoteControlPlane:
-  enabled: true                              # Enables remote execution plane mode
+  enabled: false                             # Enables remote execution plane mode
   api:
     protocol: "https"                        # Used Protocol (http, https)
     hostname: ""                             # Hostname of the control plane cluster (and Port)
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
     token: ""                                # Keptn API Token
 
-localControlPlane:
-  configurationServiceApi:
-    protocol: "http"                         # Used Protocol (http, https)
-    namespace: "keptn"                       # Namespace the keptn configuration service is in
-    service: "configuration-service"         # The name of the k8s service of the configuration-service
-    port: "8080"                             # The port which is exposed by the k8s service of the configuration-service
-    token: ""                                # Keptn API Token
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 
@@ -56,6 +49,9 @@ securityContext: { }                          # Set the security context (e.g. r
 #  readOnlyRootFilesystem: true
 #  runAsNonRoot: true
 #  runAsUser: 1000
+service:
+  type: ClusterIP
+  port: 8080
 
 resources: # Resource limits and requests
   limits:

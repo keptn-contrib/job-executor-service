@@ -26,3 +26,6 @@ main
 .idea/*
 # but allow .idea shared run configurations
 !.idea/runConfigurations/
+
+# ignore installer folder (packaged helm chart)
+installer/

@@ -6,7 +6,7 @@ metadata:
     {{- include "job-executor-service.labels" . | nindent 4 }}
 
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "job-executor-service.selectorLabels" . | nindent 6 }}
@@ -32,14 +32,12 @@ spec:
         - name: job-executor-service
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.image }}
-          image: {{ .Values.image }} # use image from .Values.image (e.g., when starting via skaffold)
-          {{- else }}
-          image: "{{ .Values.jobexecutorservice.image.repository }}:{{ .Values.jobexecutorservice.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
-          imagePullPolicy: {{ .Values.jobexecutorservice.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 8080
+              protocol: TCP
           env:
           {{- if .Values.remoteControlPlane.enabled }}
           - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
@@ -108,14 +106,14 @@ spec:
             - containerPort: 8080
           resources:
             requests:
-              memory: "32Mi"
-              cpu: "50m"
+              memory: "16Mi"
+              cpu: "25m"
             limits:
-              memory: "128Mi"
-              cpu: "500m"
+              memory: "32Mi"
+              cpu: "100m"
           env:
             - name: PUBSUB_TOPIC
-              value: 'sh.keptn.event.test.triggered'
+              value: 'sh.keptn.>'
             - name: PUBSUB_RECIPIENT
               value: '127.0.0.1'
             - name: STAGE_FILTER

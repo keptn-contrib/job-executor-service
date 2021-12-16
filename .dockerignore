@@ -1,0 +1,9 @@
+README.md
+.git
+.idea
+skaffold.yaml
+reviewdog.yml
+charts/
+deploy/
+.github/
+installer/
