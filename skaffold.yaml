@@ -1,13 +1,32 @@
-apiVersion: skaffold/v1beta13
+apiVersion: skaffold/v2beta23
 kind: Config
 build:
+  local:
+    useBuildkit: true
   artifacts:
     - image: keptncontrib/job-executor-service
       docker:
         dockerfile: Dockerfile
-        buildArgs:
-          debugBuild: true
+# Before executing this, install job-executor-service manually:
+# helm install -n keptn job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/0.1.4/job-executor-service-0.1.4.tgz
 deploy:
-  kubectl:
-    manifests:
-      - deploy/service.yaml
+  helm:
+    flags:
+      upgrade: ["--reuse-values"]
+    releases:
+      - name: job-executor-service # needs to be the same name as currently used (check via helm ls -n keptn)
+        namespace: keptn # needs to be the same namespace as where the helm-chart is currently deployed
+        # upgradeOnChange: true
+        # recreatePods: false # don't recreate all pods
+        artifactOverrides:
+          image: keptncontrib/job-executor-service
+        imageStrategy:
+          helm: { }
+        overrides:
+          distributor:
+            image:
+              tag: 0.10.0
+          resources:
+            limits:
+              memory: 512Mi
+        chartPath: chart

@@ -18,7 +18,7 @@ jobs:
       - name: Package helm
         uses: WyriHaximus/github-action-helm3@v2
         with:
-          exec: helm package helm
+          exec: helm package chart
 
       - name: Upload Linux
         uses: actions/upload-release-asset@v1.0.2

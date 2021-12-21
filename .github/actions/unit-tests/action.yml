@@ -1,0 +1,18 @@
+name: 'Unit Tests'
+description: 'Run unit tests using go'
+inputs:
+  GO_VERSION:
+    default: "1.16"
+env:
+  GO111MODULE: "on"
+  GOPROXY: "https://proxy.golang.org"
+runs:
+  using: "composite"
+  steps: 
+    - name: Install Go
+      uses: actions/setup-go@v2.1.4
+      with:
+        go-version: ${{ inputs.GO_VERSION }}
+    - name: Test
+      shell: bash
+      run: go test -v ./...
