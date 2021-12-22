@@ -2,9 +2,11 @@ package config
 
 import (
 	"encoding/json"
-	"gotest.tools/assert"
 	"strings"
 	"testing"
+
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 const simpleConfig = `
@@ -293,4 +295,55 @@ func TestComplexMatch(t *testing.T) {
 	found, action = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+}
+
+func TestTaskPullPolicy(t *testing.T) {
+	configYaml := `
+apiVersion: v2
+actions:
+  - name: "Run some fancy job with various pull policies"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+        jsonpath:
+          property: "$.test.teststrategy"
+          match: "health"
+    tasks:
+      - name: "task1-nopullpolicy"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        cmd:
+          - cmd
+        args:
+          - arg1
+          - arg2
+      - name: "task2-alwayspullpolicy"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        imagePullPolicy: Always
+        cmd:
+          - cmd
+      - name: "task3-neverpullpolicy"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        imagePullPolicy: Never
+        cmd:
+          - cmd
+      - name: "task4-ifnotpresentpullpolicy"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        imagePullPolicy: IfNotPresent
+        cmd:
+          - cmd
+    `
+
+	config, err := NewConfig([]byte(configYaml))
+
+	assert.NilError(t, err)
+
+	assert.Equal(t, len(config.Actions), 1)
+	assert.Equal(t, len(config.Actions[0].Tasks), 4)
+	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[0].ImagePullPolicy, ""))
+	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[1].ImagePullPolicy, "Always"))
+	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[2].ImagePullPolicy, "Never"))
+	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[3].ImagePullPolicy, "IfNotPresent"))
 }

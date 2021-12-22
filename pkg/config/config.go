@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/PaesslerAG/jsonpath"
 )
@@ -38,17 +39,18 @@ type JSONPath struct {
 
 // Task this is the actual task which can be triggered within an Action
 type Task struct {
-	Name            string     `yaml:"name"`
-	Files           []string   `yaml:"files"`
-	Image           string     `yaml:"image"`
-	Cmd             []string   `yaml:"cmd"`
-	Args            []string   `yaml:"args"`
-	Env             []Env      `yaml:"env"`
-	Resources       *Resources `yaml:"resources"`
-	WorkingDir      string     `yaml:"workingDir"`
-	MaxPollDuration *int       `yaml:"maxPollDuration"`
-	Namespace       string     `yaml:"namespace"`
-	TTLSecondsAfterFinished *int32 `yaml:"ttlSecondsAfterFinished"`
+	Name                    string     `yaml:"name"`
+	Files                   []string   `yaml:"files"`
+	Image                   string     `yaml:"image"`
+	ImagePullPolicy         string     `yaml:"imagePullPolicy"`
+	Cmd                     []string   `yaml:"cmd"`
+	Args                    []string   `yaml:"args"`
+	Env                     []Env      `yaml:"env"`
+	Resources               *Resources `yaml:"resources"`
+	WorkingDir              string     `yaml:"workingDir"`
+	MaxPollDuration         *int       `yaml:"maxPollDuration"`
+	Namespace               string     `yaml:"namespace"`
+	TTLSecondsAfterFinished *int32     `yaml:"ttlSecondsAfterFinished"`
 }
 
 // Env value from the event which will be added as env to the job
