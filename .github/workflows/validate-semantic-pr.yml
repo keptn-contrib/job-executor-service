@@ -7,12 +7,14 @@ on:
       - synchronize
 jobs:
   validate:
-    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@main
+    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@v1.3.0
     with:
       # Configure which scopes are allowed.
       scopes: |
         api
         cli
+        lint
+        initcontainer
         core
         install
         cloudevents
