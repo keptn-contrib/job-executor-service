@@ -45,7 +45,7 @@ jobs:
 
       - name: Docker Build Initcontainer
         id: docker_build_initcontainer
-        uses: ./.github/actions/docker-build
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.3.0
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
@@ -98,9 +98,9 @@ jobs:
 
       - name: Rename binaries
         run: |
-          mv ./bin/job-lint-linux-amd64 job-lint-linux-amd64-$VERSION
-          mv ./bin/job-lint-windows-amd64 job-lint-windows-amd64-$VERSION.exe
-          mv ./bin/job-lint-darwin-amd64 job-lint-darwin-amd64-$VERSION
+          mv ./bin/job-lint-linux-amd64 ./bin/job-lint-linux-amd64-$VERSION
+          mv ./bin/job-lint-windows-amd64 ./bin/job-lint-windows-amd64-$VERSION.exe
+          mv ./bin/job-lint-darwin-amd64 ./bin/job-lint-darwin-amd64-$VERSION
 
       - name: Upload release assets
         env:
