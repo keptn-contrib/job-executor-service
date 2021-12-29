@@ -22,17 +22,14 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
-ARG debugBuild
-
-# set buildflags for debug build
-RUN if [ ! -z "$debugBuild" ]; then export BUILDFLAGS='-gcflags "all=-N -l"'; fi
-
 # Copy local code to the container image.
 COPY . .
 
+# `skaffold debug` sets SKAFFOLD_GO_GCFLAGS to disable compiler optimizations
+ARG SKAFFOLD_GO_GCFLAGS
 # Build the command inside the container.
 # (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
-RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o job-executor-service-initcontainer cmd/job-executor-service-initcontainer/main.go
+RUN GOOS=linux go build -ldflags '-linkmode=external' -gcflags="${SKAFFOLD_GO_GCFLAGS}" -v -o job-executor-service-initcontainer cmd/job-executor-service-initcontainer/main.go
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
@@ -57,11 +54,6 @@ EXPOSE 8080
 
 # required for external tools to detect this as a go binary
 ENV GOTRACEBACK=all
-
-# KEEP THE FOLLOWING LINES COMMENTED OUT!!! (they will be included within the travis-ci build)
-#build-uncomment ADD MANIFEST /
-#build-uncomment COPY entrypoint.sh /
-#build-uncomment ENTRYPOINT ["/entrypoint.sh"]
 
 # Run the web service on container startup.
 CMD ["/job-executor-service-initcontainer"]

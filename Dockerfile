@@ -2,6 +2,7 @@
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
 FROM golang:1.16.2-alpine as builder
+
 RUN apk add --no-cache gcc libc-dev git
 
 ARG version=develop

@@ -4,15 +4,20 @@ build:
   local:
     useBuildkit: true
   artifacts:
+    # job executor service
     - image: keptncontrib/job-executor-service
       docker:
         dockerfile: Dockerfile
+    # init container for actual jobs (will be used for every job that is started)
+    - image: keptncontrib/job-executor-service-initcontainer
+      docker:
+        dockerfile: initcontainer.Dockerfile
 # Before executing this, install job-executor-service manually:
 # helm install -n keptn job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/0.1.4/job-executor-service-0.1.4.tgz
 deploy:
   helm:
     flags:
-      upgrade: ["--reuse-values"]
+      upgrade: ["--reuse-values"] # keep configuration (e.g., Keptn API Token)
     releases:
       - name: job-executor-service # needs to be the same name as currently used (check via helm ls -n keptn)
         namespace: keptn # needs to be the same namespace as where the helm-chart is currently deployed
@@ -20,6 +25,8 @@ deploy:
         # recreatePods: false # don't recreate all pods
         artifactOverrides:
           image: keptncontrib/job-executor-service
+          jobexecutorserviceinitcontainer:
+            image: keptncontrib/job-executor-service-initcontainer
         imageStrategy:
           helm: { }
         overrides:
@@ -28,5 +35,5 @@ deploy:
               tag: 0.10.0
           resources:
             limits:
-              memory: 512Mi
+              memory: 512Mi # increase memory limit such that debugging using delve works
         chartPath: chart
