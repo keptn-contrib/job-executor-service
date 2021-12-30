@@ -33,6 +33,7 @@ type JobSettings struct {
 	InitContainerImage                           string
 	DefaultResourceRequirements                  *v1.ResourceRequirements
 	AlwaysSendFinishedEvent                      bool
+	EnableKubernetesAPIAccess                    bool
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
@@ -67,7 +68,15 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 		Medium:    v1.StorageMediumDefault,
 		SizeLimit: &quantity,
 	}
-	automountServiceAccountToken := false
+	automountServiceAccountToken := jobSettings.EnableKubernetesAPIAccess
+
+	// specify empty service account name for job
+	serviceAccountName := ""
+
+	if jobSettings.EnableKubernetesAPIAccess {
+		automountServiceAccountToken = true
+		serviceAccountName = "job-executor-service"
+	}
 
 	runAsNonRoot := true
 	convert := func(s int64) *int64 {
@@ -172,9 +181,10 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 						},
 					},
 					AutomountServiceAccountToken: &automountServiceAccountToken,
+					ServiceAccountName:           serviceAccountName,
 				},
 			},
-			BackoffLimit: &backOffLimit,
+			BackoffLimit:            &backOffLimit,
 			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
 		},
 	}
