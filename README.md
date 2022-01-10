@@ -22,6 +22,7 @@
         - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
         - [Additional Event Data](#additional-event-data)
         - [Remote Control Plane](#remote-control-plane)
+        - [Job clean-up](#job-clean-up)
     - [How to validate a job configuration](#how-to-validate-a-job-configuration)
     - [Endless Possibilities](#endless-possibilities)
     - [Credits](#credits)
@@ -566,6 +567,38 @@ The job executor service currently adds the following data to specific event typ
 If you are using the service in a remote control plane setup make sure the distributor is configured to forward all
 events used in the `job/config.yaml`. Just edit the `PUBSUB_TOPIC` environment variable in the distributor deployment
 configuration to fit your needs.
+
+### Job clean-up
+
+Jobs objects are kept in kubernetes after completion to allow checking for status or logs inspections/retrieval.
+This is not always desirable so kubernetes allows for [automatic clean-up of finished jobs](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/)
+using `ttlSecondsAfterFinished` property in the job spec.
+
+Jobs created by the executor service will still be available for a time after (successful or failed) completion.
+The default value of the time-to-live (TTL) for completed jobs is `21600` seconds (6 hours).
+
+In order to set a different TTL for jobs add the `ttlSecondsAfterFinished` property in the task definition, for example:
+
+```yaml
+tasks:
+  - name: "Run locust tests"
+    files:
+      - locust/basic.py
+      - locust/import.py
+      - locust/locust.conf
+    image: "locustio/locust"
+    cmd:
+      - locust
+    args:
+      - '--config'
+      - /keptn/locust/locust.conf
+      - '-f'
+      - /keptn/locust/basic.py
+      - '--host'
+      - $(HOST)
+    # the corresponding job for this task will be cleaned up 10 minutes (600 seconds) after completion
+    ttlSecondsAfterFinished: 600
+```
 
 ## How to validate a job configuration
 
