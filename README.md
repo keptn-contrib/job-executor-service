@@ -18,6 +18,7 @@
         - [Resource quotas](#resource-quotas)
         - [Poll duration](#poll-duration)
         - [Job namespace](#job-namespace)
+        - [Job image pull policy](#job-image-pull-policy)
         - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
         - [Additional Event Data](#additional-event-data)
         - [Remote Control Plane](#remote-control-plane)
@@ -490,6 +491,37 @@ tasks:
     ...
     namespace: carts
 ```
+
+### Job Image Pull Policy
+By default the image for the tasks will be pulled according to 
+[kubernetes pull policy defaults](https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting).
+
+It's possible to override the pull policy by specifying the desired value in the task:
+
+```yaml
+tasks:
+  - name: "Run locust tests"
+    files:
+      - locust/basic.py
+      - locust/import.py
+      - locust/locust.conf
+    image: "locustio/locust"
+    imagePullPolicy: "Always"
+    cmd:
+      - locust
+    args:
+      - '--config'
+      - /keptn/locust/locust.conf
+      - '-f'
+      - /keptn/locust/basic.py
+      - '--host'
+      - $(HOST)
+```
+
+Allowed values for image pull policy are the same as the [ones accepted by kubernetes](https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy)
+
+Note: the job executor service does not perform any validation on the image pull policy value. We delegate any validation
+to kubernetes api server.
 
 ### Send start/finished event if the job config.yaml can't be found
 

@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/config"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"keptn-contrib/job-executor-service/pkg/config"
 
 	"github.com/PaesslerAG/jsonpath"
 	"gopkg.in/yaml.v2"
@@ -147,11 +148,12 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 					},
 					Containers: []v1.Container{
 						{
-							Name:       jobName,
-							Image:      task.Image,
-							Command:    task.Cmd,
-							Args:       task.Args,
-							WorkingDir: task.WorkingDir,
+							Name:            jobName,
+							Image:           task.Image,
+							ImagePullPolicy: v1.PullPolicy(task.ImagePullPolicy),
+							Command:         task.Cmd,
+							Args:            task.Args,
+							WorkingDir:      task.WorkingDir,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
@@ -174,7 +176,7 @@ func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task con
 					AutomountServiceAccountToken: &automountServiceAccountToken,
 				},
 			},
-			BackoffLimit: &backOffLimit,
+			BackoffLimit:            &backOffLimit,
 			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
 		},
 	}

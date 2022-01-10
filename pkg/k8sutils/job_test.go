@@ -3,9 +3,11 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
-	"keptn-contrib/job-executor-service/pkg/config"
+	"fmt"
 	"strings"
 	"testing"
+
+	"keptn-contrib/job-executor-service/pkg/config"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gotest.tools/assert"
@@ -437,6 +439,85 @@ func TestSetEmptyNamespace(t *testing.T) {
 	assert.NilError(t, err)
 
 	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
+}
+
+func TestImagePullPolicy(t *testing.T) {
+
+	tests := []struct {
+		name string
+		inputPullPolicy string
+		expectedPullPolicy corev1.PullPolicy
+	}{
+		{
+			name:               "No pull policy specified in input - server will assign a default value",
+			inputPullPolicy:    "",
+			expectedPullPolicy: corev1.PullPolicy(""),
+		},
+		{
+			name:               `"Always" policy specified in input`,
+			inputPullPolicy:    "Always",
+			expectedPullPolicy: corev1.PullAlways,
+		},
+		{
+			name:               `"Never" policy specified in input`,
+			inputPullPolicy:    "Never",
+			expectedPullPolicy: corev1.PullNever,
+		},
+		{
+			name:               `"IfNotPresent"" policy specified in input`,
+			inputPullPolicy:    "IfNotPresent",
+			expectedPullPolicy: corev1.PullIfNotPresent,
+		},
+		{
+			name:               "`always` policy specified in input wrong case - works on client it will fail on" +
+				" server",
+			inputPullPolicy:    "always",
+			expectedPullPolicy: corev1.PullPolicy("always"),
+		},
+	}
+	for i, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+
+				k8sClientSet := k8sfake.NewSimpleClientset()
+				k8s := k8sImpl{clientset: k8sClientSet}
+
+				jobName:= fmt.Sprintf("ipp-job-%d", i)
+
+				task := config.Task{
+					Name: fmt.Sprintf("noIppTask-%d", i),
+					Image: "someImage:someversion",
+					Cmd: []string{"someCmd"},
+					ImagePullPolicy: test.inputPullPolicy,
+				}
+
+				eventData := keptnv2.EventData{
+					Project: "keptnproject",
+					Stage:   "dev",
+					Service: "keptnservice",
+				}
+
+				namespace := "test-namespace"
+
+				err := k8s.CreateK8sJob(
+					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+						JobNamespace: namespace,
+						DefaultResourceRequirements: &corev1.ResourceRequirements{
+							Limits:   make(corev1.ResourceList),
+							Requests: make(corev1.ResourceList),
+						},
+					}, "", namespace,
+				)
+				assert.NilError(t, err)
+
+				job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+				assert.NilError(t, err)
+
+				assert.Equal(t, job.Spec.Template.Spec.Containers[0].ImagePullPolicy, test.expectedPullPolicy)
+			},
+		)
+	}
+
 }
 
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {
