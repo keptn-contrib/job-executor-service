@@ -47,6 +47,8 @@ type envConfig struct {
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
 	// Respond with .finished event if no configuration found
 	AlwaysSendFinishedEvent string `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
+	// Whether jobs can access Kubernetes API
+	EnableKubernetesAPIAccess string `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -105,11 +107,16 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,
 			AlwaysSendFinishedEvent:     false,
+			EnableKubernetesAPIAccess:   false,
 		},
 	}
 
 	if env.AlwaysSendFinishedEvent == "true" {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
+	}
+
+	if env.EnableKubernetesAPIAccess == "true" {
+		eventHandler.JobSettings.EnableKubernetesAPIAccess = true
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888

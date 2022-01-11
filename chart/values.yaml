@@ -29,6 +29,9 @@ remoteControlPlane:
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
     token: ""                                # Keptn API Token
 
+jobConfig:
+  enableKubernetesApiAccess: false           # whether or not the started jobs should have Kubernetes API Access
+
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 
