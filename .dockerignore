@@ -3,7 +3,10 @@ README.md
 .idea
 skaffold.yaml
 reviewdog.yml
-charts/
+chart/
 deploy/
 .github/
 installer/
+bin/
+test-data/
+test-events/
