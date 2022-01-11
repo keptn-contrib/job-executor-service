@@ -520,6 +520,79 @@ func TestImagePullPolicy(t *testing.T) {
 
 }
 
+func TestTTLSecondsAfterFinished(t *testing.T) {
+
+	var DefaultTTLAfterFinished int32 = 21600
+	var TenMinutesTTLAfterFinished int32 = 600
+	var ImmediatedlyDeletableTTLAfterFinished int32 = 0
+
+	tests := []struct {
+		name string
+		ttlSecondsAfterFinished *int32
+		expectedTTLSecondsAfterFinished int32
+	}{
+		{
+			name:               "No ttl specified in input - we should have the default job executor of 21600",
+			ttlSecondsAfterFinished: nil,
+			expectedTTLSecondsAfterFinished: DefaultTTLAfterFinished,
+		},
+		{
+			name:               "10 mins ttl specified in input",
+			ttlSecondsAfterFinished: &TenMinutesTTLAfterFinished,
+			expectedTTLSecondsAfterFinished: TenMinutesTTLAfterFinished,
+		},
+		{
+			name:               "0 seconds ttl specified in input - job eligible for deletion immediately",
+			ttlSecondsAfterFinished: &ImmediatedlyDeletableTTLAfterFinished,
+			expectedTTLSecondsAfterFinished: ImmediatedlyDeletableTTLAfterFinished,
+		},
+	}
+	for i, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+
+				k8sClientSet := k8sfake.NewSimpleClientset()
+				k8s := k8sImpl{clientset: k8sClientSet}
+
+				jobName:= fmt.Sprintf("ipp-job-%d", i)
+
+				task := config.Task{
+					Name: fmt.Sprintf("noIppTask-%d", i),
+					Image: "someImage:someversion",
+					Cmd: []string{"someCmd"},
+					TTLSecondsAfterFinished: test.ttlSecondsAfterFinished,
+				}
+
+				eventData := keptnv2.EventData{
+					Project: "keptnproject",
+					Stage:   "dev",
+					Service: "keptnservice",
+				}
+
+				namespace := "test-namespace"
+
+				err := k8s.CreateK8sJob(
+					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+						JobNamespace: namespace,
+						DefaultResourceRequirements: &corev1.ResourceRequirements{
+							Limits:   make(corev1.ResourceList),
+							Requests: make(corev1.ResourceList),
+						},
+					}, "", namespace,
+				)
+				assert.NilError(t, err)
+
+				job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+				assert.NilError(t, err)
+
+				assert.Assert(t, job.Spec.TTLSecondsAfterFinished != nil)
+				assert.Equal(t, *job.Spec.TTLSecondsAfterFinished, test.expectedTTLSecondsAfterFinished)
+			},
+		)
+	}
+
+}
+
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{

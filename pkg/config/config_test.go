@@ -347,3 +347,49 @@ actions:
 	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[2].ImagePullPolicy, "Never"))
 	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[3].ImagePullPolicy, "IfNotPresent"))
 }
+
+func TestTTLSecondsAfterFinished(t *testing.T) {
+	configYaml := `
+apiVersion: v2
+actions:
+  - name: "Run some fancy job with various ttl after job completes"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+        jsonpath:
+          property: "$.test.teststrategy"
+          match: "health"
+    tasks:
+      - name: "task1-noinputttl"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        cmd:
+          - cmd
+        args:
+          - arg1
+          - arg2
+      - name: "task2-ttl10mins"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        cmd:
+          - cmd
+        ttlSecondsAfterFinished: 600
+      - name: "task3-zerosecondsttl"
+        workingDir: "/bin"
+        image: "somefancyimage"
+        cmd:
+          - cmd
+        ttlSecondsAfterFinished: 0
+    `
+
+	config, err := NewConfig([]byte(configYaml))
+
+	assert.NilError(t, err)
+
+	assert.Equal(t, len(config.Actions), 1)
+	assert.Equal(t, len(config.Actions[0].Tasks), 3)
+	assert.Assert(t, config.Actions[0].Tasks[0].TTLSecondsAfterFinished == nil)
+	assert.Assert(t, config.Actions[0].Tasks[1].TTLSecondsAfterFinished != nil)
+	assert.Check(t, cmp.Equal(*config.Actions[0].Tasks[1].TTLSecondsAfterFinished, int32(600)))
+	assert.Assert(t, config.Actions[0].Tasks[2].TTLSecondsAfterFinished != nil)
+	assert.Check(t, cmp.Equal(*config.Actions[0].Tasks[2].TTLSecondsAfterFinished, int32(0)))
+}
