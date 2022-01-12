@@ -1,0 +1,109 @@
+name: Create Release
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Unit tests
+        uses: ./.github/actions/unit-tests
+
+  release:
+    needs: test
+    name: Release
+    uses: keptn/gh-automation/.github/workflows/release-integration.yml@v1.3.0
+
+  docker_build:
+    needs: [release]
+    name: Docker Build
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.4.0
+
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - name: Docker Build
+        id: docker_build_service
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.3.0
+        with:
+          TAGS: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}.${{ env.DATETIME }}
+          BUILD_ARGS: |
+            version=${{ env.VERSION }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Docker Build Initcontainer
+        id: docker_build_initcontainer
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.3.0
+        with:
+          TAGS: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}.${{ env.DATETIME }}
+          BUILD_ARGS: |
+            version=${{ env.VERSION }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          DOCKERFILE: ${{ env.DOCKERFILE_INITCONTAINER }}
+
+  helm_chart_build:
+    needs: [release, docker_build]
+    name: Build Helm Charts
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.4.0
+
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - name: Build Helm Charts
+        id: build_helm_charts
+        run: ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
+
+      - name: Upload Helm Chart as release asset
+        env:
+          RELEASE_TAG: ${{ needs.release.outputs.RELEASE_TAG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$RELEASE_TAG" installer/*.tgz
+
+  linter_build:
+    needs: [release]
+    name: Build Linter
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Run make
+        run: make build-lint
+
+      - name: Rename binaries
+        run: |
+          mv ./bin/job-lint-linux-amd64 ./bin/job-lint-linux-amd64-$VERSION
+          mv ./bin/job-lint-windows-amd64 ./bin/job-lint-windows-amd64-$VERSION.exe
+          mv ./bin/job-lint-darwin-amd64 ./bin/job-lint-darwin-amd64-$VERSION
+
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$VERSION" bin/job-lint-*
