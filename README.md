@@ -33,6 +33,36 @@ Please replace `<VERSION>` with the actual version you want to install from the 
 kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/job-executor-service/release-<VERSION>/deploy/service.yaml
 ```
 
+### Installation on remote execution-plane
+
+You can install job-executor-service either in the same cluster and namespace as Keptn (see above), or on a completely 
+separate Kubernetes environment (see [Keptn docs: Multi-cluster setup](https://keptn.sh/docs/0.11.x/operate/multi_cluster/) for details).
+
+In order to do the latter, job-executor-service helm chart provides some values that can be configured:
+
+* `remoteControlPlane.enabled` - needs to be set to `true` in order to connect to the remote Keptn instance
+* `remoteControlPlane.topicSubscription` - list of Keptn CloudEvent types that this instance should listen to, e.g., `sh.keptn.event.remote-task.triggered`
+* `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane
+* `remoteControlPlane.api.hostname` - Keptn API Hostname (e.g., `1.2.3.4.nip.io`)
+* `remoteControlPlane.api.token` - Keptn API Token (can be obtained from Bridge)
+
+**Example**
+```bash
+KEPTN_API_PROTOCOL=http # or https
+KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
+ KEPTN_API_TOKEN=<INSERT-YOUR-KEPTN-API-TOKEN-HERE>
+
+TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
+
+helm install -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+ --set remoteControlPlane.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
+
+
+```
+
+To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
+
 
 ## Uninstall
 
