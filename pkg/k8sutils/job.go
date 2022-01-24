@@ -38,8 +38,11 @@ type JobSettings struct {
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
-func (k8s *k8sImpl) CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-	jobSettings JobSettings, jsonEventData interface{}, namespace string) error {
+// returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
+func (k8s *k8sImpl) CreateK8sJob(
+	jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings,
+	jsonEventData interface{}, namespace string,
+) error {
 
 	var backOffLimit int32 = 0
 
@@ -238,13 +241,6 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 
 		time.Sleep(time.Duration(pollIntervalInSeconds) * time.Second)
 	}
-}
-
-// DeleteK8sJob delete a k8s job in the given namespace
-func (k8s *k8sImpl) DeleteK8sJob(jobName string, namespace string) error {
-
-	jobs := k8s.clientset.BatchV1().Jobs(namespace)
-	return jobs.Delete(context.TODO(), jobName, metav1.DeleteOptions{})
 }
 
 func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}, namespace string) ([]v1.EnvVar, error) {
