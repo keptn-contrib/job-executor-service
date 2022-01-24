@@ -3,12 +3,13 @@ package eventhandler
 import (
 	"encoding/json"
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/config"
-	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	"log"
 	"math"
 	"strconv"
 	"time"
+
+	"keptn-contrib/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -146,7 +147,8 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			namespace = task.Namespace
 		}
 
-		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings, jsonEventData, namespace)
+		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings,
+			jsonEventData, namespace)
 
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err)
@@ -155,13 +157,6 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			}
 			return
 		}
-
-		defer func() {
-			err = k8s.DeleteK8sJob(jobName, namespace)
-			if err != nil {
-				log.Printf("Error while deleting job: %s\n", err.Error())
-			}
-		}()
 
 		maxPollCount := defaultMaxPollCount
 		if task.MaxPollDuration != nil {

@@ -18,10 +18,11 @@ type k8sImpl struct {
 // K8s is used to interact with kubernetes jobs
 type K8s interface {
 	ConnectToCluster() error
-	CreateK8sJob(jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData,
-		jobSettings JobSettings, jsonEventData interface{}, namespace string) error
+	CreateK8sJob(
+		jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings,
+		jsonEventData interface{}, namespace string,
+	) error
 	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int, namespace string) error
-	DeleteK8sJob(jobName string, namespace string) error
 	GetLogsOfPod(jobName string, namespace string) (string, error)
 }
 
