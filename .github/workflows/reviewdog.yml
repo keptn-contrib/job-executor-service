@@ -11,7 +11,7 @@ jobs:
           go-version: 1.16.2
         id: go
       - name: Check out code.
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
       - name: Install linters
         run: '( mkdir linters && cd linters && go get golang.org/x/lint/golint )'
       - uses: reviewdog/action-setup@v1
