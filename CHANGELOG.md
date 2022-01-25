@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/keptn-contrib/job-executor-service/compare/0.1.5...0.1.6) (2022-01-25)
+
+
+### Bug Fixes
+
+* clean-up pods when deleting kubernetes jobs ([#154](https://github.com/keptn-contrib/job-executor-service/issues/154)) ([#155](https://github.com/keptn-contrib/job-executor-service/issues/155)) ([38c9f19](https://github.com/keptn-contrib/job-executor-service/commit/38c9f19886251b5bbdd06a6391db1c146d90ce29))
+
+
+### Docs
+
+* Added docs regarding remote execution plane ([#153](https://github.com/keptn-contrib/job-executor-service/issues/153)) ([6735d50](https://github.com/keptn-contrib/job-executor-service/commit/6735d504426de006137c055447d1b126860ba7b0))
+
 ### [0.1.5](https://github.com/keptn-contrib/job-executor-service/compare/0.1.4...0.1.5) (2022-01-13)
 
 
