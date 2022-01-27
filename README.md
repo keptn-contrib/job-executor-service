@@ -171,9 +171,9 @@ actions:
     tasks:
       - name: "Run locust tests"
         files:
-          - locust/basic.py
-          - locust/import.py
-          - locust/locust.conf
+          - job/locust/basic.py
+          - job/locust/import.py
+          - job/locust/locust.conf
         image: "locustio/locust"
         cmd:
           - locust
@@ -276,17 +276,17 @@ The configuration contains the following section:
 tasks:
   - name: "Run locust tests"
     files:
-      - locust/basic.py
-      - locust/import.py
-      - locust/locust.conf
+      - job/locust/basic.py
+      - job/locust/import.py
+      - job/locust/locust.conf
     image: "locustio/locust"
     cmd:
       - locust
     args:
       - '--config'
-      - /keptn/locust/locust.conf
+      - /keptn/job/locust/locust.conf
       - '-f'
-      - /keptn/locust/basic.py
+      - /keptn/job/locust/basic.py
       - '--host'
       - $(HOST)
 ```
@@ -314,9 +314,9 @@ cmd:
   - locust
 args:
   - '--config'
-  - /keptn/locust/locust.conf
+  - /keptn/job/locust/locust.conf
   - '-f'
-  - /keptn/locust/basic.py
+  - /keptn/job/locust/basic.py
   - '--host'
   - $(HOST)
 env:
@@ -369,9 +369,9 @@ cmd:
   - locust
 args:
   - '--config'
-  - /keptn/locust/locust.conf
+  - /keptn/job/locust/locust.conf
   - '-f'
-  - /keptn/locust/basic.py
+  - /keptn/job/locust/basic.py
   - '--host'
   - $(HOST)
 env:
@@ -395,9 +395,9 @@ cmd:
   - locust
 args:
   - '--config'
-  - /keptn/locust/locust.conf
+  - /keptn/job/locust/locust.conf
   - '-f'
-  - /keptn/locust/$(FILE)
+  - /keptn/job/locust/$(FILE)
   - '--host'
   - $(HOST)
 env:
@@ -437,9 +437,9 @@ cmd:
   - locust
 args:
   - '--config'
-  - /keptn/locust/locust.conf
+  - /keptn/job/locust/locust.conf
   - '-f'
-  - /keptn/locust/$(FILE)
+  - /keptn/job/locust/$(FILE)
   - '--host'
   - $(HOST)
 env:
@@ -458,9 +458,9 @@ your tasks:
 
 ```yaml
 files:
-  - locust/basic.py
-  - locust/import.py
-  - locust/locust.conf
+  - job/locust/basic.py
+  - job/locust/import.py
+  - job/locust/locust.conf
   - /helm
 ```
 
@@ -480,9 +480,9 @@ cmd:
   - locust
 args:
   - '--config'
-  - /keptn/locust/locust.conf
+  - /keptn/job/locust/locust.conf
   - '-f'
-  - /keptn/locust/basic.py
+  - /keptn/job/locust/basic.py
 ```
 
 ### Silent mode
@@ -594,18 +594,18 @@ It's possible to override the pull policy by specifying the desired value in the
 tasks:
   - name: "Run locust tests"
     files:
-      - locust/basic.py
-      - locust/import.py
-      - locust/locust.conf
+      - job/locust/basic.py
+      - job/locust/import.py
+      - job/locust/locust.conf
     image: "locustio/locust"
     imagePullPolicy: "Always"
     cmd:
       - locust
     args:
       - '--config'
-      - /keptn/locust/locust.conf
+      - /keptn/job/locust/locust.conf
       - '-f'
-      - /keptn/locust/basic.py
+      - /keptn/job/locust/basic.py
       - '--host'
       - $(HOST)
 ```
@@ -674,17 +674,17 @@ In order to set a different TTL for jobs add the `ttlSecondsAfterFinished` prope
 tasks:
   - name: "Run locust tests"
     files:
-      - locust/basic.py
-      - locust/import.py
-      - locust/locust.conf
+      - job/locust/basic.py
+      - job/locust/import.py
+      - job/locust/locust.conf
     image: "locustio/locust"
     cmd:
       - locust
     args:
       - '--config'
-      - /keptn/locust/locust.conf
+      - /keptn/job/locust/locust.conf
       - '-f'
-      - /keptn/locust/basic.py
+      - /keptn/job/locust/basic.py
       - '--host'
       - $(HOST)
     # the corresponding job for this task will be cleaned up 10 minutes (600 seconds) after completion
