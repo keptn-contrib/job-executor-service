@@ -2,6 +2,7 @@
 ## Features
 
 - [Features](#Features)
+    - [Getting started](#getting-started)
     - [Specifying the working directory](#specifying-the-working-directory)
     - [Event Matching](#event-matching)
     - [Kubernetes Job](#kubernetes-job)
@@ -20,6 +21,10 @@
     - [Remote Control Plane](#remote-control-plane)
     - [Job clean-up](#job-clean-up)
 
+
+### Getting started
+
+To get started with job-executor-service, please follow the [Quickstart](README.md#quickstart).
 
 
 ### Specifying the working directory
