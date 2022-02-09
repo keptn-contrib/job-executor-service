@@ -52,7 +52,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 	jobVolumeMountPath := "/keptn"
 
 	// TODO configure from outside:
-	quantity := resource.MustParse("20Mi")
+	quantity := resource.MustParse("128Mi")
 
 	jobResourceRequirements := jobSettings.DefaultResourceRequirements
 	if task.Resources != nil {
