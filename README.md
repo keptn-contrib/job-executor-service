@@ -172,6 +172,10 @@ the [official kubernetes documentation](https://v1-20.docs.kubernetes.io/docs/re
 
 A more comprehensive list of use-cases and features that this integration supports is provided in [FEATURES.md](FEATURES.md).
 
+## Architecture
+
+A deep look into the architecture of job-executor-service is provided in [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Credits
 
 The credits of this service heavily go to @thschue and @yeahservice who originally came up with this idea. :rocket:
