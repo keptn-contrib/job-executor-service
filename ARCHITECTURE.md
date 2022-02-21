@@ -35,7 +35,7 @@ a Keptn installation.
 
 When a certain Cloud Event is emitted by Keptn, Job-Executor will create a new Kubernetes job within the same Kubernetes
 cluster, with the details configured in `job/config.yaml`. This job will consist of an `initcontainer`, which is supposed
-to fetch files from the projects config git repo (served by Keptns `configuration-service`), and the actual container
+to fetch files from the project's config git repo (served by Keptns `configuration-service`), and the actual container
 based on the `image` defined in `job/config.yaml`, where a `command` is executed.
 
 ## Example Configuration
@@ -94,3 +94,108 @@ This diagram shows the full event flow, but limited to user-facing Keptn compone
 itself, as well as Kubernetes and Git.
 
 ![](assets/architecture/user-flow-keptn-job-exec.png)
+
+## Kubernetes Jobs
+
+Based on `job/config.yaml`, Kubernetes jobs are started.
+
+Each job consists of an initcontainer, and one or many tasks.
+
+For instance, look at the following config:
+```yaml
+apiVersion: v2
+actions:
+  - name: "Run something"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+    tasks:
+      - name: "Greet the world"
+        image: "alpine"
+        files:
+          - locust/basic.py
+          - locust/import.py
+          - locust/locust.conf
+        cmd:
+          - echo
+        args:
+          - "Hello World"
+```
+
+This would start a new job in Kubernetes containing
+
+* Init container with `keptn-contrib/job-executor-service-initcontainer`
+* One task container with `docker.io/alpine` (`docker.io` is inferred by Kubernetes), executing `echo "Hello World"
+
+These containers are usually resource and permission restricted:
+
+* Resources quotas can be configured - see [Resource Quotas](FEATURES.md#resource-quotas).
+* Jobs usually run with a very restrictive set of permissions. However, by setting `jobConfig.enableKubernetesApiAccess` 
+  in the Helm Chart, jobs can run with the same ServiceAccount as `job-executor-service`, which sets 
+  `AutomountServiceAccountToken` to true, and links the service account.
+
+In addition, each job has an [`emptyDir` volume](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) with
+a limited size (e.g, 20 MB). Init container uses this volume to fetch `files` specified in `job/config.yaml`
+from the Keptn config repository, and provide those files to the task container.
+
+
+## Hardening opportunities
+
+This section should outline several hardening opportunities for job-executor-service.
+
+### Limit image names / container registries
+
+One of the key strengths and weaknesses of job-executor-service is that any container/image can be started.
+The ability to start any container/image is problematic for multiple reasons:
+
+* Malicious containers can contain tools for crypto-mining, DOS attacks, etc...
+* Some companies require approval for containers/images used, so they need to be limited
+
+One obvious way to limit this behaviour would be to only allow pulling images from a pre-defined container registry.
+Another way would be to have an *allowlist* containing a list and potentially tags of images that are allowed.
+
+### Signed Containers
+
+With the possibility to [sign containers](https://www.cloudsavvyit.com/12388/how-to-sign-your-docker-images-to-increase-trust/), 
+it would make sense to configure job-executor-service such that only containers signed by a certain authority 
+are accepted.
+
+This approach would be similar to an allowlist, but would provide more flexibility (no need to maintain an actual
+list, such make sure the image is signed).
+
+### Plugins (aka: Avoid arbitrary command execution and injection)
+
+Last but not least, we envision a concept of so-called *plugins*, where the end-user would no longer be allowed
+to specify a custom command.
+In this scenario, we envision a config file like this:
+
+```yaml
+apiVersion: v2
+actions:
+  - name: "Run tests"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - plugin: "keptn-contrib/helm-deploy-job"
+        files:
+          - helm/
+```
+
+
+```yaml
+apiVersion: v2
+actions:
+  - name: "Run tests"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+    tasks:
+      - plugin: "keptn-contrib/locust-test-job"
+        files:
+          - locust/basic.py
+          - locust/locust.conf
+        with:
+          LOCUST_TEST=locust/basic.py
+```
+
+Here `keptn-contrib/helm-deploy-job` and `keptn-contrib/locust-test-job` could be signed containers/images, which
+provide a pre-configured command (entrypoint), and can in addition be configuerd using `with` (or `env`).
+
