@@ -93,20 +93,10 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: enable_kubernetes_api_access
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 10999
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor
           image: "{{ .Values.distributor.image.repository }}:{{ .Values.distributor.image.tag | default .Chart.AppVersion }}"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 10999
-            initialDelaySeconds: 5
-            periodSeconds: 5
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -135,6 +125,8 @@ spec:
               value: "{{ .Values.distributor.projectFilter }}"
             - name: SERVICE_FILTER
               value: "{{ .Values.distributor.serviceFilter }}"
+            - name: DISTRIBUTOR_VERSION
+              value: {{ .Values.distributor.image.tag | default .Chart.AppVersion }}
             - name: VERSION
               valueFrom:
                 fieldRef:
@@ -162,6 +154,12 @@ spec:
               value: "{{ .Values.remoteControlPlane.api.token }}"
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
+            {{- end }}
+            {{- if .Values.distributor.config.queueGroup.enabled }}
+            - name: PUBSUB_GROUP
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['app.kubernetes.io/name']
             {{- end }}
 
       {{- with .Values.nodeSelector }}
