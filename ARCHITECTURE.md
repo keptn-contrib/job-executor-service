@@ -34,8 +34,8 @@ job-Executor Keptn service itself. Job-Executor needs to be installed within a K
 a Keptn installation.
 
 When a certain Cloud Event is emitted by Keptn, Job-Executor will create a new Kubernetes job within the same Kubernetes
-cluster, with the details configured in `job/config.yaml`. This job will consist of an `initcontainer`, which is supposed
-to fetch files from the project's config git repo (served by Keptns `configuration-service`), and the actual container
+cluster, with the details configured in `job/config.yaml`. This job will consist of an `initcontainer`, which will
+fetch files specified in the job configuration from the project's config git repo (served by Keptn's own `configuration-service`), and the actual container
 based on the `image` defined in `job/config.yaml`, where a `command` is executed.
 
 ## Example Configuration
@@ -76,24 +76,24 @@ actions:
 This configuration basically means:
 * When `test.triggered` is emitted from Keptn,
 * fetch the files `locust/basic.py` and `locust/locust.conf` from the projects config repo,
-* spawn a Kubernetes job with the image `docker.io/locustio/locust`, 
+* spawn a Kubernetes job using the image `docker.io/locustio/locust`, 
 * and run the command `locust --config /keptn/locust/locust.conf -f /keptn/locust/basic.py --host $(HOST)`
 
 *Note*: Locust is a tool for running performance/load-tests
 
-## Full Event flow 
+## Event Flow focused on job-executor-centric
+
+This diagram shows the event flow limited to user-facing Keptn components, job-executor-service itself, as well as 
+Kubernetes and Git.
+
+![](assets/architecture/user-flow-keptn-job-exec.png)
+
+## Full Event flow
 
 This diagram shows the full event flow with almost all Keptn components involved (based on Keptn 0.12), job-executor-service
 itself, as well as Kubernetes and Git.
 
 ![](assets/architecture/user-flow-keptn-full.png)
-
-## Event Flow focused on job-executor-centric
-
-This diagram shows the full event flow, but limited to user-facing Keptn components, job-executor-service
-itself, as well as Kubernetes and Git.
-
-![](assets/architecture/user-flow-keptn-job-exec.png)
 
 ## Kubernetes Jobs
 
@@ -124,7 +124,7 @@ actions:
 This would start a new job in Kubernetes containing
 
 * Init container with `keptn-contrib/job-executor-service-initcontainer`
-* One task container with `docker.io/alpine` (`docker.io` is inferred by Kubernetes), executing `echo "Hello World"
+* One task container with `docker.io/alpine` (`docker.io` is inferred by the container runtime), executing `echo "Hello World"
 
 These containers are usually resource and permission restricted:
 
