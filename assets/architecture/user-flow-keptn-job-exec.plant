@@ -1,0 +1,42 @@
+@startuml
+
+actor User
+
+
+participant "Keptn API" as A
+participant "configuration-service" as C
+participant "Git Repo" as G
+participant "Job-Executor" as JES
+participant "Job-Executor Job" as JOB
+participant "Kubernetes" as K8S
+participant "Container Registry" as DOCKER
+
+User --> A: keptn create project -p=foobar -s=shipyard.yaml
+
+User --> A: keptn trigger pipeline -p=foobar
+
+JES --> A: Poll test.triggered
+
+JES --> C: Request job/config.yaml
+C <--> G: job/config.yaml
+C --> JES: job/config.yaml
+JES --> JES: process
+JES --> A: Emit Task test.started
+
+JES --> K8S: Create job
+K8S <--> DOCKER: Fetch "keptn-contrib/job-executor-initcontainer"
+K8S <--> DOCKER: Fetch "docker.io/locustio/locust"
+K8S --> JOB: Start job
+K8S --> JOB: Run initcontainer
+JOB --> C: Fetch files "locust/{basic.py,locust.conf}"
+C <--> G: files
+C --> JOB: files (stored in emptyDir volume)
+JOB --> K8S: initcontainer done
+K8S --> JOB: Run pod docker.io/locustio/locust
+JOB --> K8S: Job done
+JES <--> K8S: Poll: Is job finished
+JES --> A: Task test.finished
+
+User --> A: keptn get event pipeline.finished
+
+@enduml
