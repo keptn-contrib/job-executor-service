@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"errors"
-	"keptn-contrib/job-executor-service/pkg/eventhandler"
-	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	"log"
 	"os"
-	"strings"
 
 	v1 "k8s.io/api/core/v1"
+
+	"keptn-contrib/job-executor-service/pkg/eventhandler"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2" // make sure to use v2 cloudevents here
 	"github.com/kelseyhightower/envconfig"
@@ -84,10 +84,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 	}
 
 	log.Printf("gotEvent(%s): %s - %s", event.Type(), myKeptn.KeptnContext, event.Context.GetID())
-
-	if !strings.Contains(event.Type(), ".triggered") {
-		return nil
-	}
 
 	eventData := &keptnv2.EventData{}
 	err = parseKeptnCloudEventPayload(event, eventData)
