@@ -267,6 +267,7 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 		jobEnv = append(jobEnv, generatedEnv...)
 	}
 
+	// append KEPTN_PROJECT, KEPTN_SERVICE and KEPTN_STAGE as environment variables
 	jobEnv = append(jobEnv,
 		v1.EnvVar{
 			Name:  "KEPTN_PROJECT",
@@ -281,6 +282,21 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 			Value: eventData.Service,
 		},
 	)
+
+	replacer := strings.NewReplacer("-", "_", " ", "_")
+
+	// append labels as environment variables
+	for key, value := range eventData.Labels {
+		// replace - with _
+		key = replacer.Replace(key)
+
+		jobEnv = append(jobEnv,
+			v1.EnvVar{
+				Name:  "LABELS_" + strings.ToUpper(key),
+				Value: value,
+			},
+		)
+	}
 
 	return jobEnv, nil
 }

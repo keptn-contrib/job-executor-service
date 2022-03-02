@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 
 	"keptn-contrib/job-executor-service/pkg/config"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
@@ -72,7 +73,7 @@ func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 
 	k8s := k8sImpl{}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.ErrorContains(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
+	assert.EqualError(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
 }
 
 func TestPrepareJobEnvFromEvent(t *testing.T) {
@@ -111,6 +112,10 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 		Project: "sockshop",
 		Stage:   "dev",
 		Service: "carts",
+		Labels: map[string]string{
+			"app-version":    "0.1.2",
+			"build-datetime": "202202212056",
+		},
 	}
 
 	var eventAsInterface interface{}
@@ -118,16 +123,7 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 
 	k8s := k8sImpl{}
 	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.NilError(t, err)
-
-	assert.Equal(t, jobEnv[0].Name, "HOST")
-	assert.Equal(t, jobEnv[0].Value, "https://keptn.sh")
-
-	assert.Equal(t, jobEnv[1].Name, "DEPLOYMENT_STRATEGY")
-	assert.Equal(t, jobEnv[1].Value, "user_managed")
-
-	assert.Equal(t, jobEnv[2].Name, "TEST_STRATEGY")
-	assert.Equal(t, jobEnv[2].Value, "health")
+	require.NoError(t, err)
 
 	testTriggeredEventJSON := `
 {
@@ -147,23 +143,28 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	testTriggeredEventJSON = strings.ReplaceAll(testTriggeredEventJSON, " ", "")
 	testTriggeredEventJSON = strings.ReplaceAll(testTriggeredEventJSON, "\n", "")
 
-	assert.Equal(t, jobEnv[3].Name, "DATA_JSON")
-	assert.Equal(t, jobEnv[3].Value, testTriggeredEventJSON)
-
 	testTriggeredEventYaml := `- https://keptn.sh
 - https://keptn2.sh
 `
 	assert.Equal(t, jobEnv[4].Name, "DATA_YAML")
 	assert.Equal(t, jobEnv[4].Value, testTriggeredEventYaml)
 
-	assert.Equal(t, jobEnv[5].Name, "KEPTN_PROJECT")
-	assert.Equal(t, jobEnv[5].Value, "sockshop")
+	expectedEnv := []corev1.EnvVar{
+		{Name: "HOST", Value: "https://keptn.sh"},
+		{Name: "DEPLOYMENT_STRATEGY", Value: "user_managed"},
+		{Name: "TEST_STRATEGY", Value: "health"},
+		{Name: "DATA_JSON", Value: testTriggeredEventJSON},
+		{Name: "DATA_YAML", Value: testTriggeredEventYaml},
+		// built-ins:
+		{Name: "KEPTN_PROJECT", Value: "sockshop"},
+		{Name: "KEPTN_STAGE", Value: "dev"},
+		{Name: "KEPTN_SERVICE", Value: "carts"},
+		// labels:
+		{Name: "LABELS_APP_VERSION", Value: "0.1.2"},
+		{Name: "LABELS_BUILD_DATETIME", Value: "202202212056"},
+	}
 
-	assert.Equal(t, jobEnv[6].Name, "KEPTN_STAGE")
-	assert.Equal(t, jobEnv[6].Value, "dev")
-
-	assert.Equal(t, jobEnv[7].Name, "KEPTN_SERVICE")
-	assert.Equal(t, jobEnv[7].Value, "carts")
+	assert.Subset(t, jobEnv, expectedEnv, "Prepared Job Environment does not contain the expected environment variables (or values)")
 }
 
 func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
@@ -188,7 +189,7 @@ func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 
 	k8s := k8sImpl{}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.ErrorContains(t, err, "unknown key undeploymentstrategy")
+	assert.Contains(t, err.Error(), "unknown key undeploymentstrategy")
 }
 
 func TestPrepareJobEnvFromSecret(t *testing.T) {
@@ -222,7 +223,7 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 	k8s.clientset.CoreV1().Secrets(testNamespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
 
 	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	// env from secrets can in in any order, sort them
 	var orderedSecretEnv [2]*corev1.EnvVar
@@ -234,12 +235,12 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 		}
 	}
 
-	assert.Assert(t, orderedSecretEnv[0] != nil, "env with key1 not present")
+	require.NotNil(t, orderedSecretEnv[0], "env with key1 not present")
 	assert.Equal(t, orderedSecretEnv[0].Name, key1)
 	assert.Equal(t, orderedSecretEnv[0].ValueFrom.SecretKeyRef.Key, key1)
 	assert.Equal(t, orderedSecretEnv[0].ValueFrom.SecretKeyRef.Name, secretName)
 
-	assert.Assert(t, orderedSecretEnv[1] != nil, "env with key2 not present")
+	require.NotNil(t, orderedSecretEnv[1], "env with key2 not present")
 	assert.Equal(t, orderedSecretEnv[1].Name, key2)
 	assert.Equal(t, orderedSecretEnv[1].ValueFrom.SecretKeyRef.Key, key2)
 	assert.Equal(t, orderedSecretEnv[1].ValueFrom.SecretKeyRef.Name, secretName)
@@ -268,7 +269,7 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.ErrorContains(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
+	assert.EqualError(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
 }
 
 func TestPrepareJobEnvFromString(t *testing.T) {
@@ -298,9 +299,9 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 	}
 
 	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
-	assert.Assert(t, len(jobEnv) == 4, "expected `jobEnv` to be 4, but was %d", len(jobEnv))
+	assert.Equal(t, len(jobEnv), 4)
 	assert.Equal(t, jobEnv[0].Name, envName)
 	assert.Equal(t, jobEnv[0].Value, value)
 }
@@ -339,10 +340,10 @@ func TestSetWorkingDir(t *testing.T) {
 		},
 	}, "", testNamespace)
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	var container *corev1.Container
 
@@ -354,7 +355,7 @@ func TestSetWorkingDir(t *testing.T) {
 		}
 	}
 
-	assert.Assert(t, container != nil, "No container called `%s` found", jobName)
+	require.NotNil(t, container, nil, "No container called `%s` found", jobName)
 	assert.Equal(t, container.WorkingDir, workingDir)
 
 }
@@ -392,12 +393,12 @@ func TestSetCustomNamespace(t *testing.T) {
 		},
 	}, "", namespace)
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
-	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
+	assert.Equal(t, job.Namespace, namespace, "Could not find container in namespace %s", namespace)
 }
 
 func TestSetEmptyNamespace(t *testing.T) {
@@ -433,19 +434,19 @@ func TestSetEmptyNamespace(t *testing.T) {
 		},
 	}, "", namespace)
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
-	assert.Assert(t, job.Namespace == namespace, "Could not find container in namespace %s", namespace)
+	assert.Equal(t, job.Namespace, namespace, "Could not find container in namespace %s", namespace)
 }
 
 func TestImagePullPolicy(t *testing.T) {
 
 	tests := []struct {
-		name string
-		inputPullPolicy string
+		name               string
+		inputPullPolicy    string
 		expectedPullPolicy corev1.PullPolicy
 	}{
 		{
@@ -469,7 +470,7 @@ func TestImagePullPolicy(t *testing.T) {
 			expectedPullPolicy: corev1.PullIfNotPresent,
 		},
 		{
-			name:               "`always` policy specified in input wrong case - works on client it will fail on" +
+			name: "`always` policy specified in input wrong case - works on client it will fail on" +
 				" server",
 			inputPullPolicy:    "always",
 			expectedPullPolicy: corev1.PullPolicy("always"),
@@ -482,12 +483,12 @@ func TestImagePullPolicy(t *testing.T) {
 				k8sClientSet := k8sfake.NewSimpleClientset()
 				k8s := k8sImpl{clientset: k8sClientSet}
 
-				jobName:= fmt.Sprintf("ipp-job-%d", i)
+				jobName := fmt.Sprintf("ipp-job-%d", i)
 
 				task := config.Task{
-					Name: fmt.Sprintf("noIppTask-%d", i),
-					Image: "someImage:someversion",
-					Cmd: []string{"someCmd"},
+					Name:            fmt.Sprintf("noIppTask-%d", i),
+					Image:           "someImage:someversion",
+					Cmd:             []string{"someCmd"},
 					ImagePullPolicy: test.inputPullPolicy,
 				}
 
@@ -508,10 +509,10 @@ func TestImagePullPolicy(t *testing.T) {
 						},
 					}, "", namespace,
 				)
-				assert.NilError(t, err)
+				require.NoError(t, err)
 
 				job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-				assert.NilError(t, err)
+				require.NoError(t, err)
 
 				assert.Equal(t, job.Spec.Template.Spec.Containers[0].ImagePullPolicy, test.expectedPullPolicy)
 			},
@@ -527,23 +528,23 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 	var ImmediatedlyDeletableTTLAfterFinished int32 = 0
 
 	tests := []struct {
-		name string
-		ttlSecondsAfterFinished *int32
+		name                            string
+		ttlSecondsAfterFinished         *int32
 		expectedTTLSecondsAfterFinished int32
 	}{
 		{
-			name:               "No ttl specified in input - we should have the default job executor of 21600",
-			ttlSecondsAfterFinished: nil,
+			name:                            "No ttl specified in input - we should have the default job executor of 21600",
+			ttlSecondsAfterFinished:         nil,
 			expectedTTLSecondsAfterFinished: DefaultTTLAfterFinished,
 		},
 		{
-			name:               "10 mins ttl specified in input",
-			ttlSecondsAfterFinished: &TenMinutesTTLAfterFinished,
+			name:                            "10 mins ttl specified in input",
+			ttlSecondsAfterFinished:         &TenMinutesTTLAfterFinished,
 			expectedTTLSecondsAfterFinished: TenMinutesTTLAfterFinished,
 		},
 		{
-			name:               "0 seconds ttl specified in input - job eligible for deletion immediately",
-			ttlSecondsAfterFinished: &ImmediatedlyDeletableTTLAfterFinished,
+			name:                            "0 seconds ttl specified in input - job eligible for deletion immediately",
+			ttlSecondsAfterFinished:         &ImmediatedlyDeletableTTLAfterFinished,
 			expectedTTLSecondsAfterFinished: ImmediatedlyDeletableTTLAfterFinished,
 		},
 	}
@@ -554,12 +555,12 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 				k8sClientSet := k8sfake.NewSimpleClientset()
 				k8s := k8sImpl{clientset: k8sClientSet}
 
-				jobName:= fmt.Sprintf("ipp-job-%d", i)
+				jobName := fmt.Sprintf("ipp-job-%d", i)
 
 				task := config.Task{
-					Name: fmt.Sprintf("noIppTask-%d", i),
-					Image: "someImage:someversion",
-					Cmd: []string{"someCmd"},
+					Name:                    fmt.Sprintf("noIppTask-%d", i),
+					Image:                   "someImage:someversion",
+					Cmd:                     []string{"someCmd"},
 					TTLSecondsAfterFinished: test.ttlSecondsAfterFinished,
 				}
 
@@ -580,12 +581,12 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 						},
 					}, "", namespace,
 				)
-				assert.NilError(t, err)
+				require.NoError(t, err)
 
 				job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
-				assert.NilError(t, err)
+				require.NoError(t, err)
 
-				assert.Assert(t, job.Spec.TTLSecondsAfterFinished != nil)
+				require.NotNil(t, job.Spec.TTLSecondsAfterFinished)
 				assert.Equal(t, *job.Spec.TTLSecondsAfterFinished, test.expectedTTLSecondsAfterFinished)
 			},
 		)
