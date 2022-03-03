@@ -12,6 +12,7 @@ require (
 	github.com/keptn/go-utils v0.12.0
 	github.com/keptn/kubernetes-utils v0.12.0
 	github.com/spf13/afero v1.8.1
+	github.com/stretchr/testify v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
