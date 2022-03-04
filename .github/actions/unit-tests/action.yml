@@ -10,7 +10,7 @@ runs:
   using: "composite"
   steps: 
     - name: Install Go
-      uses: actions/setup-go@v2.2.0
+      uses: actions/setup-go@v3.0.0
       with:
         go-version: ${{ inputs.GO_VERSION }}
     - name: Test
