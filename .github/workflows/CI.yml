@@ -129,7 +129,7 @@ jobs:
 
       - name: Docker Build
         id: docker_build
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.0
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.1
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
@@ -142,7 +142,7 @@ jobs:
 
       - name: Docker Build Initcontainer
         id: docker_build_initcontainer
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.0
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.1
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
