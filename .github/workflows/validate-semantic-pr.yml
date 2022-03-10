@@ -7,7 +7,7 @@ on:
       - synchronize
 jobs:
   validate:
-    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@v1.5.0
+    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@v1.5.1
     with:
       # Configure which scopes are allowed.
       scopes: |
