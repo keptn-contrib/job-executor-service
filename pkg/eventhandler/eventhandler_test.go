@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	k8sutilsfake "keptn-contrib/job-executor-service/pkg/k8sutils/fake"
-	"testing"
-	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/binding/spec"
@@ -17,7 +21,6 @@ import (
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
-	"gotest.tools/assert"
 )
 
 const testEvent = `
@@ -94,7 +97,7 @@ func TestInitializeEventPayloadAsInterface(t *testing.T) {
 	}
 
 	eventPayloadAsInterface, err := eh.createEventPayloadAsInterface()
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, eventPayloadAsInterface["id"], "0123")
 	assert.Equal(t, eventPayloadAsInterface["source"], "sourcysource")
@@ -111,7 +114,7 @@ func TestStartK8s(t *testing.T) {
 	jobNamespace1 := "keptn"
 	jobNamespace2 := "keptn-2"
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
@@ -143,10 +146,14 @@ func TestStartK8s(t *testing.T) {
 
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
-	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), jobNamespace1).Times(1)
-	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), jobNamespace2).Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), jobNamespace1,
+	).Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), jobNamespace2,
+	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 202, 5, jobNamespace1).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5, jobNamespace2).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
@@ -156,13 +163,17 @@ func TestStartK8s(t *testing.T) {
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
-	err = fakeEventSender.AssertSentEventTypes([]string{"sh.keptn.event.action.started", "sh.keptn.event.action.finished"})
-	assert.NilError(t, err)
+	err = fakeEventSender.AssertSentEventTypes(
+		[]string{
+			"sh.keptn.event.action.started", "sh.keptn.event.action.finished",
+		},
+	)
+	assert.NoError(t, err)
 }
 
 func TestStartK8sJobSilent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
@@ -189,10 +200,14 @@ func TestStartK8sJobSilent(t *testing.T) {
 
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
-	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any()).Times(1)
-	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), gomock.Any(),
+	).Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), gomock.Any(),
+	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5, "").Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
@@ -202,12 +217,12 @@ func TestStartK8sJobSilent(t *testing.T) {
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes([]string{})
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
@@ -230,24 +245,28 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 
 	k8sMock := createK8sMock(t)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
-	k8sMock.EXPECT().CreateK8sJob(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), gomock.Any(),
+	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
 	// set the global timezone for testing
 	local, err := time.LoadLocation("UTC")
-	assert.NilError(t, err)
+	require.NoError(t, err)
 	time.Local = local
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
-	err = fakeEventSender.AssertSentEventTypes([]string{
-		keptnv2.GetStartedEventType(keptnv2.TestTaskName),
-		keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
-	})
-	assert.NilError(t, err)
+	err = fakeEventSender.AssertSentEventTypes(
+		[]string{
+			keptnv2.GetStartedEventType(keptnv2.TestTaskName),
+			keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
+		},
+	)
+	require.NoError(t, err)
 
 	for _, cloudEvent := range fakeEventSender.SentEvents {
 		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
@@ -256,9 +275,9 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 
 			dateLayout := "2006-01-02T15:04:05Z"
 			_, err := time.Parse(dateLayout, eventData.Test.Start)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 			_, err = time.Parse(dateLayout, eventData.Test.End)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 		}
 	}
 }

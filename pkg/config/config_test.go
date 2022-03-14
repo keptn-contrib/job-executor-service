@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const simpleConfig = `
@@ -169,7 +169,7 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 
 	config, err := NewConfig([]byte(simpleConfig))
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(config.Actions), 1)
 	assert.Equal(t, config.Actions[0].Silent, false)
 
@@ -185,11 +185,11 @@ func TestComplexConfigUnmarshalling(t *testing.T) {
 
 	config, err := NewConfig([]byte(complexConfig))
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(config.Actions), 2)
 	assert.Equal(t, config.Actions[1].Silent, true)
 
-	assert.Assert(t, config.Actions[1].Tasks[0].Resources == nil)
+	assert.Nil(t, config.Actions[1].Tasks[0].Resources)
 
 	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Limits.CPU, "1")
 	assert.Equal(t, config.Actions[0].Tasks[0].Resources.Limits.Memory, "512Mi")
@@ -225,11 +225,11 @@ func TestSimpleWrongApiVersion(t *testing.T) {
 func TestSimpleMatch(t *testing.T) {
 
 	config, err := NewConfig([]byte(simpleConfig))
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	jsonEventData := interface{}(nil)
 	err = json.Unmarshal([]byte(testTriggeredEvent), &jsonEventData)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
 	found, action := config.IsEventMatch("sh.keptn.event.test.triggered", data)
@@ -240,11 +240,11 @@ func TestSimpleMatch(t *testing.T) {
 func TestSimpleNoMatch(t *testing.T) {
 
 	config, err := NewConfig([]byte(simpleConfig))
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	jsonEventData := interface{}(nil)
 	err = json.Unmarshal([]byte(testTriggeredEvent), &jsonEventData)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
 	found, _ := config.IsEventMatch("sh.keptn.event.action.triggered", data)
@@ -254,14 +254,14 @@ func TestSimpleNoMatch(t *testing.T) {
 func TestComplexMatch(t *testing.T) {
 
 	config, err := NewConfig([]byte(complexConfig))
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	// sh.keptn.event.action.triggered - action: hello
 
 	actionTriggeredEvent := getActionEvent("triggered", "hello")
 	jsonEventData := interface{}(nil)
 	err = json.Unmarshal([]byte(actionTriggeredEvent), &jsonEventData)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
 	found, action := config.IsEventMatch("sh.keptn.event.action.triggered", data)
@@ -273,7 +273,7 @@ func TestComplexMatch(t *testing.T) {
 	actionTriggeredEvent = getActionEvent("triggered", "goodbye")
 	jsonEventData = interface{}(nil)
 	err = json.Unmarshal([]byte(actionTriggeredEvent), &jsonEventData)
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	data = jsonEventData.(map[string]interface{})["data"]
 	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", data)
@@ -338,14 +338,14 @@ actions:
 
 	config, err := NewConfig([]byte(configYaml))
 
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, len(config.Actions), 1)
 	assert.Equal(t, len(config.Actions[0].Tasks), 4)
-	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[0].ImagePullPolicy, ""))
-	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[1].ImagePullPolicy, "Always"))
-	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[2].ImagePullPolicy, "Never"))
-	assert.Check(t, cmp.Equal(config.Actions[0].Tasks[3].ImagePullPolicy, "IfNotPresent"))
+	assert.Equal(t, config.Actions[0].Tasks[0].ImagePullPolicy, "")
+	assert.Equal(t, config.Actions[0].Tasks[1].ImagePullPolicy, "Always")
+	assert.Equal(t, config.Actions[0].Tasks[2].ImagePullPolicy, "Never")
+	assert.Equal(t, config.Actions[0].Tasks[3].ImagePullPolicy, "IfNotPresent")
 }
 
 func TestTTLSecondsAfterFinished(t *testing.T) {
@@ -383,13 +383,13 @@ actions:
 
 	config, err := NewConfig([]byte(configYaml))
 
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, len(config.Actions), 1)
 	assert.Equal(t, len(config.Actions[0].Tasks), 3)
-	assert.Assert(t, config.Actions[0].Tasks[0].TTLSecondsAfterFinished == nil)
-	assert.Assert(t, config.Actions[0].Tasks[1].TTLSecondsAfterFinished != nil)
-	assert.Check(t, cmp.Equal(*config.Actions[0].Tasks[1].TTLSecondsAfterFinished, int32(600)))
-	assert.Assert(t, config.Actions[0].Tasks[2].TTLSecondsAfterFinished != nil)
-	assert.Check(t, cmp.Equal(*config.Actions[0].Tasks[2].TTLSecondsAfterFinished, int32(0)))
+	assert.Nil(t, config.Actions[0].Tasks[0].TTLSecondsAfterFinished)
+	require.NotNil(t, config.Actions[0].Tasks[1].TTLSecondsAfterFinished)
+	assert.Equal(t, *config.Actions[0].Tasks[1].TTLSecondsAfterFinished, int32(600))
+	require.NotNil(t, config.Actions[0].Tasks[2].TTLSecondsAfterFinished)
+	assert.Equal(t, *config.Actions[0].Tasks[2].TTLSecondsAfterFinished, int32(0))
 }

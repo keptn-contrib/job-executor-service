@@ -1,14 +1,17 @@
 package keptn
 
 import (
-	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
 
 	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/spf13/afero"
-	"gotest.tools/assert"
 )
 
 func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockResourceHandler {
@@ -39,33 +42,40 @@ func TestGetAllKeptnResources(t *testing.T) {
 				ResourceContent: "",
 				ResourceURI:     &locustFunctional,
 			},
-		}, nil)
+		}, nil,
+	)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(project, stage, service, url.QueryEscape(locustBasic)).Times(1).Return(
+	resourceHandlerMock.EXPECT().GetServiceResource(
+		project, stage, service, url.QueryEscape(locustBasic),
+	).Times(1).Return(
 		&models.Resource{
 			Metadata:        nil,
 			ResourceContent: locustBasic,
 			ResourceURI:     nil,
-		}, nil)
+		}, nil,
+	)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(project, stage, service, url.QueryEscape(locustFunctional)).Times(1).Return(
+	resourceHandlerMock.EXPECT().GetServiceResource(
+		project, stage, service, url.QueryEscape(locustFunctional),
+	).Times(1).Return(
 		&models.Resource{
 			Metadata:        nil,
 			ResourceContent: locustFunctional,
 			ResourceURI:     nil,
-		}, nil)
+		}, nil,
+	)
 
 	configService := NewConfigService(false, project, stage, service, resourceHandlerMock)
 	fs := afero.NewMemMapFs()
 
 	keptnResources, err := configService.GetAllKeptnResources(fs, "locust")
-	assert.NilError(t, err)
+	require.NoError(t, err)
 
 	val, ok := keptnResources[locustBasic]
-	assert.Assert(t, ok)
+	assert.True(t, ok)
 	assert.Equal(t, string(val), locustBasic)
 
 	val, ok = keptnResources[locustFunctional]
-	assert.Assert(t, ok)
+	assert.True(t, ok)
 	assert.Equal(t, string(val), locustFunctional)
 }
