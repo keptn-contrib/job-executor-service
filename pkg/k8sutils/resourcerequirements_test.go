@@ -1,8 +1,10 @@
 package k8sutils
 
 import (
-	"gotest.tools/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -19,7 +21,7 @@ func TestCreateResourceRequirements_Valid(t *testing.T) {
 		resourceRequestsCPU,
 		resourceRequestsMemory,
 	)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, resourceRequirements.Limits.Cpu().String(), resourceLimitsCPU)
 	assert.Equal(t, resourceRequirements.Limits.Memory().String(), resourceLimitsMemory)
 	assert.Equal(t, resourceRequirements.Requests.Cpu().String(), resourceRequestsCPU)
@@ -33,10 +35,10 @@ func TestCreateResourceRequirements_Partial(t *testing.T) {
 		"",
 		resourceRequestsMemory,
 	)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, resourceRequirements.Limits.Cpu().String(), resourceLimitsCPU)
-	assert.Assert(t, resourceRequirements.Limits.Memory().IsZero())
-	assert.Assert(t, resourceRequirements.Requests.Cpu().IsZero())
+	assert.True(t, resourceRequirements.Limits.Memory().IsZero())
+	assert.True(t, resourceRequirements.Requests.Cpu().IsZero())
 	assert.Equal(t, resourceRequirements.Requests.Memory().String(), resourceRequestsMemory)
 }
 
@@ -49,5 +51,9 @@ func TestCreateResourceRequirements_Invalid(t *testing.T) {
 		resourceRequestsCPU,
 		resourceRequestsMemory,
 	)
-	assert.ErrorContains(t, err, "unable to parse resource limits requirement: unable to parse cpu quantity '1KeinEiKummGeGimmeEinEi'")
+	require.Error(t, err)
+	assert.Contains(
+		t, err.Error(),
+		"unable to parse resource limits requirement: unable to parse cpu quantity '1KeinEiKummGeGimmeEinEi'",
+	)
 }
