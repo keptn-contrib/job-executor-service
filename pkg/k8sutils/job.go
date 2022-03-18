@@ -118,7 +118,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 						{
 							Name:            "init-" + jobName,
 							Image:           jobSettings.InitContainerImage,
-							ImagePullPolicy: v1.PullAlways,
+							ImagePullPolicy: v1.PullIfNotPresent,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
