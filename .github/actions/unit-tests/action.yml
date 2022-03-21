@@ -13,6 +13,14 @@ runs:
       uses: actions/setup-go@v3.0.0
       with:
         go-version: ${{ inputs.GO_VERSION }}
+    - name: Install gotestsum
+      shell: bash
+      run: go install gotest.tools/gotestsum@latest
     - name: Test
       shell: bash
-      run: go test -v ./...
+      run: gotestsum --format testname --junitfile unittests_report.xml
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      with:
+        files: "unittests_report.xml"
