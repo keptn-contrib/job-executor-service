@@ -10,7 +10,7 @@ require (
 	github.com/keptn/go-utils v0.12.0
 	github.com/keptn/kubernetes-utils v0.12.0
 	github.com/spf13/afero v1.8.2
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
