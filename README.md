@@ -40,17 +40,12 @@ Please note: Newer Keptn versions might be compatible, but compatibility has not
 The *job-executor-service* can be installed as a part of [Keptn's uniform](https://keptn.sh) using `helm`:
 
 ```bash
-helm install -n keptn job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz
+helm upgrade --install -n keptn job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz
 ```
 
 Please replace `<VERSION>` with the actual version you want to install from the compatibility matrix above or the 
 [GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases).
 
-
-**Note**: Versions 0.1.4 and older need to be installed using `kubectl`, e.g.:
-```bash
-kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/job-executor-service/release-<VERSION>/deploy/service.yaml
-```
 
 ### Installation on remote execution-plane
 
@@ -73,7 +68,7 @@ KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
 
 TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
 
-helm install -n <NAMESPACE> \
+helm upgrade --install --create-namespace -n <NAMESPACE> \
   job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
  --set remoteControlPlane.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
 
@@ -82,13 +77,48 @@ helm install -n <NAMESPACE> \
 
 To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
 
+### Update API Token on Remote Execution-Plane
+
+To update your `KEPTN_API_TOKEN` on an existing installation, please execute the following command (make sure to use the same `<VERSION>` is currently installed):
+
+```bash
+ KEPTN_API_TOKEN=<INSERT-YOUR-NEW-KEPTN-API-TOKEN-HERE>
+
+helm upgrade -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  --reuse-values \
+ --set remoteControlPlane.api.token=${KEPTN_API_TOKEN}
+```
+
+### Update Topic Subscriptions
+
+To update your `TASK_SUBSCRIPTION` (as in the Cloud Event types that job-executor-service is listening to), please execute the following command (make sure to use the same `<VERSION>` is currently installed):
+
+```bash
+TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered,sh.keptn.event.some-other-task.triggered
+
+helm upgrade -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  --reuse-values \
+ --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION}
+```
+
+## Upgrade
+
+To upgrade to a newer version of *job-executor-service*, run
+
+```bash
+helm upgrade -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  --reuse-values
+```
 
 ## Uninstall
 
 To uninstall *job-executor-service*, run
 
 ```bash
-helm uninstall -n keptn job-executor-service
+helm uninstall -n <NAMESPACE> job-executor-service
 ```
 
 ## Development
@@ -99,15 +129,12 @@ When writing code, it is recommended to follow the coding style suggested by the
 
 ### Common tasks
 
-* Build the binary: `go build -ldflags '-linkmode=external' -v -o job-executor-service`
 * Run tests: `go test -race -v ./...`
+* Deploy the service during development using [Skaffold](https://skaffold.dev/):  
+  `skaffold run --default-repo=<your-docker-registry> --tail` (Note: replace `<your-docker-registry>` with your DockerHub username)
 * Watch the deployment using `kubectl`: `kubectl -n keptn get deployment job-executor-service -o wide`
 * Get logs using `kubectl`: `kubectl -n keptn logs deployment/job-executor-service -f`
 * Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=job-executor-service`
-* Deploy the service
-  using [Skaffold](https://skaffold.dev/): `skaffold run --default-repo=<your-docker-registry> --tail` (Note:
-  Replace `<your-docker-registry>` with your DockerHub username
-
 
 ### How to release a new version of this service
 
@@ -150,13 +177,6 @@ The easiest way to add the `config.yaml` to the keptn git repository is to use t
 ```shell
 keptn add-resource --project=myproject --service=myservice --stage=mystage --resource=config.yaml --resourceUri=job/config.yaml
 ```
-
-
-**Note:** `ttlSecondsAfterFinished` relies on setting the [same property](https://kubernetes.io/docs/concepts/workloads/controllers/job/#ttl-mechanism-for-finished-jobs)
-in kubernetes job workloads spec. The TTL controller (alpha from Kubernetes v1.12-v1.20, beta in v1.21-v1.22, GA in v1.23)
-will then take care of cleanup.
-More information about feature stages in kubernetes (that is what alpha, beta and GA implies in that context) have a look at
-the [official kubernetes documentation](https://v1-20.docs.kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-stages).
 
 
 ## How to validate a job configuration
