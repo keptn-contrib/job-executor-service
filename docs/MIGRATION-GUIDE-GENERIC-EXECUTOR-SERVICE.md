@@ -15,6 +15,43 @@ Suggested reads:
 * https://keptn.sh/docs/concepts/architecture/
 * https://engineering.dynatrace.com/blog/a-tool-to-execute-them-all-the-job-executor-service/
 
+## What's still missing
+
+Unfortunately, job-executor-service is not fully compatible with generic-executor-service. The following list provides
+an overview of what's still missing.
+
+### Returning errors or follow-up event
+
+While [generic-executor-service supports returning errors or a follow-up event](https://github.com/keptn-sandbox/generic-executor-service#returning-errors-or-follow-up-event),
+job-executor-service still lacks this, and will always put the output produced by the command as the `data.message` property
+of the `.finished` cloud-event.
+
+Example (using `helm upgrade` within job-executor-service) - output is written to `data.message`:
+```json
+{
+  "data": {
+    "message": "Job job-executor-service-job-a9338cab-2462-41e6-9414-599d-1 finished successfully!\n\nLogs:\nRelease \"helloservice\" has been upgraded. Happy Helming!\nNAME: helloservice\nLAST DEPLOYED: Wed Mar 16 13:43:41 2022\nNAMESPACE: podtato-head-qa\nSTATUS: deployed\nREVISION: 18\nTEST SUITE: None\n\n\n",
+    "project": "podtato-head",
+    "result": "pass",
+    "service": "helloservice",
+    "stage": "qa",
+    "status": "succeeded"
+  },
+  "id": "7b8f6c80-b887-421a-8c90-cca9b51c2acd",
+  "source": "job-executor-service",
+  "specversion": "1.0",
+  "time": "2022-03-16T13:43:49.785Z",
+  "type": "sh.keptn.event.je-deployment.finished",
+  "shkeptncontext": "2ebdf6a9-8300-42b0-80ea-ebd54061996e",
+  "shkeptnspecversion": "0.2.3",
+  "triggeredid": "a9338cab-2462-41e6-9414-599d711652e8"
+}
+```
+
+**Plan**: There is a plan to include a similar feature in the future - see https://github.com/keptn-contrib/job-executor-service/discussions/129 for a related discussion.
+
+**Recommendation**: For now, we recommend staying with generic-executor-service until this feature is implemented in job-executor-service.
+
 ## Migrating HTTP webhook-based setup
 
 In generic-executor-service you can use webhooks by creating a `$event.http` file (where `$event` reflects the Cloud
