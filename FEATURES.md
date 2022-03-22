@@ -528,3 +528,10 @@ tasks:
     # the corresponding job for this task will be cleaned up 10 minutes (600 seconds) after completion
     ttlSecondsAfterFinished: 600
 ```
+
+**Note:** `ttlSecondsAfterFinished` relies on setting the [same property](https://kubernetes.io/docs/concepts/workloads/controllers/job/#ttl-mechanism-for-finished-jobs)
+in kubernetes job workloads spec. The TTL controller (alpha from Kubernetes v1.12-v1.20, beta in v1.21-v1.22, GA in v1.23)
+will then take care of cleanup.
+More information about feature stages in kubernetes (that is what alpha, beta and GA implies in that context) have a look at
+the [official kubernetes documentation](https://v1-20.docs.kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/#feature-stages).
+
