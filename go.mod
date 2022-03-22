@@ -9,7 +9,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.12.0
 	github.com/keptn/kubernetes-utils v0.12.0
-	github.com/spf13/afero v1.8.1
+	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.1
