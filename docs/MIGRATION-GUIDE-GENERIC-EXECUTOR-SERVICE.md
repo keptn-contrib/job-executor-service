@@ -175,7 +175,7 @@ keptn add-resource --project=<PROJECT> --service=<SERVICE> --stage=<STAGE> --res
 
 ## Migrating Python Scripts
 
-In generic-executor-service you can use bash scripts by creating a `$event.sh` file (where `$event` reflects the Cloud
+In generic-executor-service you can use python scripts by creating a `$event.py` file (where `$event` reflects the Cloud
 event type you are listening for), with the following content:
 
 **deployment.triggered.py**
