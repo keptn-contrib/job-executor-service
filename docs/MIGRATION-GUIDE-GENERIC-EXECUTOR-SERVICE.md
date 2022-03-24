@@ -204,7 +204,7 @@ However, we recommend some additional steps before that:
 * Create secrets for sensitive data in the Kubernetes namespace that job-executor-service is installed (`kubectl create secret ...`)
 * Move the script into another folder (optional)
 
-For more information regarding environment variables, please consult [FEATUERS.md](../FEATURES.md).
+For more information regarding environment variables, please consult [FEATURES.md](../FEATURES.md).
 
 **job/config.yaml**
 ```yaml
