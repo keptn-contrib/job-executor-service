@@ -32,7 +32,7 @@ deploy:
         overrides:
           distributor:
             image:
-              tag: 0.12.2
+              tag: 0.12.6
           resources:
             limits:
               memory: 512Mi # increase memory limit such that debugging using delve works
