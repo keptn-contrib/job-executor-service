@@ -194,7 +194,7 @@ print("SOURCE=" + os.getenv('SOURCE',""))
 print("PROJECT=" + os.getenv('DATA_PROJECT',""))
 ```
 
-In general, this can be achieved by re-using existing `.sh` files in job-executor-service, using a container that provides bash and the necessary tools, and providing all necessary variables within the code.
+In general, this can be achieved by re-using existing `.py` files in job-executor-service, using a container that provides python and the necessary tools/packages, and providing all necessary variables within the code.
 
 However, we recommend some additional steps before that:
 
