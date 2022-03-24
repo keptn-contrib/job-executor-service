@@ -119,7 +119,7 @@ However, we recommend some additional steps before that:
 * Create secrets for sensitive data in the Kubernetes namespace that job-executor-service is installed (`kubectl -n keptn create secret generic my-super-secret --from-literal="ENV_TESTTOKEN=1234"`)
 * Move the script into another folder (optional)
 
-For more information regarding environment variables, please consult [FEATUERS.md](../FEATURES.md).
+For more information regarding environment variables, please consult [FEATURES.md](../FEATURES.md).
 
 **job/config.yaml**
 ```yaml
