@@ -165,7 +165,7 @@ func _main(args []string, env envConfig) int {
 
 	// Checking if the given job service account is empty
 	if env.DefaultJobServiceAccount == "" {
-		log.Println("WARNING: Using default service account for jobs!")
+		log.Println("WARNING: No default service account for jobs configured: using kubernetes default service account!")
 	}
 
 	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceURL

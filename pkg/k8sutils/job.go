@@ -74,8 +74,6 @@ func (k8s *k8sImpl) CreateK8sJob(
 		SizeLimit: &quantity,
 	}
 	automountServiceAccountToken := jobSettings.EnableKubernetesAPIAccess
-
-	// specify empty service account name for job
 	serviceAccountName := jobSettings.DefaultJobServiceAccount
 
 	if jobSettings.EnableKubernetesAPIAccess {
