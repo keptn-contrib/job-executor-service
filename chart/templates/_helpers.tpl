@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the name of the job service account to use
+*/}}
+{{- define "job-executor-service.jobConfig.serviceAccountName" -}}
+{{- if ((.Values.jobConfig).serviceAccount).create | default true }}
+{{- default (printf "%s-%s" (include "job-executor-service.fullname" .) (default "default-job-account" ((.Values.jobConfig).serviceAccount).name)) }}
+{{- else }}
+{{- default "default-job-account" ((.Values.jobConfig).serviceAccount).name }}
+{{- end }}
+{{- end }}

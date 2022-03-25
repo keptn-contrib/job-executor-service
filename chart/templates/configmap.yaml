@@ -11,3 +11,4 @@ data:
   default_resource_requests_memory: "128Mi"
   always_send_finished_event: "false"
   enable_kubernetes_api_access: "{{ .Values.jobConfig.enableKubernetesApiAccess | default false }}"
+  default_job_service_account: "{{ include "job-executor-service.jobConfig.serviceAccountName" . }}"

@@ -51,6 +51,8 @@ type envConfig struct {
 	AlwaysSendFinishedEvent string `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
 	// Whether jobs can access Kubernetes API
 	EnableKubernetesAPIAccess string `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
+	// The name of the default job service account which should be used
+	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -106,6 +108,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 			DefaultResourceRequirements: DefaultResourceRequirements,
 			AlwaysSendFinishedEvent:     false,
 			EnableKubernetesAPIAccess:   false,
+			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 		},
 	}
 
@@ -158,6 +161,11 @@ func _main(args []string, env envConfig) int {
 	if env.Env == "local" {
 		log.Println("env=local: Running with local filesystem to fetch resources")
 		keptnOptions.UseLocalFileSystem = true
+	}
+
+	// Checking if the given job service account is empty
+	if env.DefaultJobServiceAccount == "" {
+		log.Println("WARNING: Using default service account for jobs!")
 	}
 
 	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceURL

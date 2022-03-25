@@ -101,6 +101,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: enable_kubernetes_api_access
+          - name: DEFAULT_JOB_SERVICE_ACCOUNT
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: default_job_service_account
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor
