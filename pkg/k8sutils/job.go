@@ -127,12 +127,26 @@ func (k8s *k8sImpl) CreateK8sJob(
 							},
 							Env: []v1.EnvVar{
 								{
-									Name:  "CONFIGURATION_SERVICE",
-									Value: jobSettings.InitContainerConfigurationServiceAPIEndpoint,
+									Name: "CONFIGURATION_SERVICE",
+									ValueFrom: &v1.EnvVarSource{
+										SecretKeyRef: &v1.SecretKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-serivce-keptn-secrets",
+											},
+											Key: "configuration-endpoint",
+										},
+									},
 								},
 								{
-									Name:  "KEPTN_API_TOKEN",
-									Value: jobSettings.KeptnAPIToken,
+									Name: "KEPTN_API_TOKEN",
+									ValueFrom: &v1.EnvVarSource{
+										SecretKeyRef: &v1.SecretKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-serivce-keptn-secrets",
+											},
+											Key: "token",
+										},
+									},
 								},
 								{
 									Name:  "KEPTN_PROJECT",

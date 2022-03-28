@@ -50,9 +50,15 @@ spec:
           env:
           {{- if .Values.remoteControlPlane.enabled }}
           - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
-            value: "{{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api/configuration-service"
+            valueFrom:
+              secretKeyRef:
+                name: job-serivce-keptn-secrets
+                key: configuration-endpoint
           - name: KEPTN_API_TOKEN
-            value: "{{ .Values.remoteControlPlane.api.token }}"
+            valueFrom:
+              secretKeyRef:
+                name: job-serivce-keptn-secrets
+                key: token
           {{- else }}
           - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
             value: "http://configuration-service:8080"
@@ -165,9 +171,15 @@ spec:
                   fieldPath: spec.nodeName
             {{- if .Values.remoteControlPlane.enabled }}
             - name: KEPTN_API_ENDPOINT
-              value: "{{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api"
+              valueFrom:
+                secretKeyRef:
+                  name: job-serivce-keptn-secrets
+                  key: endpoint
             - name: KEPTN_API_TOKEN
-              value: "{{ .Values.remoteControlPlane.api.token }}"
+              valueFrom:
+                secretKeyRef:
+                  name: job-serivce-keptn-secrets
+                  key: token
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
             {{- end }}

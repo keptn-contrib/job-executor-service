@@ -11,3 +11,14 @@ data:
   default_resource_requests_memory: "128Mi"
   always_send_finished_event: "false"
   enable_kubernetes_api_access: "{{ .Values.jobConfig.enableKubernetesApiAccess | default false }}"
+---
+# Secret for the Keptn API Token
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: job-serivce-keptn-secrets
+data:
+  token: {{ .Values.remoteControlPlane.api.token | b64enc | quote }}
+  endpoint: {{ (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) | b64enc }}
+  configuration-endpoint: {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) | b64enc }}

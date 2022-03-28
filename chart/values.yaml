@@ -24,11 +24,11 @@ distributor:
       enabled: true                          # Enable connection via Nats queue group to support exactly-once message processing
 
 remoteControlPlane:
-  enabled: false                             # Enables remote execution plane mode
+  enabled: true                              # Enables remote execution plane mode
   topicSubscription: "sh.keptn.event.test.triggered,sh.keptn.event.deployment.triggered,sh.keptn.event.evaluation.triggered,sh.keptn.event.release.triggered,sh.keptn.event.approval.triggered" # Specify list of CloudEvents to subscribe to in the case of remote control plane
   api:
-    protocol: "https"                        # Used Protocol (http, https)
-    hostname: ""                             # Hostname of the control plane cluster (and Port)
+    protocol: "http"                         # Used Protocol (http, https)
+    hostname: "api-gateway-nginx.keptn"                             # Hostname of the control plane cluster (and Port)
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
     token: ""                                # Keptn API Token
 
