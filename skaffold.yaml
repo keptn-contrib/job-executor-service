@@ -20,7 +20,7 @@ deploy:
       upgrade: ["--reuse-values"] # keep configuration (e.g., Keptn API Token)
     releases:
       - name: job-executor-service # needs to be the same name as currently used (check via helm ls -n keptn)
-        namespace: job-executor-service # needs to be the same namespace as where the helm-chart is currently deployed
+        namespace: keptn-jes # needs to be the same namespace as where the helm-chart is currently deployed
         # upgradeOnChange: true
         # recreatePods: false # don't recreate all pods
         artifactOverrides:
