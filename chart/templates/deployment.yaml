@@ -48,21 +48,11 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-          {{- if .Values.remoteControlPlane.enabled }}
-          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
-            valueFrom:
-              secretKeyRef:
-                name: job-serivce-keptn-secrets
-                key: configuration-endpoint
           - name: KEPTN_API_TOKEN
             valueFrom:
               secretKeyRef:
                 name: job-serivce-keptn-secrets
                 key: token
-          {{- else }}
-          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
-            value: "http://configuration-service:8080"
-          {{- end }}
           - name: CONFIGURATION_SERVICE
             value: "http://localhost:8081/configuration-service"
           - name: env
@@ -172,9 +162,9 @@ spec:
             {{- if .Values.remoteControlPlane.enabled }}
             - name: KEPTN_API_ENDPOINT
               valueFrom:
-                secretKeyRef:
-                  name: job-serivce-keptn-secrets
-                  key: endpoint
+                configMapKeyRef:
+                  name: job-service-config
+                  key: keptn_api_endpoint
             - name: KEPTN_API_TOKEN
               valueFrom:
                 secretKeyRef:

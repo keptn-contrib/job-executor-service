@@ -28,13 +28,12 @@ const envValueFromString = "string"
 
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
-	JobNamespace                                 string
-	InitContainerConfigurationServiceAPIEndpoint string
-	KeptnAPIToken                                string
-	InitContainerImage                           string
-	DefaultResourceRequirements                  *v1.ResourceRequirements
-	AlwaysSendFinishedEvent                      bool
-	EnableKubernetesAPIAccess                    bool
+	JobNamespace                string
+	KeptnAPIToken               string
+	InitContainerImage          string
+	DefaultResourceRequirements *v1.ResourceRequirements
+	AlwaysSendFinishedEvent     bool
+	EnableKubernetesAPIAccess   bool
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
@@ -129,11 +128,11 @@ func (k8s *k8sImpl) CreateK8sJob(
 								{
 									Name: "CONFIGURATION_SERVICE",
 									ValueFrom: &v1.EnvVarSource{
-										SecretKeyRef: &v1.SecretKeySelector{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
 											LocalObjectReference: v1.LocalObjectReference{
-												Name: "job-serivce-keptn-secrets",
+												Name: "job-service-config",
 											},
-											Key: "configuration-endpoint",
+											Key: "init_container_configuration_endpoint",
 										},
 									},
 								},

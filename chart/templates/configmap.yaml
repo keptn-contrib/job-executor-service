@@ -11,6 +11,13 @@ data:
   default_resource_requests_memory: "128Mi"
   always_send_finished_event: "false"
   enable_kubernetes_api_access: "{{ .Values.jobConfig.enableKubernetesApiAccess | default false }}"
+  keptn_api_endpoint: {{ (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
+  init_container_configuration_endpoint:
+    {{- if .Values.remoteControlPlane.enabled }}
+      {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
+    {{- else }}
+      "http://configuration-service:8080"
+    {{- end }}
 ---
 # Secret for the Keptn API Token
 apiVersion: v1
@@ -20,5 +27,3 @@ metadata:
   name: job-serivce-keptn-secrets
 data:
   token: {{ .Values.remoteControlPlane.api.token | b64enc | quote }}
-  endpoint: {{ (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) | b64enc }}
-  configuration-endpoint: {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) | b64enc }}
