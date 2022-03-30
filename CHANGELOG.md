@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/keptn-contrib/job-executor-service/compare/0.1.7...0.1.8) (2022-03-30)
+
+
+### Features
+
+* Add labels to environment variables ([#185](https://github.com/keptn-contrib/job-executor-service/issues/185)) ([43cee8d](https://github.com/keptn-contrib/job-executor-service/commit/43cee8d1ed0b810c2fa554363faf4c8273a55487))
+* Implement liveness and readiness endpoints ([#197](https://github.com/keptn-contrib/job-executor-service/issues/197)) ([0bcd9a6](https://github.com/keptn-contrib/job-executor-service/commit/0bcd9a6eb6bdaa5cd3c83c2ac74b8f31d2d8cfdd))
+* Use pullPolicy ifNotPresent for initContainer ([#191](https://github.com/keptn-contrib/job-executor-service/issues/191)) ([#196](https://github.com/keptn-contrib/job-executor-service/issues/196)) ([71716b7](https://github.com/keptn-contrib/job-executor-service/commit/71716b7563adfe60d3a327c1f81d1fdb63dc1ebf))
+
+
+### Bug Fixes
+
+* Allow handling of event types other than *.triggered ([#182](https://github.com/keptn-contrib/job-executor-service/issues/182)) ([80a49d7](https://github.com/keptn-contrib/job-executor-service/commit/80a49d7769036f3e1b192e1b130dc7438d0be59d))
+
+
+### Other
+
+* Release notes for 0.1.7 ([#180](https://github.com/keptn-contrib/job-executor-service/issues/180)) ([146257e](https://github.com/keptn-contrib/job-executor-service/commit/146257e4849667af8e891e67d89b6a5801d515c6))
+
+
+### Docs
+
+* Add guidance for updating api-token, topic subscription to README ([#200](https://github.com/keptn-contrib/job-executor-service/issues/200)) ([6e99d57](https://github.com/keptn-contrib/job-executor-service/commit/6e99d57fa46a5abb90f66265631cb1350d20343b))
+* added architecture diagrams ([#172](https://github.com/keptn-contrib/job-executor-service/issues/172)) ([1814bc0](https://github.com/keptn-contrib/job-executor-service/commit/1814bc0f80923dde2d0c00162ebb3f27bac95c30))
+* Added migration guide for generic-executor-service ([#199](https://github.com/keptn-contrib/job-executor-service/issues/199)) ([f1eb946](https://github.com/keptn-contrib/job-executor-service/commit/f1eb946d671de336786e6554455e54b32dc9fe59))
+* Moved releasenotes into CHANGELOG.md ([#203](https://github.com/keptn-contrib/job-executor-service/issues/203)) ([c8cbe5e](https://github.com/keptn-contrib/job-executor-service/commit/c8cbe5eb51c18b52b40aa1aac7d5cb04c7647f7b))
+
 ### [0.1.7](https://github.com/keptn-contrib/job-executor-service/compare/0.1.6...0.1.7) (2022-02-28)
 
 
