@@ -61,7 +61,7 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{- define "job-executor-service.remote-conrol-plane.token" -}}
+{{- define "job-executor-service.remote-control-plane.token" -}}
 {{- if .Values.remoteControlPlane.enabled }}
 {{- required "A valid Keptn API token is needed for the installation in the remote-control-plane" .Values.remoteControlPlane.api.token }}
 {{- else }}

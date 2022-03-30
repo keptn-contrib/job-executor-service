@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: job-service-config
+  namespace: {{ .Release.Namespace }}
 data:
   job_namespace: "{{ .Release.Namespace }}"
   init_container_image: "{{ .Values.jobexecutorserviceinitcontainer.image.repository }}:{{ .Values.jobexecutorserviceinitcontainer.image.tag | default .Chart.AppVersion }}"
@@ -12,18 +13,4 @@ data:
   always_send_finished_event: "false"
   enable_kubernetes_api_access: "{{ .Values.jobConfig.enableKubernetesApiAccess | default false }}"
   keptn_api_endpoint: {{ (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
-  init_container_configuration_endpoint:
-    {{- if .Values.remoteControlPlane.enabled }}
-      {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
-    {{- else }}
-      "http://configuration-service:8080"
-    {{- end }}
----
-# Secret for the Keptn API Token
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: job-serivce-keptn-secrets
-data:
-  token: {{ b64enc (include "job-executor-service.remote-conrol-plane.token" .) | quote }}
+  init_container_configuration_endpoint: {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}

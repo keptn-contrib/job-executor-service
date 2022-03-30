@@ -24,7 +24,6 @@ distributor:
       enabled: true                          # Enable connection via Nats queue group to support exactly-once message processing
 
 remoteControlPlane:
-  enabled: true                              # Enables remote execution plane mode
   topicSubscription: "sh.keptn.event.test.triggered,sh.keptn.event.deployment.triggered,sh.keptn.event.evaluation.triggered,sh.keptn.event.release.triggered,sh.keptn.event.approval.triggered" # Specify list of CloudEvents to subscribe to in the case of remote control plane
   api:
     protocol: "http"                         # Used Protocol (http, https)

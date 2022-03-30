@@ -141,7 +141,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 									ValueFrom: &v1.EnvVarSource{
 										SecretKeyRef: &v1.SecretKeySelector{
 											LocalObjectReference: v1.LocalObjectReference{
-												Name: "job-serivce-keptn-secrets",
+												Name: "job-service-keptn-secrets",
 											},
 											Key: "token",
 										},
