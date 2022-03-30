@@ -22,17 +22,8 @@ distributor:
   config:
     queueGroup:
       enabled: true                          # Enable connection via Nats queue group to support exactly-once message processing
-  securityContext:                           # Default security context of the distributor; DO NOT CHANGE!
-    privileged: false
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 1234
-    runAsGroup: 2345
-    capabilities:
-      drop: [ "all" ]
-    seccompProfile:
-      type: RuntimeDefault
+  containerSecurityContext:                  # Settings for the default security context of the distributor
+    overwrite: false                         # Set overwrite to 'true' to customize the security context
 
 remoteControlPlane:
   enabled: false                             # Enables remote execution plane mode
@@ -63,7 +54,7 @@ podAnnotations: { }                           # Annotations to add to the create
 # -------------------------------------------------------------------------- #
 # WARNING: DO NOT CHANGE THE DEFAULT podSecurityContext OR securityContext!  #
 # Changes may                                                                #
-#   - impact the job executor service from running correctly                 #
+#   - impact the job-executor-service from running correctly                 #
 #   - result in a security risk for the whole kubernetes cluster             #
 # -------------------------------------------------------------------------- #
 podSecurityContext:

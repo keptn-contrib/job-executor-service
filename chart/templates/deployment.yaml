@@ -105,8 +105,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor
           image: "{{ .Values.distributor.image.repository }}:{{ .Values.distributor.image.tag | default .Chart.AppVersion }}"
-          securityContext:
-            {{- toYaml .Values.distributor.securityContext | nindent 12 }}
+          {{ include "distributor.container-security-context" . | nindent 10 }}
           livenessProbe:
             httpGet:
               path: /health
