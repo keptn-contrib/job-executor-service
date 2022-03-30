@@ -26,4 +26,4 @@ type: Opaque
 metadata:
   name: job-serivce-keptn-secrets
 data:
-  token: {{ .Values.remoteControlPlane.api.token | b64enc | quote }}
+  token: {{ b64enc (include "job-executor-service.remote-conrol-plane.token" .) | quote }}
