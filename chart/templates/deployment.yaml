@@ -120,12 +120,8 @@ spec:
               memory: "32Mi"
               cpu: "100m"
           env:
-            # Note: in the case of remote execution plane we need to specify a list of CloudEvent types
             - name: PUBSUB_TOPIC
               value: "{{ .Values.remoteControlPlane.topicSubscription }}"
-            # Note: In case of "normal" setup (within the same Kuberntes cluster as Keptn control-plane) it is enough to subscribe to sh.keptn.>
-            - name: PUBSUB_TOPIC
-              value: "sh.keptn.>" # all CloudEvent types
             - name: PUBSUB_RECIPIENT
               value: '127.0.0.1'
             - name: STAGE_FILTER
