@@ -73,9 +73,5 @@ Create the name of the job service account to use
 {{- end }}
 
 {{- define "job-executor-service.remote-control-plane.token" -}}
-{{- if .Values.remoteControlPlane.enabled }}
 {{- required "A valid Keptn API token is needed for the installation in the remote-control-plane" .Values.remoteControlPlane.api.token }}
-{{- else }}
-{{- .Values.remoteControlPlane.api.token }}
-{{- end }}
 {{- end }}
