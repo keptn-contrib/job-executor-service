@@ -61,6 +61,17 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{/*
+Create the name of the job service account to use
+*/}}
+{{- define "job-executor-service.jobConfig.serviceAccountName" -}}
+{{- if ((.Values.jobConfig).serviceAccount).create | default true }}
+{{- default (printf "%s-%s" (include "job-executor-service.fullname" .) (default "default-job-account" ((.Values.jobConfig).serviceAccount).name)) }}
+{{- else }}
+{{- default "default-job-account" ((.Values.jobConfig).serviceAccount).name }}
+{{- end }}
+{{- end }}
+
 {{- define "job-executor-service.remote-control-plane.token" -}}
 {{- if .Values.remoteControlPlane.enabled }}
 {{- required "A valid Keptn API token is needed for the installation in the remote-control-plane" .Values.remoteControlPlane.api.token }}

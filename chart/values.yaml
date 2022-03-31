@@ -33,7 +33,10 @@ remoteControlPlane:
 
 jobConfig:
   enableKubernetesApiAccess: false           # whether or not the started jobs should have Kubernetes API Access
-
+  serviceAccount:                            # The default service account that is used for jobs
+    create: true                             # Enables the service account creation
+    name: "default-job-account"              # The name of the service account to use for job execution
+    annotations: { }                         # Annotations to add to the service account
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 

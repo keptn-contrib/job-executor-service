@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/keptn-contrib/job-executor-service/compare/0.1.7...0.1.8) (2022-03-30)
+
+
+### Features
+
+* Add labels to environment variables ([#185](https://github.com/keptn-contrib/job-executor-service/issues/185)) ([43cee8d](https://github.com/keptn-contrib/job-executor-service/commit/43cee8d1ed0b810c2fa554363faf4c8273a55487))
+* Implement liveness and readiness endpoints ([#197](https://github.com/keptn-contrib/job-executor-service/issues/197)) ([0bcd9a6](https://github.com/keptn-contrib/job-executor-service/commit/0bcd9a6eb6bdaa5cd3c83c2ac74b8f31d2d8cfdd))
+* Use pullPolicy ifNotPresent for initContainer ([#191](https://github.com/keptn-contrib/job-executor-service/issues/191)) ([#196](https://github.com/keptn-contrib/job-executor-service/issues/196)) ([71716b7](https://github.com/keptn-contrib/job-executor-service/commit/71716b7563adfe60d3a327c1f81d1fdb63dc1ebf))
+
+
+### Bug Fixes
+
+* Allow handling of event types other than *.triggered ([#182](https://github.com/keptn-contrib/job-executor-service/issues/182)) ([80a49d7](https://github.com/keptn-contrib/job-executor-service/commit/80a49d7769036f3e1b192e1b130dc7438d0be59d))
+
+
+### Other
+
+* Release notes for 0.1.7 ([#180](https://github.com/keptn-contrib/job-executor-service/issues/180)) ([146257e](https://github.com/keptn-contrib/job-executor-service/commit/146257e4849667af8e891e67d89b6a5801d515c6))
+
+
+### Docs
+
+* Add guidance for updating api-token, topic subscription to README ([#200](https://github.com/keptn-contrib/job-executor-service/issues/200)) ([6e99d57](https://github.com/keptn-contrib/job-executor-service/commit/6e99d57fa46a5abb90f66265631cb1350d20343b))
+* added architecture diagrams ([#172](https://github.com/keptn-contrib/job-executor-service/issues/172)) ([1814bc0](https://github.com/keptn-contrib/job-executor-service/commit/1814bc0f80923dde2d0c00162ebb3f27bac95c30))
+* Added migration guide for generic-executor-service ([#199](https://github.com/keptn-contrib/job-executor-service/issues/199)) ([f1eb946](https://github.com/keptn-contrib/job-executor-service/commit/f1eb946d671de336786e6554455e54b32dc9fe59))
+* Moved releasenotes into CHANGELOG.md ([#203](https://github.com/keptn-contrib/job-executor-service/issues/203)) ([c8cbe5e](https://github.com/keptn-contrib/job-executor-service/commit/c8cbe5eb51c18b52b40aa1aac7d5cb04c7647f7b))
+
 ### [0.1.7](https://github.com/keptn-contrib/job-executor-service/compare/0.1.6...0.1.7) (2022-02-28)
 
 
@@ -59,3 +86,81 @@ All notable changes to this project will be documented in this file. See [standa
 * remove dependabot, add renovate ([#113](https://github.com/keptn-contrib/job-executor-service/issues/113)) ([c1fbc8b](https://github.com/keptn-contrib/job-executor-service/commit/c1fbc8b0ceb06ef1a7e0798f901039d7d3c7f2e4))
 * restructure docs, add new installation method ([#149](https://github.com/keptn-contrib/job-executor-service/issues/149)) ([f5522d4](https://github.com/keptn-contrib/job-executor-service/commit/f5522d4968958fba84e0a4a84a5f24392ddfeae2))
 * Use validate-semantic-pr workflow from keptn/gh-automation repo ([#103](https://github.com/keptn-contrib/job-executor-service/issues/103)) ([c4e7a97](https://github.com/keptn-contrib/job-executor-service/commit/c4e7a9725edd4dd0fed79971cc5184d55a5185db))
+
+
+### [0.1.4](https://github.com/keptn-contrib/job-executor-service/compare/0.1.3...0.1.4) (2021-09-14)
+
+
+Compatible with Keptn 0.9.0
+
+### Features
+
+* Add environment setting to always send a started/finished event on job config errors (#52, #57)
+    * (thanks @thschue for the contribution)
+* Event data formatting (#59, #63, #65)
+    * (thanks @TannerGabriel for the contribution)
+* Add start and end event metadata for test finished events (#19, #64)
+* Add support for running jobs in a different namespace (#53, #67, #73)
+    * (thanks @thschue for the contribution)
+* With each release the helm chart is packaged and added to the assets (#77)
+
+### Fixed Issues
+
+* Uniform registration for remote execution planes over https doesn't work (https://github.com/keptn/keptn/issues/4516)
+* Display correct timeout value in job timeout error message (#49, #61)
+
+
+### [0.1.3](https://github.com/keptn-contrib/job-executor-service/compare/0.1.2...0.1.3) (2021-07-16)
+
+Compatible with Keptn 0.8.6
+
+Starting with this release a binary for checking job configurations is attached to each release (see https://github.com/keptn-sandbox/job-executor-service#how-to-validate-a-job-configuration)
+
+### Features
+
+* Allow array of strings for command, add args that are also passed through to the kubernetes job (#31)
+* Provide a cli tool that validates job configurations (#33)
+* Support env variables from string (#34, #36)
+* Allow setting the working directory of a kubernetes job (#38)
+* Configurable job timeout (#40, #43)
+
+### Fixed Issues
+
+* Fix kubernetes labels used by distributor for uniform registration (#32)
+
+### Known Limitations
+
+* Uniform registration for remote execution planes over https doesn't work (https://github.com/keptn/keptn/issues/4516)
+
+### [0.1.2](https://github.com/keptn-contrib/job-executor-service/compare/0.1.1...0.1.2) (2021-06-24)
+
+
+Compatible with Keptn 0.8.4
+
+### Features
+
+* Reference kubernetes secrets as environment variables in tasks (#8, #15)
+* Configurable resource quotas (#18, #27)
+* Specifying a directory under task files now imports all files of this directory (#28, #29)
+* Configuration for uniform registration feature of distributor (#22)
+
+
+### Known Limitations
+
+* Uniform registration for remote execution planes over https doesn't work
+
+### [0.1.1](https://github.com/keptn-contrib/job-executor-service/compare/0.1.0...0.1.1) (2021-06-07)
+
+Fixes some issues with wrong tags or versions for images. Adds the possibility to execute actions in silent mode, meaning no `started` or `finished` events are sent.
+
+### Features
+
+* Silent mode for actions #6
+
+### Fixed Issues
+
+* Correct tags for images #5, #9
+
+### 0.1.0
+
+This is the initial implementation of job-executor-service, compatible with Keptn 0.8.3.
