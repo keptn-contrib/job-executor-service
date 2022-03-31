@@ -31,8 +31,8 @@ The following table lists the configurable parameters of the job-executor-servic
 | `serviceAccount.annotations` | Annotations to add to the service account | `{}` |
 | `serviceAccount.name` | The name of the service account to use. | `""` |
 | `podAnnotations` | Annotations to add to the created pods | `{}` |
-| `podSecurityContext` | Set the pod security context. ***For security puropses the podSecurityContext value should not be changed!*** | [See values.yaml](values.yaml)            |
-| `securityContext` | Set the security context. ***For security puropses the securityContext value should not be changed!***        | [See values.yaml](values.yaml)  |
+| `podSecurityContext` | Set the pod security context. ***For security purposes the podSecurityContext value should not be changed!*** | [See values.yaml](values.yaml)            |
+| `securityContext` | Set the security context. ***For security purposes the securityContext value should not be changed!***        | [See values.yaml](values.yaml)  |
 | `resources` | Resource limits and requests | `{}` |
 | `nodeSelector` | Node selector configuration | `{}` |
 | `tolerations` | Tolerations for the pods | `[]` |
