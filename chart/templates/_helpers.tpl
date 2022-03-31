@@ -65,7 +65,7 @@ Create the name of the service account to use
 securityContext:
   runAsNonRoot: true
   runAsUser: 65532
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
   privileged: false
 {{- end}}
