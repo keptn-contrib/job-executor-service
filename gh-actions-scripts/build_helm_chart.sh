@@ -25,7 +25,7 @@ fi
 # find . -name Chart.yaml -exec sed -i -- "s/appVersion: latest/appVersion: ${APP_VERSION}/g" {} \;
 # find . -name Chart.yaml -exec sed -i -- "s/version: latest/version: ${VERSION}/g" {} \;
 
-mkdir installer/
+mkdir -p installer/
 
 # ####################
 # HELM CHART
@@ -33,6 +33,14 @@ mkdir installer/
 BASE_PATH=.
 CHARTS_PATH=chart
 
+# lint the chart
+helm lint ${BASE_PATH}/${CHARTS_PATH} --strict
+if [ $? -ne 0 ]; then
+  echo "::error Helm Chart for ${IMAGE} has templating errors -exiting"
+  exit 1
+fi
+
+# package the chart
 helm package ${BASE_PATH}/${CHARTS_PATH} --app-version "$APP_VERSION" --version "$VERSION"
 if [ $? -ne 0 ]; then
   echo "Error packaging installer, exiting..."
@@ -40,14 +48,6 @@ if [ $? -ne 0 ]; then
 fi
 
 mv "${IMAGE}-${VERSION}.tgz" "installer/${IMAGE}-${VERSION}.tgz"
-
-#verify the chart
-helm template "installer/${IMAGE}-${VERSION}.tgz" --dry-run --set remoteControlPlane.api.token=thisisnotavalidkeptntoken > /dev/null
-
-if [ $? -ne 0 ]; then
-  echo "::error Helm Chart for ${IMAGE} has templating errors -exiting"
-  exit 1
-fi
 
 echo "Generated files:"
 echo " - installer/${IMAGE}-${VERSION}.tgz"
