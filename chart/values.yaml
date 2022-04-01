@@ -22,8 +22,12 @@ distributor:
   config:
     queueGroup:
       enabled: true                          # Enable connection via Nats queue group to support exactly-once message processing
-  containerSecurityContext:                  # Settings for the default security context of the distributor
-    overwrite: false                         # Set overwrite to 'true' to customize the security context
+  securityContext:                           # Settings for the default security context of the distributor
+    runAsNonRoot: true
+    runAsUser: 65532
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    privileged: false
 
 remoteControlPlane:
   enabled: false                             # Enables remote execution plane mode

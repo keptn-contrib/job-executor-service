@@ -60,27 +60,3 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-
-{{- define "distributor.default-container-security-context" }}
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 65532
-  readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
-  privileged: false
-{{- end}}
-
-{{- define "distributor.container-security-context" -}}
-{{- if (.Values.distributor).containerSecurityContext -}}
-{{- if .Values.distributor.containerSecurityContext.overwrite -}}
-securityContext:
-{{- range $key, $value := omit .Values.distributor.containerSecurityContext "overwrite" }}
-  {{ $key }}: {{- toYaml $value | nindent 4 }}
-{{- end -}}
-{{- else -}}
-{{ include "distributor.default-container-security-context" . }}
-{{- end -}}
-{{- else -}}
-{{ include "distributor.default-container-security-context" . }}
-{{- end -}}
-{{- end -}}
