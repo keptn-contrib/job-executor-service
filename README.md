@@ -47,27 +47,14 @@ Please note: Newer Keptn versions might be compatible, but compatibility has not
 
 ## Installation
 
-The *job-executor-service* can be installed as a part of [Keptn's uniform](https://keptn.sh) using `helm`:
-
-```bash
-helm upgrade --install -n keptn job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz
-```
-
-Please replace `<VERSION>` with the actual version you want to install from the compatibility matrix above or the 
-[GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases).
-
-
-### Installation on remote execution-plane
-
-You can install job-executor-service either in the same cluster and namespace as Keptn (see above), or on a completely 
+The *job-executor-service* can be installed as a part of [Keptn's uniform](https://keptn.sh) using `helm`.
+It is recommended to install the *job-executor-service* on the remote execution-plane, which can be on the same cluster, or on a completely
 separate Kubernetes environment (see [Keptn docs: Multi-cluster setup](https://keptn.sh/docs/0.11.x/operate/multi_cluster/) for details).
 
-In order to do the latter, job-executor-service helm chart provides some values that can be configured:
-
-* `remoteControlPlane.enabled` - needs to be set to `true` in order to connect to the remote Keptn instance
+In order to install the *job-executor-service* on the remote execution plane, some values of the helm chart need to be configured:
 * `remoteControlPlane.topicSubscription` - list of Keptn CloudEvent types that this instance should listen to, e.g., `sh.keptn.event.remote-task.triggered`
 * `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane
-* `remoteControlPlane.api.hostname` - Keptn API Hostname (e.g., `1.2.3.4.nip.io`)
+* `remoteControlPlane.api.hostname` - Keptn API Hostname (e.g., `1.2.3.4.nip.io`). If Keptn is installed on the same cluster the API is usually reachable under `api-gateway-nginx.keptn`.
 * `remoteControlPlane.api.token` - Keptn API Token (can be obtained from Bridge)
 
 **Example**
@@ -80,10 +67,11 @@ TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
 
 helm upgrade --install --create-namespace -n <NAMESPACE> \
   job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
- --set remoteControlPlane.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
-
-
+ --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
 ```
+
+Please replace `<VERSION>` with the actual version you want to install from the compatibility matrix above or the
+[GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases).
 
 To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
 

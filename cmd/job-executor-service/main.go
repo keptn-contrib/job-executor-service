@@ -31,8 +31,6 @@ type envConfig struct {
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
 	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:""`
-	// The endpoint of the keptn configuration service API
-	InitContainerConfigurationServiceAPIEndpoint string `envconfig:"INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT" required:"true"`
 	// The k8s namespace the job will run in
 	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
 	// The token of the keptn API
@@ -101,8 +99,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		EventData:   eventData,
 		ServiceName: ServiceName,
 		JobSettings: k8sutils.JobSettings{
-			JobNamespace: env.JobNamespace,
-			InitContainerConfigurationServiceAPIEndpoint: env.InitContainerConfigurationServiceAPIEndpoint,
+			JobNamespace:                env.JobNamespace,
 			KeptnAPIToken:               env.KeptnAPIToken,
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,

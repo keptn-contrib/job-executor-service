@@ -48,15 +48,11 @@ spec:
               containerPort: 8080
               protocol: TCP
           env:
-          {{- if .Values.remoteControlPlane.enabled }}
-          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
-            value: "{{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api/configuration-service"
           - name: KEPTN_API_TOKEN
-            value: "{{ .Values.remoteControlPlane.api.token }}"
-          {{- else }}
-          - name: INIT_CONTAINER_CONFIGURATION_SERVICE_API_ENDPOINT
-            value: "http://configuration-service:8080"
-          {{- end }}
+            valueFrom:
+              secretKeyRef:
+                name: job-service-keptn-secrets
+                key: token
           - name: CONFIGURATION_SERVICE
             value: "http://localhost:8081/configuration-service"
           - name: env
@@ -131,15 +127,8 @@ spec:
               memory: "32Mi"
               cpu: "100m"
           env:
-            # Note: in the case of remote execution plane we need to specify a list of CloudEvent types
-            {{- if .Values.remoteControlPlane.enabled }}
             - name: PUBSUB_TOPIC
               value: "{{ .Values.remoteControlPlane.topicSubscription }}"
-            {{- else }}
-            # Note: In case of "normal" setup (within the same Kuberntes cluster as Keptn control-plane) it is enough to subscribe to sh.keptn.>
-            - name: PUBSUB_TOPIC
-              value: "sh.keptn.>" # all CloudEvent types
-            {{- end }}
             - name: PUBSUB_RECIPIENT
               value: '127.0.0.1'
             - name: STAGE_FILTER
@@ -170,14 +159,18 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            {{- if .Values.remoteControlPlane.enabled }}
             - name: KEPTN_API_ENDPOINT
-              value: "{{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api"
+              valueFrom:
+                configMapKeyRef:
+                  name: job-service-config
+                  key: keptn_api_endpoint
             - name: KEPTN_API_TOKEN
-              value: "{{ .Values.remoteControlPlane.api.token }}"
+              valueFrom:
+                secretKeyRef:
+                  name: job-service-keptn-secrets
+                  key: token
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
-            {{- end }}
             {{- if (((.Values.distributor).config).queueGroup).enabled | default true }}
             - name: PUBSUB_GROUP
               valueFrom:

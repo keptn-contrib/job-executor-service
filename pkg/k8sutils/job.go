@@ -28,14 +28,13 @@ const envValueFromString = "string"
 
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
-	JobNamespace                                 string
-	InitContainerConfigurationServiceAPIEndpoint string
-	KeptnAPIToken                                string
-	InitContainerImage                           string
-	DefaultResourceRequirements                  *v1.ResourceRequirements
-	AlwaysSendFinishedEvent                      bool
-	EnableKubernetesAPIAccess                    bool
-	DefaultJobServiceAccount                     string
+	JobNamespace                string
+	KeptnAPIToken               string
+	InitContainerImage          string
+	DefaultResourceRequirements *v1.ResourceRequirements
+	AlwaysSendFinishedEvent     bool
+	EnableKubernetesAPIAccess   bool
+	DefaultJobServiceAccount    string
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
@@ -126,12 +125,26 @@ func (k8s *k8sImpl) CreateK8sJob(
 							},
 							Env: []v1.EnvVar{
 								{
-									Name:  "CONFIGURATION_SERVICE",
-									Value: jobSettings.InitContainerConfigurationServiceAPIEndpoint,
+									Name: "CONFIGURATION_SERVICE",
+									ValueFrom: &v1.EnvVarSource{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-config",
+											},
+											Key: "init_container_configuration_endpoint",
+										},
+									},
 								},
 								{
-									Name:  "KEPTN_API_TOKEN",
-									Value: jobSettings.KeptnAPIToken,
+									Name: "KEPTN_API_TOKEN",
+									ValueFrom: &v1.EnvVarSource{
+										SecretKeyRef: &v1.SecretKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-keptn-secrets",
+											},
+											Key: "token",
+										},
+									},
 								},
 								{
 									Name:  "KEPTN_PROJECT",
