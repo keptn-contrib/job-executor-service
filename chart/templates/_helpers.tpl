@@ -75,3 +75,14 @@ Create the name of the job service account to use
 {{- define "job-executor-service.remote-control-plane.token" -}}
 {{- required "A valid Keptn API token is needed for the installation in the remote-control-plane" .Values.remoteControlPlane.api.token }}
 {{- end }}
+
+{{/*
+Build the keptn api endpoint string form protocol, hostname and an optional port
+*/}}
+{{- define "job-executor-service.remote-control-plane.api-endpoint" }}
+{{- if .Values.remoteControlPlane.api.port }}
+{{- printf "%s://%s:%d/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname .Values.remoteControlPlane.api.port -}}
+{{- else }}
+{{- printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname -}}
+{{- end }}
+{{- end }}
