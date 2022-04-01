@@ -1,0 +1,8 @@
+Spanish: hola.
+French: bonjour.
+German: guten tag.
+Italian: salve.
+Chinese: nǐn hǎo.
+Portuguese: olá
+Arabic: asalaam alaikum.
+Japanese: konnichiwa.

@@ -178,6 +178,7 @@ The easiest way to add the `config.yaml` to the keptn git repository is to use t
 keptn add-resource --project=myproject --service=myservice --stage=mystage --resource=config.yaml --resourceUri=job/config.yaml
 ```
 
+For more extensive examples, please have a look at the [examples folder](examples/).
 
 ## How to validate a job configuration
 

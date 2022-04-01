@@ -1,0 +1,14 @@
+
+apiVersion: v2
+actions:
+  - name: "My remote task"
+    events:
+      - name: "sh.keptn.event.my-task.triggered"
+    tasks:
+      - name: "Run kubectl"
+        image: "bitnami/kubectl"
+        cmd:
+          - kubectl
+        args:
+          - "get"
+          - "secrets"
