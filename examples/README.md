@@ -1,6 +1,6 @@
 # Examples
 
-*Note*: Unless specified otherwise, all commands should be executed from within this folder. It is assumed that job-executor-service is arleady installed and running (in remote execution plane).
+*Note*: Unless specified otherwise, all commands should be executed from within this folder. It is assumed that job-executor-service is already installed and running (in remote execution plane).
 
 ## Hello World
 
