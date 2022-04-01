@@ -24,16 +24,26 @@ running in the Keptn ecosystem:
 
 | Keptn Version | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptncontrib/job-executor-service/tags) | Config version |
 |:-------------:|:----------------------------------------------------------------------------------------------------:|:--------------:|
-|     0.8.3     |                               keptncontrib/job-executor-service:0.1.0                                |       -        |
-|     0.8.3     |                               keptncontrib/job-executor-service:0.1.1                                |       -        |
-|     0.8.4     |                               keptncontrib/job-executor-service:0.1.2                                |       v1       |
-|     0.8.6     |                               keptncontrib/job-executor-service:0.1.3                                |       v2       |
-|     0.9.0     |                               keptncontrib/job-executor-service:0.1.4                                |       v2       |
 |    0.10.0     |                               keptncontrib/job-executor-service:0.1.5                                |       v2       |
 |    0.10.0     |                               keptncontrib/job-executor-service:0.1.6                                |       v2       |
 |    0.12.2     |                               keptncontrib/job-executor-service:0.1.7                                |       v2       |
+|    0.12.6     |                               keptncontrib/job-executor-service:0.1.8                                |       v2       |
+
 
 Please note: Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
+
+<details>
+  <summary>Click here to show older versions</summary>
+  
+  | Keptn Version | [Job-Executor-Service Docker Image](https://hub.docker.com/r/keptncontrib/job-executor-service/tags) | Config version |
+  |:-------------:|:----------------------------------------------------------------------------------------------------:|:--------------:|
+  |     0.8.3     |                               keptncontrib/job-executor-service:0.1.0                                |       -        |
+  |     0.8.3     |                               keptncontrib/job-executor-service:0.1.1                                |       -        |
+  |     0.8.4     |                               keptncontrib/job-executor-service:0.1.2                                |       v1       |
+  |     0.8.6     |                               keptncontrib/job-executor-service:0.1.3                                |       v2       |
+  |     0.9.0     |                               keptncontrib/job-executor-service:0.1.4                                |       v2       |
+
+</details>
 
 ## Installation
 
