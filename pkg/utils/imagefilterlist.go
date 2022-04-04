@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gobwas/glob"
 	"regexp"
 	"strings"
@@ -10,12 +9,14 @@ import (
 
 const defaultContainerRegistry = "docker.io"
 
+// ImageFilterList represents a list of glob filters that can be used to check if an image matches one of these filters
 type ImageFilterList struct {
 	registryMatcher *regexp.Regexp
 	userMatcher     *regexp.Regexp
 	patterns        []glob.Glob
 }
 
+// NewAllowAllImageFilterList creates a new empty list, which will allow all images
 func NewAllowAllImageFilterList() (*ImageFilterList, error) {
 	return NewImageFilterList([]string{})
 }
@@ -64,7 +65,6 @@ func NewImageFilterList(patterns []string) (*ImageFilterList, error) {
 
 			pattern = registry + "/*/" + image
 		}
-		fmt.Printf("%s", pattern)
 
 		// If the pattern ends with <image> or <image>:* we drop the suffix (:*) and replace it with an implicit *
 		// to be able to match <image>, <image>:latest, <image>@sha, <image>:1.2.3
