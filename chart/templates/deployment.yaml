@@ -102,6 +102,8 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: default_job_service_account
+          - name: ALLOWED_IMAGE_LIST
+            value: {{ (.Values.jobConfig).allowedImageList | default "" }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor

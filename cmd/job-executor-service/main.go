@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"keptn-contrib/job-executor-service/pkg/utils"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -51,6 +53,8 @@ type envConfig struct {
 	EnableKubernetesAPIAccess string `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
+	// A list of all allowed images that can be used in jobs
+	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -77,7 +81,7 @@ func parseKeptnCloudEventPayload(event cloudevents.Event, data interface{}) erro
  * Depending on the Event Type will call the specific event handler functions, e.g: handleDeploymentFinishedEvent
  * See https://github.com/keptn/spec/blob/0.2.0-alpha/cloudevents.md for details on the payload
  */
-func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error {
+func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowList *utils.ImageFilterList) error {
 	// create keptn handler
 	log.Printf("Initializing Keptn Handler")
 	myKeptn, err := keptnv2.NewKeptn(&event, keptnOptions)
@@ -94,10 +98,11 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 	}
 
 	eventHandler := &eventhandler.EventHandler{
-		Keptn:       myKeptn,
-		Event:       event,
-		EventData:   eventData,
-		ServiceName: ServiceName,
+		Keptn:         myKeptn,
+		Event:         event,
+		EventData:     eventData,
+		ServiceName:   ServiceName,
+		AllowedImages: allowList,
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace:                env.JobNamespace,
 			KeptnAPIToken:               env.KeptnAPIToken,
@@ -186,8 +191,17 @@ func _main(args []string, env envConfig) int {
 		log.Fatalf("failed to create client, %v", err)
 	}
 
+	imageFilterList, err := buildImageAllowList(env.AllowedImageList)
+	if err != nil {
+		log.Fatalf("failed to generate the allowlist, %v", err)
+	}
+
+	processCloudEventFunc := func(ctx context.Context, event cloudevents.Event) error {
+		return processKeptnCloudEvent(ctx, event, imageFilterList)
+	}
+
 	log.Printf("Starting receiver")
-	log.Fatal(c.StartReceiver(ctx, processKeptnCloudEvent))
+	log.Fatal(c.StartReceiver(ctx, processCloudEventFunc))
 
 	return 0
 }
@@ -238,4 +252,23 @@ func endpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+// buildImageAllowList creates a ImageFilterList from a comma separated string that is present as environment variable
+func buildImageAllowList(envVariable string) (*utils.ImageFilterList, error) {
+	// Extract allow list from env variable, strip empty strings from the
+	// list, since they are useless, and we really don't want them
+	var allowListStrings []string
+	for _, str := range strings.Split(envVariable, ",") {
+		if str != "" {
+			allowListStrings = append(allowListStrings, str)
+		}
+	}
+
+	// Remind the user that he is probably running an unsafe configuration
+	if len(allowListStrings) == 0 {
+		log.Println("Found empty allowlist for images, all images are allowed!")
+	}
+
+	return utils.NewImageFilterList(allowListStrings)
 }

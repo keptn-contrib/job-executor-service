@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"keptn-contrib/job-executor-service/pkg/utils"
 	"testing"
 	"time"
 
@@ -116,13 +117,17 @@ func TestStartK8s(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
+	allowList, err := utils.NewAllowAllImageFilterList()
+	require.NoError(t, err)
+
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
+		ServiceName:   "job-executor-service",
+		Keptn:         myKeptn,
+		EventData:     eventData,
+		Event:         *event,
+		AllowedImages: allowList,
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace: jobNamespace1,
 		},
@@ -175,13 +180,17 @@ func TestStartK8sJobSilent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
+	allowList, err := utils.NewAllowAllImageFilterList()
+	require.NoError(t, err)
+
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
+		ServiceName:   "job-executor-service",
+		Keptn:         myKeptn,
+		EventData:     eventData,
+		Event:         *event,
+		AllowedImages: allowList,
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
@@ -224,13 +233,17 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
 	require.NoError(t, err)
 
+	allowList, err := utils.NewAllowAllImageFilterList()
+	require.NoError(t, err)
+
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
+		ServiceName:   "job-executor-service",
+		Keptn:         myKeptn,
+		EventData:     eventData,
+		Event:         *event,
+		AllowedImages: allowList,
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
@@ -278,6 +291,72 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 			assert.NoError(t, err)
 			_, err = time.Parse(dateLayout, eventData.Test.End)
 			assert.NoError(t, err)
+		}
+	}
+}
+
+func TestExpectImageNotAllowedError(t *testing.T) {
+	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	require.NoError(t, err)
+
+	allowList, err := utils.NewImageFilterList([]string{"private.registry/*"})
+	require.NoError(t, err)
+
+	eventData := &keptnv2.EventData{}
+	myKeptn.CloudEvent.DataAs(eventData)
+	eh := EventHandler{
+		ServiceName:   "job-executor-service",
+		Keptn:         myKeptn,
+		EventData:     eventData,
+		Event:         *event,
+		AllowedImages: allowList,
+	}
+	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+
+	notAllowedImageName := "alpine:latest"
+	action := config.Action{
+		Name: "Run some task with invalid image",
+		Tasks: []config.Task{
+			{
+				Image: notAllowedImageName,
+				Name:  "Run some image",
+			},
+		},
+	}
+
+	k8sMock := createK8sMock(t)
+	k8sMock.EXPECT().ConnectToCluster().Times(1)
+	k8sMock.EXPECT().CreateK8sJob(
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Any(), gomock.Any(),
+	).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
+	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
+
+	// set the global timezone for testing
+	local, err := time.LoadLocation("UTC")
+	require.NoError(t, err)
+	time.Local = local
+
+	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
+
+	err = fakeEventSender.AssertSentEventTypes(
+		[]string{
+			keptnv2.GetStartedEventType(keptnv2.TestTaskName),
+			keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
+		},
+	)
+	require.NoError(t, err)
+
+	for _, cloudEvent := range fakeEventSender.SentEvents {
+		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
+			eventData := &keptnv2.TestFinishedEventData{}
+			cloudEvent.DataAs(eventData)
+
+			assert.Equal(t, eventData.Status, keptnv2.StatusErrored)
+			assert.Equal(t, eventData.Result, keptnv2.ResultFailed)
+			assert.Contains(t, eventData.Message, notAllowedImageName)
 		}
 	}
 }

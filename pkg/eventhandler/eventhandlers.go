@@ -2,7 +2,9 @@ package eventhandler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"keptn-contrib/job-executor-service/pkg/utils"
 	"log"
 	"math"
 	"strconv"
@@ -22,11 +24,12 @@ const (
 
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn       *keptnv2.Keptn
-	Event       cloudevents.Event
-	EventData   *keptnv2.EventData
-	ServiceName string
-	JobSettings k8sutils.JobSettings
+	Keptn         *keptnv2.Keptn
+	Event         cloudevents.Event
+	EventData     *keptnv2.EventData
+	ServiceName   string
+	JobSettings   k8sutils.JobSettings
+	AllowedImages *utils.ImageFilterList
 }
 
 type jobLogs struct {
@@ -133,6 +136,21 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	var allJobLogs []jobLogs
 	additionalFinishedEventData := dataForFinishedEvent{
 		start: time.Now(),
+	}
+
+	// To execute all tasks atomically, we check all images
+	// before we start executing a single task of a job
+	for _, task := range action.Tasks {
+		if !eh.AllowedImages.Contains(task.Image) {
+			log.Printf("Image %s is not in the allowed!\n", task.Image)
+
+			if !action.Silent {
+				errorText := fmt.Sprintf("Image %s is not allowed", task.Image)
+				sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, errors.New(errorText), "")
+			}
+
+			return
+		}
 	}
 
 	for index, task := range action.Tasks {
