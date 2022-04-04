@@ -29,6 +29,10 @@ deploy:
             image: keptncontrib/job-executor-service-initcontainer
         imageStrategy:
           helm: { }
+        setValueTemplates:
+          remoteControlPlane:
+            api:
+              token: "{{.KEPTN_API_TOKEN}}" # please set KEPTN_API_TOKEN as an environment variable
         overrides:
           distributor:
             image:
