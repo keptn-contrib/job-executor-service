@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"github.com/gobwas/glob"
+	"log"
 	"regexp"
 	"strings"
 )
@@ -19,6 +20,25 @@ type ImageFilterList struct {
 // NewAllowAllImageFilterList creates a new empty list, which will allow all images
 func NewAllowAllImageFilterList() (*ImageFilterList, error) {
 	return NewImageFilterList([]string{})
+}
+
+// BuildImageAllowList creates a ImageFilterList from a comma separated string that is present as environment variable
+func BuildImageAllowList(envVariable string) (*ImageFilterList, error) {
+	// Extract allow list from env variable, strip empty strings from the
+	// list, since they are useless, and we really don't want them
+	var allowListStrings []string
+	for _, str := range strings.Split(envVariable, ",") {
+		if str != "" {
+			allowListStrings = append(allowListStrings, str)
+		}
+	}
+
+	// Remind the user that he is probably running an unsafe configuration
+	if len(allowListStrings) == 0 {
+		log.Println("Found empty allowlist for images, all images are allowed!")
+	}
+
+	return NewImageFilterList(allowListStrings)
 }
 
 // NewImageFilterList creates a new list of wildcards

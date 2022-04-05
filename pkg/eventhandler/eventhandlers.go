@@ -142,10 +142,10 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	// before we start executing a single task of a job
 	for _, task := range action.Tasks {
 		if !eh.AllowedImages.Contains(task.Image) {
-			log.Printf("Image %s is not in the allowed!\n", task.Image)
+			errorText := fmt.Sprintf("Forbidden: Image %s is not part of allowedImageList.\n", task.Image)
 
+			log.Printf(errorText)
 			if !action.Silent {
-				errorText := fmt.Sprintf("Image %s is not allowed", task.Image)
 				sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, errors.New(errorText), "")
 			}
 

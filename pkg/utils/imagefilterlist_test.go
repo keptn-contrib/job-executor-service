@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -98,4 +99,27 @@ func TestVariousImageFormats(t *testing.T) {
 	assert.False(t, helper.Contains("forbidden.registry/abc/image@sha256:4428de44a9059fb1a49237a5881c2d2cffa9375749902e156ff3a544577ab7f3"))
 	assert.False(t, helper.Contains("a.b.c.d.e.f.g.registry:8080/user/a"))
 	assert.False(t, helper.Contains("a.registry:1338/user/a"))
+}
+
+func TestBuildImageAllowListFunction(t *testing.T) {
+	allowedImageArray := []string{"ghcr.io/my-other-user/my-other-image:*", "ghcr.io/my-user/my-image:1.2.3"}
+	newFunctionResult, err := NewImageFilterList(allowedImageArray)
+	require.NoError(t, err)
+
+	allowedImageList := strings.Join(allowedImageArray, ",")
+	buildFunctionResult, err := BuildImageAllowList(allowedImageList)
+	require.NoError(t, err)
+
+	assert.Equal(t, newFunctionResult, buildFunctionResult)
+}
+
+func TestEmptyImageAllowFunction(t *testing.T) {
+	var allowedImageArray []string
+	newFunctionResult, err := NewImageFilterList(allowedImageArray)
+	require.NoError(t, err)
+
+	buildFunctionResult, err := BuildImageAllowList("")
+	require.NoError(t, err)
+
+	assert.Equal(t, newFunctionResult, buildFunctionResult)
 }
