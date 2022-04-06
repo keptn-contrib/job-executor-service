@@ -14,7 +14,6 @@ func TestSpecificImagesMustBeAccepted(t *testing.T) {
 
 	// All images in allow list must be accepted
 	assert.True(t, helper.Contains("ghcr.io/my-user/my-image:1.2.3"))
-	assert.True(t, helper.Contains("ghcr.io/my-other-user/my-other-image"))
 	assert.True(t, helper.Contains("ghcr.io/my-other-user/my-other-image:3"))
 	assert.True(t, helper.Contains("ghcr.io/my-other-user/my-other-image:4"))
 	assert.True(t, helper.Contains("ghcr.io/my-other-user/my-other-image:latest"))
@@ -25,37 +24,38 @@ func TestSpecificImagesMustBeAccepted(t *testing.T) {
 	assert.False(t, helper.Contains("ghcr.io/my-user/my-image:1.2.5"))
 	assert.False(t, helper.Contains("ghcr.io/my-user/my-image:latest"))
 	assert.False(t, helper.Contains("ghcr.io/my-user/my-image"))
+
+	// Image but without a tag must not be accepted
+	assert.False(t, helper.Contains("ghcr.io/my-other-user/my-other-image"))
 }
 
 func TestDefaultRegistry(t *testing.T) {
-	allowedImageList := []string{"some-image", "my-user/my-image:1.2.3"}
+	allowedImageList := []string{"{docker.io/[AB]/some-image,some-image}", "my-user/my-image:1.2.3"}
 	helper, err := NewImageFilterList(allowedImageList)
 	require.NoError(t, err)
 
 	assert.True(t, helper.Contains("some-image"))
-	assert.True(t, helper.Contains("B/some-image"))
-	assert.True(t, helper.Contains("some-image:123"))
-	assert.True(t, helper.Contains("B/some-image:123"))
+	assert.False(t, helper.Contains("B/some-image"))
+	assert.False(t, helper.Contains("some-image:123"))
+	assert.False(t, helper.Contains("B/some-image:123"))
 	assert.True(t, helper.Contains("docker.io/A/some-image"))
 	assert.True(t, helper.Contains("docker.io/B/some-image"))
-	assert.True(t, helper.Contains("docker.io/B/some-image:latest"))
-	assert.True(t, helper.Contains("docker.io/B/some-image:1.2.3"))
-	assert.True(t, helper.Contains("docker.io/my-user/some-image"))
-	assert.True(t, helper.Contains("docker.io/my-user/my-image:1.2.3"))
+	assert.False(t, helper.Contains("docker.io/my-user/some-image"))
+	assert.False(t, helper.Contains("docker.io/my-user/my-image:1.2.3"))
 
 	assert.False(t, helper.Contains("ghcr.io/my-user/some-image"))
 	assert.False(t, helper.Contains("ghcr.io/my-user/my-image:latest"))
 }
 
 func TestAcceptEverythingFromDefaultRegistry(t *testing.T) {
-	allowedImageList := []string{"docker.io/*"}
+	allowedImageList := []string{"docker.io/*", "*[AB]/some-image*"}
 	helper, err := NewImageFilterList(allowedImageList)
 	require.NoError(t, err)
 
 	assert.True(t, helper.Contains("docker.io/A/some-image"))
 	assert.True(t, helper.Contains("B/some-image"))
 	assert.True(t, helper.Contains("A/some-image:latest"))
-	assert.True(t, helper.Contains("some-image"))
+	assert.False(t, helper.Contains("some-image"))
 	assert.True(t, helper.Contains("docker.io/my-user/my-image:1.2.3"))
 
 	assert.False(t, helper.Contains("ghcr.io/my-user/some-image"))
@@ -63,7 +63,7 @@ func TestAcceptEverythingFromDefaultRegistry(t *testing.T) {
 }
 
 func TestVariousImageFormats(t *testing.T) {
-	allowedImageList := []string{"image", "docker.io/*", "ghcr.io/*", "a.b.c.d.e.f.g.registry/*", "a.registry:1337/*"}
+	allowedImageList := []string{"image", "docker.io/*", "ghcr.io/*", "a.b.c.d.e.f.g.registry/*", "a.registry:1337/*", "{user/image@sha256*,image@sha256*}"}
 	helper, err := NewImageFilterList(allowedImageList)
 	require.NoError(t, err)
 
