@@ -7,29 +7,6 @@ import (
 	"testing"
 )
 
-func TestAllowAllList(t *testing.T) {
-	helper, err := NewAllowAllImageFilterList()
-	require.NoError(t, err)
-
-	assert.Len(t, helper.patterns, 0)
-	assert.True(t, helper.Contains("my-testimage:123"))
-	assert.True(t, helper.Contains("custom.registry/user/my-testimage:latest"))
-
-	helper, err = NewImageFilterList([]string{"*"})
-	require.NoError(t, err)
-
-	assert.Len(t, helper.patterns, 0)
-	assert.True(t, helper.Contains("my-testimage:123"))
-	assert.True(t, helper.Contains("custom.registry/user/my-testimage:latest"))
-
-	helper, err = NewImageFilterList([]string{})
-	require.NoError(t, err)
-
-	assert.Len(t, helper.patterns, 0)
-	assert.True(t, helper.Contains("my-testimage:123"))
-	assert.True(t, helper.Contains("custom.registry/user/my-testimage:latest"))
-}
-
 func TestSpecificImagesMustBeAccepted(t *testing.T) {
 	allowedImageList := []string{"ghcr.io/my-other-user/my-other-image:*", "ghcr.io/my-user/my-image:1.2.3"}
 	helper, err := NewImageFilterList(allowedImageList)

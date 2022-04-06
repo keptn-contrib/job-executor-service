@@ -95,12 +95,14 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 		log.Printf("failed to convert incoming cloudevent to event data: %v", err)
 	}
 
-	eventHandler := &eventhandler.EventHandler{
-		Keptn:         myKeptn,
-		Event:         event,
-		EventData:     eventData,
-		ServiceName:   ServiceName,
-		AllowedImages: allowList,
+	var eventHandler = &eventhandler.EventHandler{
+		Keptn:       myKeptn,
+		Event:       event,
+		EventData:   eventData,
+		ServiceName: ServiceName,
+		ImageFilter: imageFilterImpl{
+			imageFilterList: allowList,
+		},
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace:                env.JobNamespace,
 			KeptnAPIToken:               env.KeptnAPIToken,
@@ -111,7 +113,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 		},
 	}
-
 	if env.AlwaysSendFinishedEvent == "true" {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
 	}
@@ -250,4 +251,13 @@ func endpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+type imageFilterImpl struct {
+	eventhandler.ImageFilter
+	imageFilterList *utils.ImageFilterList
+}
+
+func (f imageFilterImpl) IsImageAllowed(image string) bool {
+	return f.imageFilterList.Contains(image)
 }

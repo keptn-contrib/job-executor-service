@@ -17,11 +17,6 @@ type ImageFilterList struct {
 	patterns        []glob.Glob
 }
 
-// NewAllowAllImageFilterList creates a new empty list, which will allow all images
-func NewAllowAllImageFilterList() (*ImageFilterList, error) {
-	return NewImageFilterList([]string{})
-}
-
 // BuildImageAllowList creates a ImageFilterList from a comma separated string that is present as environment variable
 func BuildImageAllowList(envVariable string) (*ImageFilterList, error) {
 	// Extract allow list from env variable, strip empty strings from the
@@ -60,6 +55,7 @@ func NewImageFilterList(patterns []string) (*ImageFilterList, error) {
 
 		// If the pattern is a * we can skip everything and just create an empty list
 		if pattern == "*" {
+			log.Println("Warning: Found '*' in the allowlist, all images will be accepted!")
 			return &ImageFilterList{
 				patterns: []glob.Glob{},
 			}, nil

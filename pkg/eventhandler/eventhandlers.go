@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/utils"
 	"log"
 	"math"
 	"strconv"
@@ -22,14 +21,18 @@ const (
 	defaultMaxPollCount   = 60
 )
 
+type ImageFilter interface {
+	IsImageAllowed(image string) bool
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn         *keptnv2.Keptn
-	Event         cloudevents.Event
-	EventData     *keptnv2.EventData
-	ServiceName   string
-	JobSettings   k8sutils.JobSettings
-	AllowedImages *utils.ImageFilterList
+	Keptn       *keptnv2.Keptn
+	Event       cloudevents.Event
+	EventData   *keptnv2.EventData
+	ServiceName string
+	JobSettings k8sutils.JobSettings
+	ImageFilter ImageFilter
 }
 
 type jobLogs struct {
@@ -141,8 +144,8 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	// To execute all tasks atomically, we check all images
 	// before we start executing a single task of a job
 	for _, task := range action.Tasks {
-		if !eh.AllowedImages.Contains(task.Image) {
-			errorText := fmt.Sprintf("Forbidden: Image %s is not part of allowedImageList.\n", task.Image)
+		if !eh.ImageFilter.IsImageAllowed(task.Image) {
+			errorText := fmt.Sprintf("Forbidden: Image %s does not match configured image allowlist.\n", task.Image)
 
 			log.Printf(errorText)
 			if !action.Silent {

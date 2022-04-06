@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"keptn-contrib/job-executor-service/pkg/utils"
 	"testing"
 	"time"
 
@@ -46,6 +45,14 @@ const testEvent = `
 
 const jobName1 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f-454b-1"
 const jobName2 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f-454b-2"
+
+type acceptAllImagesFilter struct {
+	ImageFilter
+}
+
+func (f acceptAllImagesFilter) IsImageAllowed(_ string) bool {
+	return true
+}
 
 func createK8sMock(t *testing.T) *k8sutilsfake.MockK8s {
 	mockCtrl := gomock.NewController(t)
@@ -117,17 +124,14 @@ func TestStartK8s(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
-	allowList, err := utils.NewAllowAllImageFilterList()
-	require.NoError(t, err)
-
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName:   "job-executor-service",
-		Keptn:         myKeptn,
-		EventData:     eventData,
-		Event:         *event,
-		AllowedImages: allowList,
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+		ImageFilter: acceptAllImagesFilter{},
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace: jobNamespace1,
 		},
@@ -180,17 +184,14 @@ func TestStartK8sJobSilent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
-	allowList, err := utils.NewAllowAllImageFilterList()
-	require.NoError(t, err)
-
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName:   "job-executor-service",
-		Keptn:         myKeptn,
-		EventData:     eventData,
-		Event:         *event,
-		AllowedImages: allowList,
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+		ImageFilter: acceptAllImagesFilter{},
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
@@ -233,17 +234,14 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
 	require.NoError(t, err)
 
-	allowList, err := utils.NewAllowAllImageFilterList()
-	require.NoError(t, err)
-
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName:   "job-executor-service",
-		Keptn:         myKeptn,
-		EventData:     eventData,
-		Event:         *event,
-		AllowedImages: allowList,
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+		ImageFilter: acceptAllImagesFilter{},
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
@@ -295,21 +293,26 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	}
 }
 
+type disallowAllImagesFilter struct {
+	ImageFilter
+}
+
+func (f disallowAllImagesFilter) IsImageAllowed(_ string) bool {
+	return false
+}
+
 func TestExpectImageNotAllowedError(t *testing.T) {
 	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
-	require.NoError(t, err)
-
-	allowList, err := utils.NewImageFilterList([]string{"private.registry/*"})
 	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
 	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName:   "job-executor-service",
-		Keptn:         myKeptn,
-		EventData:     eventData,
-		Event:         *event,
-		AllowedImages: allowList,
+		ServiceName: "job-executor-service",
+		Keptn:       myKeptn,
+		EventData:   eventData,
+		Event:       *event,
+		ImageFilter: disallowAllImagesFilter{},
 	}
 	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
 
