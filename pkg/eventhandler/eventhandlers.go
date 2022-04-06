@@ -21,6 +21,7 @@ const (
 	defaultMaxPollCount   = 60
 )
 
+// ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
 	IsImageAllowed(image string) bool
 }
