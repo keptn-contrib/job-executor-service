@@ -1,7 +1,6 @@
 package eventhandler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -26,14 +25,20 @@ type ImageFilter interface {
 	IsImageAllowed(image string) bool
 }
 
+// EventMapper represents an object able to map the cloudevent (including its data) into a map that will contain the
+// parsed JSON of the event data
+type EventMapper interface {
+	// Map transforms a cloud event into a generic map[string]interface{}
+	Map(cloudevents.Event) (map[string]interface{}, error)
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
 	Keptn       *keptnv2.Keptn
-	Event       cloudevents.Event
-	EventData   *keptnv2.EventData
 	ServiceName string
 	JobSettings k8sutils.JobSettings
 	ImageFilter ImageFilter
+	Mapper      EventMapper
 }
 
 type jobLogs struct {
@@ -49,13 +54,16 @@ type dataForFinishedEvent struct {
 // HandleEvent handles all events in a generic manner
 func (eh *EventHandler) HandleEvent() error {
 
-	eventAsInterface, err := eh.createEventPayloadAsInterface()
+	eventAsInterface, err := eh.Mapper.Map(*eh.Keptn.CloudEvent)
 	if err != nil {
 		log.Printf("failed to convert incoming cloudevent: %v", err)
 		return err
 	}
 
-	log.Printf("Attempting to handle event %s of type %s ...", eh.Event.Context.GetID(), eh.Event.Type())
+	log.Printf(
+		"Attempting to handle event %s of type %s ...", eh.Keptn.CloudEvent.Context.GetID(),
+		eh.Keptn.CloudEvent.Type(),
+	)
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
 	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
@@ -63,7 +71,7 @@ func (eh *EventHandler) HandleEvent() error {
 		log.Printf("Could not find config for job-executor-service: %s", err.Error())
 
 		if eh.JobSettings.AlwaysSendFinishedEvent {
-			_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
+			_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
 			if err != nil {
 				log.Printf("Error while sending started event: %s\n", err.Error())
 			}
@@ -80,13 +88,19 @@ func (eh *EventHandler) HandleEvent() error {
 		return err
 	}
 
-	match, action := configuration.IsEventMatch(eh.Event.Type(), eventAsInterface)
+	match, action := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
 	if !match {
-		log.Printf("No match found for event %s of type %s. Skipping...", eh.Event.Context.GetID(), eh.Event.Type())
+		log.Printf(
+			"No match found for event %s of type %s. Skipping...", eh.Keptn.CloudEvent.Context.GetID(),
+			eh.Keptn.CloudEvent.Type(),
+		)
 		return nil
 	}
 
-	log.Printf("Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Event.Context.GetID(), eh.Event.Type(), action.Name)
+	log.Printf(
+		"Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Keptn.CloudEvent.Context.GetID(),
+		eh.Keptn.CloudEvent.Type(), action.Name,
+	)
 
 	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
 	eh.startK8sJob(k8s, action, eventAsInterface)
@@ -94,34 +108,10 @@ func (eh *EventHandler) HandleEvent() error {
 	return nil
 }
 
-func (eh *EventHandler) createEventPayloadAsInterface() (map[string]interface{}, error) {
-
-	var eventDataAsInterface interface{}
-	err := json.Unmarshal(eh.Event.Data(), &eventDataAsInterface)
-	if err != nil {
-		log.Printf("failed to convert incoming cloudevent: %v", err)
-		return nil, err
-	}
-
-	extension, _ := eh.Event.Context.GetExtension("shkeptncontext")
-	shKeptnContext := extension.(string)
-
-	eventAsInterface := make(map[string]interface{})
-	eventAsInterface["id"] = eh.Event.ID()
-	eventAsInterface["shkeptncontext"] = shKeptnContext
-	eventAsInterface["time"] = eh.Event.Time()
-	eventAsInterface["source"] = eh.Event.Source()
-	eventAsInterface["data"] = eventDataAsInterface
-	eventAsInterface["specversion"] = eh.Event.SpecVersion()
-	eventAsInterface["type"] = eh.Event.Type()
-
-	return eventAsInterface, nil
-}
-
 func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
-		_, err := eh.Keptn.SendTaskStartedEvent(eh.EventData, eh.ServiceName)
+		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
 		if err != nil {
 			log.Printf("Error while sending started event: %s\n", err.Error())
 			return
@@ -161,7 +151,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
-		jobName := "job-executor-service-job-" + eh.Event.ID()[:28] + "-" + strconv.Itoa(index+1)
+		jobName := "job-executor-service-job-" + eh.Keptn.CloudEvent.ID()[:28] + "-" + strconv.Itoa(index+1)
 
 		namespace := eh.JobSettings.JobNamespace
 
@@ -169,8 +159,10 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			namespace = task.Namespace
 		}
 
-		err := k8s.CreateK8sJob(jobName, action, task, eh.EventData, eh.JobSettings,
-			jsonEventData, namespace)
+		err := k8s.CreateK8sJob(
+			jobName, action, task, eh.Keptn.Event, eh.JobSettings,
+			jsonEventData, namespace,
+		)
 
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err)
@@ -199,15 +191,17 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			return
 		}
 
-		allJobLogs = append(allJobLogs, jobLogs{
-			name: jobName,
-			logs: logs,
-		})
+		allJobLogs = append(
+			allJobLogs, jobLogs{
+				name: jobName,
+				logs: logs,
+			},
+		)
 	}
 
 	additionalFinishedEventData.end = time.Now()
 
-	log.Printf("Successfully finished processing of event: %s\n", eh.Event.ID())
+	log.Printf("Successfully finished processing of event: %s\n", eh.Keptn.CloudEvent.ID())
 
 	if !action.Silent {
 		sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, allJobLogs, additionalFinishedEventData)
@@ -223,11 +217,13 @@ func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName str
 		message = fmt.Sprintf("Job %s failed: %s", jobName, err)
 	}
 
-	_, err = myKeptn.SendTaskFinishedEvent(&keptnv2.EventData{
-		Status:  keptnv2.StatusErrored,
-		Result:  keptnv2.ResultFailed,
-		Message: message,
-	}, serviceName)
+	_, err = myKeptn.SendTaskFinishedEvent(
+		&keptnv2.EventData{
+			Status:  keptnv2.StatusErrored,
+			Result:  keptnv2.ResultFailed,
+			Message: message,
+		}, serviceName,
+	)
 
 	if err != nil {
 		log.Printf("Error while sending started event: %s\n", err)

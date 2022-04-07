@@ -1,9 +1,10 @@
 package k8sutils
 
 import (
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+
 	"keptn-contrib/job-executor-service/pkg/config"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"k8s.io/client-go/kubernetes"
 )
@@ -19,8 +20,8 @@ type k8sImpl struct {
 type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(
-		jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings,
-		jsonEventData interface{}, namespace string,
+		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
+		jobSettings JobSettings, jsonEventData interface{}, namespace string,
 	) error
 	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int, namespace string) error
 	GetLogsOfPod(jobName string, namespace string) (string, error)
