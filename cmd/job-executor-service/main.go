@@ -49,8 +49,6 @@ type envConfig struct {
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
 	// Respond with .finished event if no configuration found
 	AlwaysSendFinishedEvent bool `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
-	// Whether jobs can access Kubernetes API
-	EnableKubernetesAPIAccess bool `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
 	// A list of all allowed images that can be used in jobs
@@ -107,7 +105,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,
 			AlwaysSendFinishedEvent:     false,
-			EnableKubernetesAPIAccess:   false,
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
@@ -116,10 +113,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 	}
 	if env.AlwaysSendFinishedEvent {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
-	}
-
-	if env.EnableKubernetesAPIAccess {
-		eventHandler.JobSettings.EnableKubernetesAPIAccess = true
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888
