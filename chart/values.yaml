@@ -43,6 +43,7 @@ jobConfig:
     create: true                             # Enables the service account creation
     name: "default-job-account"              # The name of the service account to use for job execution
     annotations: { }                         # Annotations to add to the service account
+  allowedImageList: ""                       # A list of images that are allowed for the jobs (e.g.: docker.io/*,ghcr.io/my-other-user/my-other-image:*,ghcr.io/my-user/my-image:1.2.3)
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 

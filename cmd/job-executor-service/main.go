@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	v1 "k8s.io/api/core/v1"
+	"keptn-contrib/job-executor-service/pkg/utils"
 	"log"
 	"net/http"
 	"os"
-
-	v1 "k8s.io/api/core/v1"
 
 	"keptn-contrib/job-executor-service/pkg/eventhandler"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
@@ -51,6 +51,8 @@ type envConfig struct {
 	EnableKubernetesAPIAccess string `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
+	// A list of all allowed images that can be used in jobs
+	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -77,7 +79,7 @@ func parseKeptnCloudEventPayload(event cloudevents.Event, data interface{}) erro
  * Depending on the Event Type will call the specific event handler functions, e.g: handleDeploymentFinishedEvent
  * See https://github.com/keptn/spec/blob/0.2.0-alpha/cloudevents.md for details on the payload
  */
-func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error {
+func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowList *utils.ImageFilterList) error {
 	// create keptn handler
 	log.Printf("Initializing Keptn Handler")
 	myKeptn, err := keptnv2.NewKeptn(&event, keptnOptions)
@@ -93,11 +95,14 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 		log.Printf("failed to convert incoming cloudevent to event data: %v", err)
 	}
 
-	eventHandler := &eventhandler.EventHandler{
+	var eventHandler = &eventhandler.EventHandler{
 		Keptn:       myKeptn,
 		Event:       event,
 		EventData:   eventData,
 		ServiceName: ServiceName,
+		ImageFilter: imageFilterImpl{
+			imageFilterList: allowList,
+		},
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace:                env.JobNamespace,
 			KeptnAPIToken:               env.KeptnAPIToken,
@@ -108,7 +113,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event) error 
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 		},
 	}
-
 	if env.AlwaysSendFinishedEvent == "true" {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
 	}
@@ -186,8 +190,17 @@ func _main(args []string, env envConfig) int {
 		log.Fatalf("failed to create client, %v", err)
 	}
 
+	imageFilterList, err := utils.BuildImageAllowList(env.AllowedImageList)
+	if err != nil {
+		log.Fatalf("failed to generate the allowlist, %v", err)
+	}
+
+	processCloudEventFunc := func(ctx context.Context, event cloudevents.Event) error {
+		return processKeptnCloudEvent(ctx, event, imageFilterList)
+	}
+
 	log.Printf("Starting receiver")
-	log.Fatal(c.StartReceiver(ctx, processKeptnCloudEvent))
+	log.Fatal(c.StartReceiver(ctx, processCloudEventFunc))
 
 	return 0
 }
@@ -238,4 +251,13 @@ func endpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+type imageFilterImpl struct {
+	eventhandler.ImageFilter
+	imageFilterList *utils.ImageFilterList
+}
+
+func (f imageFilterImpl) IsImageAllowed(image string) bool {
+	return f.imageFilterList.Contains(image)
 }

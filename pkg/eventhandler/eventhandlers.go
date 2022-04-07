@@ -2,6 +2,7 @@ package eventhandler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -20,6 +21,11 @@ const (
 	defaultMaxPollCount   = 60
 )
 
+// ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
+type ImageFilter interface {
+	IsImageAllowed(image string) bool
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
 	Keptn       *keptnv2.Keptn
@@ -27,6 +33,7 @@ type EventHandler struct {
 	EventData   *keptnv2.EventData
 	ServiceName string
 	JobSettings k8sutils.JobSettings
+	ImageFilter ImageFilter
 }
 
 type jobLogs struct {
@@ -133,6 +140,21 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 	var allJobLogs []jobLogs
 	additionalFinishedEventData := dataForFinishedEvent{
 		start: time.Now(),
+	}
+
+	// To execute all tasks atomically, we check all images
+	// before we start executing a single task of a job
+	for _, task := range action.Tasks {
+		if !eh.ImageFilter.IsImageAllowed(task.Image) {
+			errorText := fmt.Sprintf("Forbidden: Image %s does not match configured image allowlist.\n", task.Image)
+
+			log.Printf(errorText)
+			if !action.Silent {
+				sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, errors.New(errorText), "")
+			}
+
+			return
+		}
 	}
 
 	for index, task := range action.Tasks {
