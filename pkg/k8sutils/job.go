@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+
 	"keptn-contrib/job-executor-service/pkg/config"
 
 	"github.com/PaesslerAG/jsonpath"
 	"gopkg.in/yaml.v2"
-
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -40,7 +40,7 @@ type JobSettings struct {
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 // returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
 func (k8s *k8sImpl) CreateK8sJob(
-	jobName string, action *config.Action, task config.Task, eventData *keptnv2.EventData, jobSettings JobSettings,
+	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
 
@@ -148,15 +148,15 @@ func (k8s *k8sImpl) CreateK8sJob(
 								},
 								{
 									Name:  "KEPTN_PROJECT",
-									Value: eventData.Project,
+									Value: eventData.GetProject(),
 								},
 								{
 									Name:  "KEPTN_STAGE",
-									Value: eventData.Stage,
+									Value: eventData.GetStage(),
 								},
 								{
 									Name:  "KEPTN_SERVICE",
-									Value: eventData.Service,
+									Value: eventData.GetService(),
 								},
 								{
 									Name:  "JOB_ACTION",
@@ -217,7 +217,9 @@ func (k8s *k8sImpl) CreateK8sJob(
 	return nil
 }
 
-func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string) error {
+func (k8s *k8sImpl) AwaitK8sJobDone(
+	jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string,
+) error {
 	jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
 	currentPollCount := 0
@@ -245,9 +247,13 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 				// hooray, it worked
 				return nil
 			case batchv1.JobSuspended:
-				return fmt.Errorf("job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message)
+				return fmt.Errorf(
+					"job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
+				)
 			case batchv1.JobFailed:
-				return fmt.Errorf("job %s failed. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message)
+				return fmt.Errorf(
+					"job %s failed. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
+				)
 			}
 		}
 
@@ -255,7 +261,9 @@ func (k8s *k8sImpl) AwaitK8sJobDone(jobName string, maxPollCount int, pollInterv
 	}
 }
 
-func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData, jsonEventData interface{}, namespace string) ([]v1.EnvVar, error) {
+func (k8s *k8sImpl) prepareJobEnv(
+	task config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
+) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
 	for _, env := range task.Env {
@@ -280,29 +288,31 @@ func (k8s *k8sImpl) prepareJobEnv(task config.Task, eventData *keptnv2.EventData
 	}
 
 	// append KEPTN_PROJECT, KEPTN_SERVICE and KEPTN_STAGE as environment variables
-	jobEnv = append(jobEnv,
+	jobEnv = append(
+		jobEnv,
 		v1.EnvVar{
 			Name:  "KEPTN_PROJECT",
-			Value: eventData.Project,
+			Value: eventData.GetProject(),
 		},
 		v1.EnvVar{
 			Name:  "KEPTN_STAGE",
-			Value: eventData.Stage,
+			Value: eventData.GetStage(),
 		},
 		v1.EnvVar{
 			Name:  "KEPTN_SERVICE",
-			Value: eventData.Service,
+			Value: eventData.GetService(),
 		},
 	)
 
 	replacer := strings.NewReplacer("-", "_", " ", "_")
 
 	// append labels as environment variables
-	for key, value := range eventData.Labels {
+	for key, value := range eventData.GetLabels() {
 		// replace - with _
 		key = replacer.Replace(key)
 
-		jobEnv = append(jobEnv,
+		jobEnv = append(
+			jobEnv,
 			v1.EnvVar{
 				Name:  "LABELS_" + strings.ToUpper(key),
 				Value: value,
@@ -317,14 +327,19 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 
 	value, err := jsonpath.Get(env.Value, jsonEventData)
 	if err != nil {
-		return nil, fmt.Errorf("could not add env with name '%v', value '%v', valueFrom '%v': %v", env.Name, env.Value, env.ValueFrom, err)
+		return nil, fmt.Errorf(
+			"could not add env with name '%v', value '%v', valueFrom '%v': %v", env.Name, env.Value, env.ValueFrom, err,
+		)
 	}
 
 	if strings.EqualFold(env.Formatting, "yaml") {
 		yamlString, err := yaml.Marshal(value)
 
 		if err != nil {
-			return nil, fmt.Errorf("could not convert env with name '%v', value '%v', valueFrom '%v' to YAML: %v", env.Name, env.Value, env.ValueFrom, err)
+			return nil, fmt.Errorf(
+				"could not convert env with name '%v', value '%v', valueFrom '%v' to YAML: %v", env.Name, env.Value,
+				env.ValueFrom, err,
+			)
 		}
 
 		value = string(yamlString[:])
@@ -332,7 +347,10 @@ func generateEnvFromEvent(env config.Env, jsonEventData interface{}) ([]v1.EnvVa
 		jsonString, err := json.Marshal(value)
 
 		if err != nil {
-			return nil, fmt.Errorf("could not convert env with name '%v', value '%v', valueFrom '%v' to JSON: %v", env.Name, env.Value, env.ValueFrom, err)
+			return nil, fmt.Errorf(
+				"could not convert env with name '%v', value '%v', valueFrom '%v' to JSON: %v", env.Name, env.Value,
+				env.ValueFrom, err,
+			)
 		}
 
 		value = string(jsonString[:])
@@ -367,15 +385,17 @@ func (k8s *k8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 	}
 
 	for key := range secret.Data {
-		generatedEnv = append(generatedEnv, v1.EnvVar{
-			Name: key,
-			ValueFrom: &v1.EnvVarSource{
-				SecretKeyRef: &v1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{Name: env.Name},
-					Key:                  key,
+		generatedEnv = append(
+			generatedEnv, v1.EnvVar{
+				Name: key,
+				ValueFrom: &v1.EnvVarSource{
+					SecretKeyRef: &v1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{Name: env.Name},
+						Key:                  key,
+					},
 				},
 			},
-		})
+		)
 	}
 
 	return generatedEnv, nil

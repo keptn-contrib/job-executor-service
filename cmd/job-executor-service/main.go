@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	v1 "k8s.io/api/core/v1"
-	"keptn-contrib/job-executor-service/pkg/utils"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+
+	v1 "k8s.io/api/core/v1"
+
+	"keptn-contrib/job-executor-service/pkg/utils"
 
 	"keptn-contrib/job-executor-service/pkg/eventhandler"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
@@ -63,18 +65,6 @@ const ServiceName = "job-executor-service"
 var /* const */ DefaultResourceRequirements *v1.ResourceRequirements
 
 /**
- * Parses a Keptn Cloud Event payload (data attribute)
- */
-func parseKeptnCloudEventPayload(event cloudevents.Event, data interface{}) error {
-	err := event.DataAs(data)
-	if err != nil {
-		log.Fatalf("Got Data Error: %s", err.Error())
-		return err
-	}
-	return nil
-}
-
-/**
  * This method gets called when a new event is received from the Keptn Event Distributor
  * Depending on the Event Type will call the specific event handler functions, e.g: handleDeploymentFinishedEvent
  * See https://github.com/keptn/spec/blob/0.2.0-alpha/cloudevents.md for details on the payload
@@ -84,22 +74,15 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 	log.Printf("Initializing Keptn Handler")
 	myKeptn, err := keptnv2.NewKeptn(&event, keptnOptions)
 	if err != nil {
-		return errors.New("Could not create Keptn Handler: " + err.Error())
+		return fmt.Errorf("could not create Keptn Handler: %w", err)
 	}
 
 	log.Printf("gotEvent(%s): %s - %s", event.Type(), myKeptn.KeptnContext, event.Context.GetID())
 
-	eventData := &keptnv2.EventData{}
-	err = parseKeptnCloudEventPayload(event, eventData)
-	if err != nil {
-		log.Printf("failed to convert incoming cloudevent to event data: %v", err)
-	}
-
 	var eventHandler = &eventhandler.EventHandler{
 		Keptn:       myKeptn,
-		Event:       event,
-		EventData:   eventData,
 		ServiceName: ServiceName,
+		Mapper:      new(eventhandler.KeptnCloudEventMapper),
 		ImageFilter: imageFilterImpl{
 			imageFilterList: allowList,
 		},
@@ -180,7 +163,9 @@ func _main(args []string, env envConfig) int {
 	log.Printf("Creating new http handler")
 
 	// configure http server to receive cloudevents
-	p, err := cloudevents.NewHTTP(cloudevents.WithPath(env.Path), cloudevents.WithPort(env.Port), cloudevents.WithGetHandlerFunc(HTTPGetHandler))
+	p, err := cloudevents.NewHTTP(
+		cloudevents.WithPath(env.Path), cloudevents.WithPort(env.Port), cloudevents.WithGetHandlerFunc(HTTPGetHandler),
+	)
 
 	if err != nil {
 		log.Fatalf("failed to create client, %v", err)
