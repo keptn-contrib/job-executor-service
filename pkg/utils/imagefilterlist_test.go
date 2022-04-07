@@ -98,5 +98,17 @@ func TestEmptyImageAllowFunction(t *testing.T) {
 	buildFunctionResult, err := BuildImageAllowList("")
 	require.NoError(t, err)
 
+	assert.Len(t, newFunctionResult.patterns, 0)
+	assert.Len(t, buildFunctionResult.patterns, 0)
 	assert.Equal(t, newFunctionResult, buildFunctionResult)
+}
+
+func TestImplicitEmptyImageFilterList(t *testing.T) {
+	allowedImageArray := []string{"docker.io/*", "ghcr.io", "*"}
+	newFunctionResult, err := NewImageFilterList(allowedImageArray)
+	require.NoError(t, err)
+
+	assert.Len(t, newFunctionResult.patterns, 0)
+
+	assert.True(t, newFunctionResult.Contains("<some/random/string._a-~#2ß1 dse"))
 }
