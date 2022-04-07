@@ -36,8 +36,8 @@ func TestExplicitAllowlistEntries(t *testing.T) {
 
 	assert.True(t, helper.Contains("docker.io/A/some-image"))
 	assert.True(t, helper.Contains("docker.io/B/some-image"))
-        assert.False(t, helper.Contains("docker.io/A/some-image:some-specific-tag"))
-        assert.False(t, helper.Contains("docker.io/B/some-image:some-specific-tag"))
+	assert.False(t, helper.Contains("docker.io/A/some-image:some-specific-tag"))
+	assert.False(t, helper.Contains("docker.io/B/some-image:some-specific-tag"))
 	assert.True(t, helper.Contains("docker.io/my-user/my-image:1.2.3"))
 	assert.False(t, helper.Contains("docker.io/my-user/some-image"))
 
@@ -68,10 +68,10 @@ func TestWildcardFormatsRegistry(t *testing.T) {
 	assert.False(t, helper.Contains("ghcr.io/A/my-image:1.2.3"))
 	assert.False(t, helper.Contains("ghcr.io/my-user/some-image"))
 	assert.False(t, helper.Contains("ghcr.io/my-user/my-image:latest"))
-        assert.True(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.34.0"))
-        assert.True(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.34.1"))
-        assert.False(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.35.0"))
-        assert.False(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6"))
+	assert.True(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.34.0"))
+	assert.True(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.34.1"))
+	assert.False(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6:0.35.0"))
+	assert.False(t, helper.Contains("my-docker-mirror.myorg/loadimpact/k6"))
 }
 
 func TestDifferentContainerRegistryFormats(t *testing.T) {
