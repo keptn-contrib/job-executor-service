@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const defaultContainerRegistry = "docker.io"
-
 // ImageFilterList represents a list of glob filters that can be used to check if an image matches one of these filters
 type ImageFilterList struct {
 	patterns []glob.Glob
