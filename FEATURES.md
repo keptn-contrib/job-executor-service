@@ -139,7 +139,7 @@ By default, the following environment variables are automatically available:
 * `$(KEPTN_PROJECT)` - project name from Cloud Event (`.data.project`)
 * `$(KEPTN_SERVICE)` - project name from Cloud Event (`.data.service`)
 * `$(KEPTN_STAGE)` - project name from Cloud Event (`.data.stage`)
-* For every label of the Cloud Event, we provide `$(LABEL_KEY)` making the key uppercase and transforming spacing/hyphens in underscores (e.g., the label `build-id` can be accessed using `$(LABEL_BUILD_ID)`) 
+* For every label of the Cloud Event, we provide `$(LABELS_KEY)` making the key uppercase and transforming spacing/hyphens in underscores (e.g., the label `build-id` can be accessed using `$(LABELS_BUILD_ID)`) 
 
 
 #### From Events
