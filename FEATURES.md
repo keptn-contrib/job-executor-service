@@ -15,6 +15,7 @@
     - [Resource quotas](#resource-quotas)
     - [Poll duration](#poll-duration)
     - [Job namespace](#job-namespace)
+    - [Job security context](#job-security-context)
     - [Job image pull policy](#job-image-pull-policy)
     - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
     - [Additional Event Data](#additional-event-data)
@@ -420,6 +421,24 @@ tasks:
   - name: "Run locust tests"
     ...
     namespace: carts
+```
+
+### Job security context
+
+By default the jobs will use the default security context, which was specified at the time of the installation of the 
+job-executor-service. The job configuration provides a way to overwrite this context on a task level:
+
+```yaml
+tasks:
+  - name: "Run as different user"
+    securityContext:
+      runAsUser: 7000
+      runAsGroup: 9000
+    ...
+  - name: "Allow modifications to root FS"
+    securityContext:
+      readOnlyRootFilesystem: false
+    ...
 ```
 
 ### Job Image Pull Policy

@@ -47,6 +47,10 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          volumeMounts:
+            - mountPath: "/config"
+              name: job-security-settings
+              readOnly: true
           env:
           - name: KEPTN_API_TOKEN
             valueFrom:
@@ -104,6 +108,11 @@ spec:
                 key: default_job_service_account
           - name: ALLOWED_IMAGE_LIST
             value: {{ (.Values.jobConfig).allowedImageList | default "" }}
+          - name: ALLOW_PRIVILEGED_JOBS
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: allow_privileged_jobs
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor
@@ -179,7 +188,10 @@ spec:
                 fieldRef:
                   fieldPath: metadata.labels['app.kubernetes.io/name']
             {{- end }}
-
+      volumes:
+        - name: job-security-settings
+          configMap:
+            name: job-security-context
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

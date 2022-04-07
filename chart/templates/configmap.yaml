@@ -14,3 +14,4 @@ data:
   keptn_api_endpoint: {{ (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
   init_container_configuration_endpoint: {{ (printf "%s://%s/api/configuration-service" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
   default_job_service_account: "{{ include "job-executor-service.jobConfig.serviceAccountName" . }}"
+  allow_privileged_jobs: "{{ .Values.jobConfig.allowPrivilegedJobs | default "false" }}"
