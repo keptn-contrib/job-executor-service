@@ -6,6 +6,7 @@ generate-mocks:
 	@echo "(Re)Generating mocks in */fake packages"
 	mockgen -source=pkg/k8sutils/connect.go -destination=pkg/k8sutils/fake/connect_mock.go -package fake
 	mockgen -source=pkg/keptn/config_service.go -destination=pkg/keptn/fake/config_service_mock.go -package fake
+	mockgen -source=pkg/eventhandler/eventhandlers.go -destination=pkg/eventhandler/fake/eventhandlers_mock.go -package fake
 
 build-lint:
 	@echo "Compiling job executor service lint for every OS and Platform"

@@ -20,6 +20,8 @@ const (
 	defaultMaxPollCount   = 60
 )
 
+//go:generate mockgen -source=eventhandlers.go -destination=fake/eventhandlers_mock.go -package=fake
+
 // ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
 	IsImageAllowed(image string) bool

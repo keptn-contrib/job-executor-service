@@ -2,6 +2,7 @@ package eventhandler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -19,6 +20,8 @@ import (
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
+
+	eventhandlerfake "keptn-contrib/job-executor-service/pkg/eventhandler/fake"
 )
 
 const testEvent = `
@@ -84,6 +87,35 @@ func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.E
 	myKeptn, err := keptnv2.NewKeptn(incomingEvent, keptnOptions)
 
 	return myKeptn, incomingEvent, fakeEventSender, err
+}
+
+func TestErrorMappingEvent(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockMapper := eventhandlerfake.NewMockEventMapper(mockCtrl)
+	mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
+
+	mappingError := errors.New("some weird error happened during mapping")
+	mockMapper.EXPECT().Map(gomock.Any()).Times(1).Return(
+		nil,
+		mappingError,
+	)
+
+	myKeptn, _, _, err := initializeTestObjects("../../test-events/action.triggered.json")
+
+	require.NoError(t, err)
+
+	sut := EventHandler{
+		Keptn:       myKeptn,
+		ServiceName: "",
+		JobSettings: k8sutils.JobSettings{},
+		ImageFilter: mockFilter,
+		Mapper:      mockMapper,
+	}
+	err = sut.HandleEvent()
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, mappingError)
 }
 
 func TestStartK8s(t *testing.T) {
