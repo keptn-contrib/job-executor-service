@@ -20,6 +20,8 @@ const (
 	defaultMaxPollCount   = 60
 )
 
+//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader
+
 // ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
 	IsImageAllowed(image string) bool
@@ -32,13 +34,19 @@ type EventMapper interface {
 	Map(cloudevents.Event) (map[string]interface{}, error)
 }
 
+// JobConfigReader retrieves the job-executor-service configuration
+type JobConfigReader interface {
+	GetJobConfig() (*config.Config, error)
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn       *keptnv2.Keptn
-	ServiceName string
-	JobSettings k8sutils.JobSettings
-	ImageFilter ImageFilter
-	Mapper      EventMapper
+	Keptn            *keptnv2.Keptn
+	ServiceName      string
+	JobConfigService JobConfigReader
+	JobSettings      k8sutils.JobSettings
+	ImageFilter      ImageFilter
+	Mapper           EventMapper
 }
 
 type jobLogs struct {
@@ -66,9 +74,10 @@ func (eh *EventHandler) HandleEvent() error {
 	)
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
-	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
+	configuration, err := eh.JobConfigService.GetJobConfig()
+
 	if err != nil {
-		log.Printf("Could not find config for job-executor-service: %s", err.Error())
+		log.Printf("Could not retrieve config for job-executor-service: %s", err.Error())
 
 		if eh.JobSettings.AlwaysSendFinishedEvent {
 			_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -78,13 +87,6 @@ func (eh *EventHandler) HandleEvent() error {
 			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil, dataForFinishedEvent{})
 		}
 
-		return err
-	}
-
-	configuration, err := config.NewConfig(resource)
-	if err != nil {
-		log.Printf("Could not parse config: %s", err)
-		log.Printf("The config was: %s", string(resource))
 		return err
 	}
 
