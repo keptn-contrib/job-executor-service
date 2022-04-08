@@ -17,7 +17,7 @@ build:
 deploy:
   helm:
     flags:
-      upgrade: ["--reuse-values"] # keep configuration (e.g., Keptn API Token)
+      upgrade: [ "--install", "--create-namespace", "--reuse-values"] # keep configuration (e.g., Keptn API Token)
     releases:
       - name: job-executor-service # needs to be the same name as currently used (check via helm ls -n keptn)
         namespace: keptn-jes # needs to be the same namespace as where the helm-chart is currently deployed
@@ -37,7 +37,13 @@ deploy:
           distributor:
             image:
               tag: 0.12.6
+            securityContext:
+              seccompProfile:
+                type: Unconfined # needed for debugging
           resources:
             limits:
               memory: 512Mi # increase memory limit such that debugging using delve works
+          securityContext:
+            seccompProfile:
+              type: Unconfined # needed for debugging
         chartPath: chart
