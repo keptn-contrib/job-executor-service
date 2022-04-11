@@ -29,8 +29,12 @@ running in the Keptn ecosystem:
 |    0.12.2     |                               keptncontrib/job-executor-service:0.1.7                                |       v2       |
 |    0.12.6     |                               keptncontrib/job-executor-service:0.1.8                                |       v2       |
 
-
 Please note: Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
+
+**Warning**: We are aware that there might be a problem when trying to install Job-Executor-Service in the same namespace as Keptn 0.14.x. 
+For now, we advise to install Job-Executor-Service in a separate namespace, and set `remoteControlPlane.api.hostname`, `remoteControlPlane.api.token`, ... as detailed in the
+[Installation section](#installation) below.
+
 
 <details>
   <summary>Click here to show older versions</summary>
