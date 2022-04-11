@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnutils "github.com/keptn/kubernetes-utils/pkg"
+	"k8s.io/client-go/kubernetes"
 
 	"keptn-contrib/job-executor-service/pkg/config"
 
@@ -45,6 +47,28 @@ type JobSettings struct {
 	DefaultSecurityContext      *v1.SecurityContext
 	DefaultPodSecurityContext   *v1.PodSecurityContext
 	AllowPrivilegedJobs         bool
+}
+
+// k8sImpl is used to interact with kubernetes jobs
+type k8sImpl struct {
+	clientset kubernetes.Interface
+}
+
+// NewK8s creates and returns new K8s
+func NewK8s(namespace string) *k8sImpl {
+	return &k8sImpl{}
+}
+
+// ConnectToCluster returns the k8s Clientset
+func (k8s *k8sImpl) ConnectToCluster() error {
+
+	config, err := keptnutils.GetClientset(true)
+	if err != nil {
+		return err
+	}
+	k8s.clientset = config
+
+	return nil
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task

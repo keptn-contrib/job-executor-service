@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+
 	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
 
@@ -20,7 +22,7 @@ const (
 	defaultMaxPollCount   = 60
 )
 
-//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader
+//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader,K8s
 
 // ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
@@ -39,14 +41,26 @@ type JobConfigReader interface {
 	GetJobConfig() (*config.Config, error)
 }
 
+// K8s is used to interact with kubernetes jobs
+type K8s interface {
+	ConnectToCluster() error
+	CreateK8sJob(
+		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
+		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
+	) error
+	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int, namespace string) error
+	GetLogsOfPod(jobName string, namespace string) (string, error)
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn            *keptnv2.Keptn
-	ServiceName      string
-	JobConfigService JobConfigReader
-	JobSettings      k8sutils.JobSettings
-	ImageFilter      ImageFilter
-	Mapper           EventMapper
+	Keptn           *keptnv2.Keptn
+	ServiceName     string
+	JobConfigReader JobConfigReader
+	JobSettings     k8sutils.JobSettings
+	ImageFilter     ImageFilter
+	Mapper          EventMapper
+	K8s             K8s
 }
 
 type jobLogs struct {
@@ -74,7 +88,7 @@ func (eh *EventHandler) HandleEvent() error {
 	)
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
-	configuration, err := eh.JobConfigService.GetJobConfig()
+	configuration, err := eh.JobConfigReader.GetJobConfig()
 
 	if err != nil {
 		log.Printf("Could not retrieve config for job-executor-service: %s", err.Error())
@@ -104,13 +118,13 @@ func (eh *EventHandler) HandleEvent() error {
 		eh.Keptn.CloudEvent.Type(), action.Name,
 	)
 
-	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
-	eh.startK8sJob(k8s, action, eventAsInterface)
+	// TODO remove the first parameter
+	eh.startK8sJob(eh.K8s, action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(k8s K8s, action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
