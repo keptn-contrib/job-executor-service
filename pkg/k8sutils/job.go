@@ -109,7 +109,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 
 	// If the privileged flag is contained check if these type of workloads are allowed and
 	// abort the execution if they aren't or warn the user that such jobs are a bad idea
-	if *jobSecurityContext.Privileged {
+	if jobSecurityContext.Privileged != nil && *jobSecurityContext.Privileged {
 		if jobSettings.AllowPrivilegedJobs {
 			log.Printf("WARNING: Job %s will be executed in a privileged container", jobName)
 		} else {

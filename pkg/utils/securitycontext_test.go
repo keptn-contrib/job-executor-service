@@ -213,6 +213,9 @@ func TestVerifySecurityContextWithInsecureContext(t *testing.T) {
 
 	err := VerifySecurityContext(&insecurePodSecurityContext, &privilegedSecurityContext, false)
 	assert.Error(t, err)
+
+	err = VerifySecurityContext(&insecurePodSecurityContext, &privilegedSecurityContext, true)
+	assert.NoError(t, err)
 }
 
 func TestVerifySecurityConfigurationWithSecureContext(t *testing.T) {
@@ -261,4 +264,7 @@ func TestVerifySecurityConfigurationWithInsecureContext(t *testing.T) {
 
 	err := VerifySecurityConfiguration(&conf, false)
 	assert.Error(t, err)
+
+	err = VerifySecurityConfiguration(&conf, true)
+	assert.NoError(t, err)
 }
