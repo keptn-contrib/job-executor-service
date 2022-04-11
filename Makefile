@@ -2,6 +2,11 @@
 
 TAG ?= latest
 
+generate-mocks:
+	@echo "(Re)Generating mocks in */fake packages"
+	mockgen -source=pkg/k8sutils/connect.go -destination=pkg/k8sutils/fake/connect_mock.go -package fake
+	mockgen -source=pkg/keptn/config_service.go -destination=pkg/keptn/fake/config_service_mock.go -package fake
+
 build-lint:
 	@echo "Compiling job executor service lint for every OS and Platform"
 	GOOS=linux GOARCH=amd64 go build -o bin/job-lint-linux-amd64 ./cmd/job-executor-service-lint

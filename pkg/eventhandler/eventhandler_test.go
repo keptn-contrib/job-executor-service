@@ -15,8 +15,6 @@ import (
 	k8sutilsfake "keptn-contrib/job-executor-service/pkg/k8sutils/fake"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/binding/spec"
-	"github.com/cloudevents/sdk-go/v2/event"
 	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -88,40 +86,10 @@ func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.E
 	return myKeptn, incomingEvent, fakeEventSender, err
 }
 
-func TestInitializeEventPayloadAsInterface(t *testing.T) {
-
-	context := spec.V1.NewContext()
-	context.SetID("0123")
-	context.SetSource("sourcysource")
-	now := time.Now()
-	context.SetTime(now)
-	context.SetExtension("shkeptncontext", interface{}("mycontext"))
-
-	eh := EventHandler{
-		Event: event.Event{
-			Context:     context,
-			DataEncoded: []byte(testEvent),
-		},
-	}
-
-	eventPayloadAsInterface, err := eh.createEventPayloadAsInterface()
-	require.NoError(t, err)
-
-	assert.Equal(t, eventPayloadAsInterface["id"], "0123")
-	assert.Equal(t, eventPayloadAsInterface["source"], "sourcysource")
-	assert.Equal(t, eventPayloadAsInterface["time"], now)
-	assert.Equal(t, eventPayloadAsInterface["shkeptncontext"], "mycontext")
-
-	data := eventPayloadAsInterface["data"]
-	dataAsMap := data.(map[string]interface{})
-
-	assert.Equal(t, dataAsMap["project"], "sockshop")
-}
-
 func TestStartK8s(t *testing.T) {
 	jobNamespace1 := "keptn"
 	jobNamespace2 := "keptn-2"
-	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
@@ -129,14 +97,13 @@ func TestStartK8s(t *testing.T) {
 	eh := EventHandler{
 		ServiceName: "job-executor-service",
 		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
 		ImageFilter: acceptAllImagesFilter{},
 		JobSettings: k8sutils.JobSettings{
 			JobNamespace: jobNamespace1,
 		},
 	}
-	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+	mapper := new(KeptnCloudEventMapper)
+	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	maxPollDuration := 1006
 	action := config.Action{
@@ -167,8 +134,6 @@ func TestStartK8s(t *testing.T) {
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5, jobNamespace2).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), jobNamespace1).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
@@ -181,7 +146,7 @@ func TestStartK8s(t *testing.T) {
 }
 
 func TestStartK8sJobSilent(t *testing.T) {
-	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
 	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
@@ -189,11 +154,10 @@ func TestStartK8sJobSilent(t *testing.T) {
 	eh := EventHandler{
 		ServiceName: "job-executor-service",
 		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
 		ImageFilter: acceptAllImagesFilter{},
 	}
-	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+	mapper := new(KeptnCloudEventMapper)
+	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	action := config.Action{
 		Name: "Run locust",
@@ -221,8 +185,6 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5, "").Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
 	eh.startK8sJob(k8sMock, &action, eventPayloadAsInterface)
 
@@ -231,7 +193,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 }
 
 func TestStartK8s_TestFinishedEvent(t *testing.T) {
-	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
 	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
@@ -239,11 +201,10 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	eh := EventHandler{
 		ServiceName: "job-executor-service",
 		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
 		ImageFilter: acceptAllImagesFilter{},
 	}
-	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+	mapper := new(KeptnCloudEventMapper)
+	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	action := config.Action{
 		Name: "Run locust",
@@ -262,7 +223,6 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
 	// set the global timezone for testing
 	local, err := time.LoadLocation("UTC")
@@ -302,7 +262,7 @@ func (f disallowAllImagesFilter) IsImageAllowed(_ string) bool {
 }
 
 func TestExpectImageNotAllowedError(t *testing.T) {
-	myKeptn, event, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
 	require.NoError(t, err)
 
 	eventData := &keptnv2.EventData{}
@@ -310,11 +270,10 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	eh := EventHandler{
 		ServiceName: "job-executor-service",
 		Keptn:       myKeptn,
-		EventData:   eventData,
-		Event:       *event,
 		ImageFilter: disallowAllImagesFilter{},
 	}
-	eventPayloadAsInterface, _ := eh.createEventPayloadAsInterface()
+	mapper := new(KeptnCloudEventMapper)
+	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	notAllowedImageName := "alpine:latest"
 	action := config.Action{
@@ -335,7 +294,6 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
-	k8sMock.EXPECT().DeleteK8sJob(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
 	// set the global timezone for testing
 	local, err := time.LoadLocation("UTC")
