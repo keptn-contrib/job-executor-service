@@ -3,30 +3,25 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	v1 "k8s.io/api/core/v1"
 	"keptn-contrib/job-executor-service/pkg/config"
 	"log"
 	"os"
 )
 
-// jobSecurityContextFilePath describes the path of the security config file that is defined in the deployment.yaml
-const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
-
-// podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
-const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
-
 // ReadDefaultJobSecurityContext reads the JSON file defined in jobSecurityContextFilePath and parses the output
 // into a valid v1.SecurityContext data structure
-func ReadDefaultJobSecurityContext() (*v1.SecurityContext, error) {
+func ReadDefaultJobSecurityContext(jobSecurityContextFilePath string) (*v1.SecurityContext, error) {
 	jobSecurityContextBytes, err := os.ReadFile(jobSecurityContextFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading security context config file %s: %w", jobSecurityContextFilePath, err)
 	}
 
 	var defaultJobSecurityContext v1.SecurityContext
 	err = json.Unmarshal(jobSecurityContextBytes, &defaultJobSecurityContext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid security context configuration format: %w", err)
 	}
 
 	return &defaultJobSecurityContext, nil
@@ -34,16 +29,16 @@ func ReadDefaultJobSecurityContext() (*v1.SecurityContext, error) {
 
 // ReadDefaultPodSecurityContext reads the JSON file defined in podSecurityContextFilePath and parses the output
 // into a valid v1.PodSecurityContext data structure
-func ReadDefaultPodSecurityContext() (*v1.PodSecurityContext, error) {
+func ReadDefaultPodSecurityContext(podSecurityContextFilePath string) (*v1.PodSecurityContext, error) {
 	podSecurityContextBytes, err := os.ReadFile(podSecurityContextFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading security context config file %s: %w", podSecurityContextFilePath, err)
 	}
 
 	var defaultPodSecurityContext v1.PodSecurityContext
 	err = json.Unmarshal(podSecurityContextBytes, &defaultPodSecurityContext)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid security context configuration format: %w", err)
 	}
 
 	return &defaultPodSecurityContext, nil

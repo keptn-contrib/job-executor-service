@@ -482,7 +482,7 @@ to kubernetes api server.
 
 ### Restrict job images
 
-During the installation of the *job-executor-service* a comma seperated allow-list of images can be specified
+During the installation of the *job-executor-service* a comma separated allow-list of images can be specified
 (`jobConfig.allowedImageList`), which is used to restrict the amount of images that can be used in job workloads. 
 This allow-list also supports simple globs like `docker.io/*`.
 

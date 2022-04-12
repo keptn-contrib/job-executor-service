@@ -27,7 +27,7 @@ func main() {
 
 	err = utils.VerifySecurityConfiguration(conf, true)
 	if err != nil {
-		log.Fatalf("error processing security context: %v", err.Error())
+		log.Fatalf("error processing security context: %v", err)
 	}
 
 	log.Printf("config %v is valid", jobConfigName)

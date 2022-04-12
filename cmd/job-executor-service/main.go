@@ -62,6 +62,12 @@ type envConfig struct {
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
 const ServiceName = "job-executor-service"
 
+// jobSecurityContextFilePath describes the path of the security config file that is defined in the deployment.yaml
+const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
+
+// podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
+const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
+
 // DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
 // startup from env (treat as const)
 var /* const */ DefaultResourceRequirements *v1.ResourceRequirements
@@ -149,12 +155,12 @@ func main() {
 		log.Println("WARNING: Privileged job workloads are allowed!")
 	}
 
-	DefaultJobSecurityContext, err = utils.ReadDefaultJobSecurityContext()
+	DefaultJobSecurityContext, err = utils.ReadDefaultJobSecurityContext(jobSecurityContextFilePath)
 	if err != nil {
 		log.Fatalf("unable to read default job security context: %v", err.Error())
 	}
 
-	DefaultPodSecurityContext, err = utils.ReadDefaultPodSecurityContext()
+	DefaultPodSecurityContext, err = utils.ReadDefaultPodSecurityContext(podSecurityContextFilePath)
 	if err != nil {
 		log.Fatalf("unable to read default pod security context: %v", err.Error())
 	}
