@@ -431,14 +431,21 @@ job-executor-service. The job configuration provides a way to overwrite this con
 ```yaml
 tasks:
   - name: "Run as different user"
+    image: "alpine"
     securityContext:
       runAsUser: 7000
       runAsGroup: 9000
-    ...
+    cmd:
+      - id
   - name: "Allow modifications to root FS"
+    image: "alpine"
     securityContext:
       readOnlyRootFilesystem: false
-    ...
+    cmd:
+      - sh
+    args:
+      - -c
+      - "echo WriteableFilesystem > test.txt"
 ```
 
 ### Job Image Pull Policy

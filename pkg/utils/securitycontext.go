@@ -120,10 +120,14 @@ func BuildSecurityContext(defaultSecurityContext *v1.SecurityContext, securityCo
 	return finalSecurityContext
 }
 
+// SecurityViolation is used for the CheckSecurityContext functions to signal which kind of possible security
+// violations have been detected
 type SecurityViolation int32
 
 const (
+	// PrivilegedContainerViolation signals that a privileged=true was found in the given security context
 	PrivilegedContainerViolation SecurityViolation = iota
+	// RunningAsRootViolation signals that a runAsNonRoot=false was found in the given security context
 	RunningAsRootViolation
 )
 
