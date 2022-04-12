@@ -29,9 +29,9 @@ const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
 const envValueFromString = "string"
 
-// PrivilegedContainerNotAllowedError indicates an error that occurs if a security context does contain privileged=true
+// ErrPrivilegedContainerNotAllowed indicates an error that occurs if a security context does contain privileged=true
 // but the policy of the job-executor-service doesn't allow such job workloads to be created
-var /*const*/ PrivilegedContainerNotAllowedError = errors.New("privileged containers are not allowed")
+var /*const*/ ErrPrivilegedContainerNotAllowed = errors.New("privileged containers are not allowed")
 
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
@@ -117,7 +117,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 		if jobSettings.AllowPrivilegedJobs {
 			log.Printf("WARNING: Job %s will be executed in a privileged container", jobName)
 		} else {
-			return PrivilegedContainerNotAllowedError
+			return ErrPrivilegedContainerNotAllowed
 		}
 	}
 
