@@ -21,6 +21,7 @@ The following table lists the configurable parameters of the job-executor-servic
 | `distributor.image.repository`          | Container image name | `"docker.io/keptn/distributor"` |
 | `distributor.image.pullPolicy`          | Kubernetes image pull policy | `"IfNotPresent"` |
 | `distributor.image.tag`                 | Container tag | `""` |
+| `jobConfig.allowedImageList`            | A comma sperated list of images that are allowed in job workloads | `""` |
 | `jobConfig.allowPrivilegedJobs`         | Allows privileged job workloads. ***Allowing privileged job workloads can be considered dangerous!*** | `false` |
 | `jobConfig.podSecurityContext`          | The default pod security context for job workloads | [See values.yaml](values.yaml)  |
 | `jobConfig.jobSecurityContext`          | The default security context for job workloads | [See values.yaml](values.yaml) |
