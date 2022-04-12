@@ -55,6 +55,8 @@ The *job-executor-service* can be installed as a part of [Keptn's uniform](https
 It is recommended to install the *job-executor-service* on the remote execution-plane, which can be on the same cluster, or on a completely
 separate Kubernetes environment (see [Keptn docs: Multi-cluster setup](https://keptn.sh/docs/0.11.x/operate/multi_cluster/) for details).
 
+During the installation process various parameters of the *job-executor-service* can be customized, for a complete list
+of these helm values have a look at the [documentation](chart/README.md).
 In order to install the *job-executor-service* on the remote execution plane, some values of the helm chart need to be configured:
 * `remoteControlPlane.topicSubscription` - list of Keptn CloudEvent types that this instance should listen to, e.g., `sh.keptn.event.remote-task.triggered`
 * `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane
