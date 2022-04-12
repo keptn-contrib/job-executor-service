@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/utils"
 	"log"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
+
+	"keptn-contrib/job-executor-service/pkg/utils"
 
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
@@ -49,18 +49,18 @@ type JobSettings struct {
 	AllowPrivilegedJobs         bool
 }
 
-// k8sImpl is used to interact with kubernetes jobs
-type k8sImpl struct {
+// K8sImpl is used to interact with kubernetes jobs
+type K8sImpl struct {
 	clientset kubernetes.Interface
 }
 
 // NewK8s creates and returns new K8s
-func NewK8s(namespace string) *k8sImpl {
-	return &k8sImpl{}
+func NewK8s(namespace string) *K8sImpl {
+	return &K8sImpl{}
 }
 
 // ConnectToCluster returns the k8s Clientset
-func (k8s *k8sImpl) ConnectToCluster() error {
+func (k8s *K8sImpl) ConnectToCluster() error {
 
 	config, err := keptnutils.GetClientset(true)
 	if err != nil {
@@ -73,7 +73,7 @@ func (k8s *k8sImpl) ConnectToCluster() error {
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 // returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
-func (k8s *k8sImpl) CreateK8sJob(
+func (k8s *K8sImpl) CreateK8sJob(
 	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
@@ -262,22 +262,22 @@ func (k8s *k8sImpl) CreateK8sJob(
 	return nil
 }
 
-func (k8s *k8sImpl) AwaitK8sJobDone(
-	jobName string, maxPollCount int, pollIntervalInSeconds int, namespace string,
+// AwaitK8sJobDone will poll the job status every pollInterval up to maxPollDuration.
+// If the job completes successfully before we reach maxPollDuration, no error is returned.
+// If the job fails, is suspended or does not complete within maxPollDuration, an appropriate error will be returned
+func (k8s *K8sImpl) AwaitK8sJobDone(
+	jobName string, maxPollDuration time.Duration, pollInterval time.Duration, namespace string,
 ) error {
 	jobs := k8s.clientset.BatchV1().Jobs(namespace)
 
-	currentPollCount := 0
+	pollingStart := time.Now()
 
 	for {
 
-		currentPollCount++
-		if currentPollCount > maxPollCount {
-			duration, err := time.ParseDuration(strconv.Itoa(maxPollCount*pollIntervalInSeconds) + "s")
-			if err != nil {
-				return err
-			}
-			return fmt.Errorf("max poll count reached for job %s. Timing out after %s", jobName, duration)
+		now := time.Now()
+
+		if now.After(pollingStart.Add(maxPollDuration)) {
+			return fmt.Errorf("max poll count reached for job %s. Timing out after %s", jobName, now.Sub(pollingStart))
 		}
 
 		job, err := jobs.Get(context.TODO(), jobName, metav1.GetOptions{})
@@ -302,11 +302,11 @@ func (k8s *k8sImpl) AwaitK8sJobDone(
 			}
 		}
 
-		time.Sleep(time.Duration(pollIntervalInSeconds) * time.Second)
+		time.Sleep(pollInterval)
 	}
 }
 
-func (k8s *k8sImpl) prepareJobEnv(
+func (k8s *K8sImpl) prepareJobEnv(
 	task config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
 ) ([]v1.EnvVar, error) {
 
@@ -420,7 +420,7 @@ func generateEnvFromString(env config.Env) []v1.EnvVar {
 	}
 }
 
-func (k8s *k8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v1.EnvVar, error) {
+func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v1.EnvVar, error) {
 
 	var generatedEnv []v1.EnvVar
 

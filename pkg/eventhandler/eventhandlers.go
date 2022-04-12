@@ -118,13 +118,12 @@ func (eh *EventHandler) HandleEvent() error {
 		eh.Keptn.CloudEvent.Type(), action.Name,
 	)
 
-	// TODO remove the first parameter
-	eh.startK8sJob(eh.K8s, action, eventAsInterface)
+	eh.startK8sJob(action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(k8s K8s, action *config.Action, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -134,7 +133,7 @@ func (eh *EventHandler) startK8sJob(k8s K8s, action *config.Action, jsonEventDat
 		}
 	}
 
-	err := k8s.ConnectToCluster()
+	err := eh.K8s.ConnectToCluster()
 	if err != nil {
 		log.Printf("Error while connecting to cluster: %s\n", err.Error())
 		if !action.Silent {
@@ -175,7 +174,7 @@ func (eh *EventHandler) startK8sJob(k8s K8s, action *config.Action, jsonEventDat
 			namespace = task.Namespace
 		}
 
-		err := k8s.CreateK8sJob(
+		err := eh.K8s.CreateK8sJob(
 			jobName, action, task, eh.Keptn.Event, eh.JobSettings,
 			jsonEventData, namespace,
 		)
@@ -192,9 +191,9 @@ func (eh *EventHandler) startK8sJob(k8s K8s, action *config.Action, jsonEventDat
 		if task.MaxPollDuration != nil {
 			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
 		}
-		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
+		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
 
-		logs, err := k8s.GetLogsOfPod(jobName, namespace)
+		logs, err := eh.K8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {
 			log.Printf("Error while retrieving logs: %s\n", err.Error())
 		}

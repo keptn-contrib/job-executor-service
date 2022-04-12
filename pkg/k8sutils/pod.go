@@ -9,7 +9,7 @@ import (
 )
 
 // GetLogsOfPod returns the k8s logs of a job in a namespace
-func (k8s *k8sImpl) GetLogsOfPod(jobName string, namespace string) (string, error) {
+func (k8s *K8sImpl) GetLogsOfPod(jobName string, namespace string) (string, error) {
 
 	// TODO include the logs of the initcontainer
 
