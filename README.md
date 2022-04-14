@@ -193,6 +193,10 @@ keptn add-resource --project=myproject --service=myservice --stage=mystage --res
 2021/07/13 16:18:49 config ../test-data/config.yaml is valid
 ```
 
+*Note*: The default behavior when linting a job configuration is to not allow privileged job workloads.
+This behavior can be changed by specifying `-allow-privileged-jobs=true`.
+The flag should match the job-executor-service [configuration](/chart/README.md) to avoid problems during runtime.
+
 ## Features
 
 A more comprehensive list of use-cases and features that this integration supports is provided in [FEATURES.md](FEATURES.md).
