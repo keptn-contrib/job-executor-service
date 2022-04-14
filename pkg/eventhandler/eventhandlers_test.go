@@ -498,8 +498,8 @@ func TestStartK8s(t *testing.T) {
 		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 		gomock.Any(), jobNamespace2,
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 202, 5, jobNamespace1).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), 60, 5, jobNamespace2).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, pollInterval, jobNamespace1).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), defaultMaxPollDuration, pollInterval, jobNamespace2).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
@@ -552,7 +552,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 		gomock.Any(), gomock.Any(),
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), 60, 5, "").Times(2)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), defaultMaxPollDuration, pollInterval, "").Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 

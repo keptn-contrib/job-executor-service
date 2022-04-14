@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -15,9 +16,11 @@ func (k8s *K8sImpl) GetLogsOfPod(jobName string, namespace string) (string, erro
 
 	podLogOpts := v1.PodLogOptions{}
 
-	list, err := k8s.clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "job-name=" + jobName,
-	})
+	list, err := k8s.clientset.CoreV1().Pods(namespace).List(
+		context.TODO(), metav1.ListOptions{
+			LabelSelector: "job-name=" + jobName,
+		},
+	)
 	if err != nil {
 		return "", err
 	}

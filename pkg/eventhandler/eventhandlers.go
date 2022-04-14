@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"time"
 
@@ -18,8 +17,8 @@ import (
 )
 
 const (
-	pollIntervalInSeconds = 5
-	defaultMaxPollCount   = 60
+	pollInterval           = 5 * time.Second
+	defaultMaxPollDuration = 5 * time.Minute
 )
 
 //go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader,K8s
@@ -48,7 +47,9 @@ type K8s interface {
 		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
 		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
 	) error
-	AwaitK8sJobDone(jobName string, maxPollDuration int, pollIntervalInSeconds int, namespace string) error
+	AwaitK8sJobDone(
+		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
+	) error
 	GetLogsOfPod(jobName string, namespace string) (string, error)
 }
 
@@ -187,11 +188,11 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 			return
 		}
 
-		maxPollCount := defaultMaxPollCount
+		maxPollDuration := defaultMaxPollDuration
 		if task.MaxPollDuration != nil {
-			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
+			maxPollDuration = time.Duration(*task.MaxPollDuration) * time.Second
 		}
-		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
+		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollDuration, pollInterval, namespace)
 
 		logs, err := eh.K8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {
