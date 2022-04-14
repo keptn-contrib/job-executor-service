@@ -44,6 +44,29 @@ jobConfig:
     name: "default-job-account"              # The name of the service account to use for job execution
     annotations: { }                         # Annotations to add to the service account
   allowedImageList: ""                       # A list of images that are allowed for the jobs (e.g.: docker.io/*,ghcr.io/my-other-user/my-other-image:*,ghcr.io/my-user/my-image:1.2.3)
+  # --------------------------------------------------------------------------------------------------- #
+  # WARNING: allowing privileged containers or runAsNonRoot is dangerous, only change the default       #
+  #          security configuration if you need, the securityContext can be overwritten by each job     #
+  # --------------------------------------------------------------------------------------------------- #
+  allowPrivilegedJobs: false                 # If true the job-executor-service will only warn instead of refusing to run privileged jobs
+  podSecurityContext:                        # Default pod security context for job workloads
+    RunAsUser: 1000
+    RunAsGroup: 2000
+    RunAsNonRoot: true
+    fsGroup: 2000
+    seccompProfile:
+      type: RuntimeDefault
+  jobSecurityContext:                        # Default security context for job workloads, can be overwritten by jobs
+    privileged: false
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 2000
+    capabilities:
+      drop: [ "all" ]
+    seccompProfile:
+      type: RuntimeDefault
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 

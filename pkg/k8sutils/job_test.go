@@ -338,6 +338,8 @@ func TestSetWorkingDir(t *testing.T) {
 			Limits:   make(corev1.ResourceList),
 			Requests: make(corev1.ResourceList),
 		},
+		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+		DefaultSecurityContext:    new(corev1.SecurityContext),
 	}, "", testNamespace)
 
 	require.NoError(t, err)
@@ -391,6 +393,8 @@ func TestSetCustomNamespace(t *testing.T) {
 			Limits:   make(corev1.ResourceList),
 			Requests: make(corev1.ResourceList),
 		},
+		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+		DefaultSecurityContext:    new(corev1.SecurityContext),
 	}, "", namespace)
 
 	require.NoError(t, err)
@@ -432,6 +436,8 @@ func TestSetEmptyNamespace(t *testing.T) {
 			Limits:   make(corev1.ResourceList),
 			Requests: make(corev1.ResourceList),
 		},
+		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+		DefaultSecurityContext:    new(corev1.SecurityContext),
 	}, "", namespace)
 
 	require.NoError(t, err)
@@ -507,6 +513,8 @@ func TestImagePullPolicy(t *testing.T) {
 							Limits:   make(corev1.ResourceList),
 							Requests: make(corev1.ResourceList),
 						},
+						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+						DefaultSecurityContext:    new(corev1.SecurityContext),
 					}, "", namespace,
 				)
 				require.NoError(t, err)
@@ -579,6 +587,8 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 							Limits:   make(corev1.ResourceList),
 							Requests: make(corev1.ResourceList),
 						},
+						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+						DefaultSecurityContext:    new(corev1.SecurityContext),
 					}, "", namespace,
 				)
 				require.NoError(t, err)

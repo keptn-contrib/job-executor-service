@@ -3,7 +3,10 @@ package k8sutils
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"keptn-contrib/job-executor-service/pkg/utils"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -26,6 +29,10 @@ const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
 const envValueFromString = "string"
 
+// ErrPrivilegedContainerNotAllowed indicates an error that occurs if a security context does contain privileged=true
+// but the policy of the job-executor-service doesn't allow such job workloads to be created
+var /*const*/ ErrPrivilegedContainerNotAllowed = errors.New("privileged containers are not allowed")
+
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
 	JobNamespace                string
@@ -35,6 +42,9 @@ type JobSettings struct {
 	AlwaysSendFinishedEvent     bool
 	EnableKubernetesAPIAccess   bool
 	DefaultJobServiceAccount    string
+	DefaultSecurityContext      *v1.SecurityContext
+	DefaultPodSecurityContext   *v1.PodSecurityContext
+	AllowPrivilegedJobs         bool
 }
 
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
@@ -80,11 +90,6 @@ func (k8s *k8sImpl) CreateK8sJob(
 		serviceAccountName = "job-executor-service"
 	}
 
-	runAsNonRoot := true
-	convert := func(s int64) *int64 {
-		return &s
-	}
-
 	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData, namespace)
 	if err != nil {
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
@@ -97,6 +102,25 @@ func (k8s *k8sImpl) CreateK8sJob(
 		TTLSecondsAfterFinished = *task.TTLSecondsAfterFinished
 	}
 
+	// Build the final security context for the pod
+	jobSecurityContext := utils.BuildSecurityContext(jobSettings.DefaultSecurityContext, task.SecurityContext)
+
+	// Warn the user if the resulting security context does contain any bad properties
+	violations := utils.CheckJobSecurityContext(jobSecurityContext)
+	if len(violations) != 0 {
+		log.Printf("WARNING: Job %v has a potential insecure job securityContext!", jobName)
+	}
+
+	// If the privileged flag is contained check if these type of workloads are allowed and
+	// abort the execution if they aren't or warn the user that such jobs are a bad idea
+	if jobSecurityContext.Privileged != nil && *jobSecurityContext.Privileged {
+		if jobSettings.AllowPrivilegedJobs {
+			log.Printf("WARNING: Job %s will be executed in a privileged container", jobName)
+		} else {
+			return ErrPrivilegedContainerNotAllowed
+		}
+	}
+
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
@@ -106,17 +130,13 @@ func (k8s *k8sImpl) CreateK8sJob(
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
 
-					SecurityContext: &v1.PodSecurityContext{
-						RunAsUser:    convert(1000),
-						RunAsGroup:   convert(2000),
-						FSGroup:      convert(2000),
-						RunAsNonRoot: &runAsNonRoot,
-					},
+					SecurityContext: jobSettings.DefaultPodSecurityContext,
 					InitContainers: []v1.Container{
 						{
 							Name:            "init-" + jobName,
 							Image:           jobSettings.InitContainerImage,
 							ImagePullPolicy: v1.PullIfNotPresent,
+							SecurityContext: jobSecurityContext,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,
@@ -178,6 +198,7 @@ func (k8s *k8sImpl) CreateK8sJob(
 							Command:         task.Cmd,
 							Args:            task.Args,
 							WorkingDir:      task.WorkingDir,
+							SecurityContext: jobSecurityContext,
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      jobVolumeName,

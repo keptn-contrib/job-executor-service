@@ -39,18 +39,19 @@ type JSONPath struct {
 
 // Task this is the actual task which can be triggered within an Action
 type Task struct {
-	Name                    string     `yaml:"name"`
-	Files                   []string   `yaml:"files"`
-	Image                   string     `yaml:"image"`
-	ImagePullPolicy         string     `yaml:"imagePullPolicy"`
-	Cmd                     []string   `yaml:"cmd"`
-	Args                    []string   `yaml:"args"`
-	Env                     []Env      `yaml:"env"`
-	Resources               *Resources `yaml:"resources"`
-	WorkingDir              string     `yaml:"workingDir"`
-	MaxPollDuration         *int       `yaml:"maxPollDuration"`
-	Namespace               string     `yaml:"namespace"`
-	TTLSecondsAfterFinished *int32     `yaml:"ttlSecondsAfterFinished"`
+	Name                    string          `yaml:"name"`
+	Files                   []string        `yaml:"files"`
+	Image                   string          `yaml:"image"`
+	ImagePullPolicy         string          `yaml:"imagePullPolicy"`
+	Cmd                     []string        `yaml:"cmd"`
+	Args                    []string        `yaml:"args"`
+	Env                     []Env           `yaml:"env"`
+	Resources               *Resources      `yaml:"resources"`
+	WorkingDir              string          `yaml:"workingDir"`
+	MaxPollDuration         *int            `yaml:"maxPollDuration"`
+	Namespace               string          `yaml:"namespace"`
+	TTLSecondsAfterFinished *int32          `yaml:"ttlSecondsAfterFinished"`
+	SecurityContext         SecurityContext `yaml:"securityContext,omitempty"`
 }
 
 // Env value from the event which will be added as env to the job
@@ -71,6 +72,42 @@ type Resources struct {
 type ResourceList struct {
 	CPU    string `yaml:"cpu"`
 	Memory string `yaml:"memory"`
+}
+
+// SecurityContext for the job container, it's a subset of the SecurityContext which is provided by Kubernetes
+type SecurityContext struct {
+	Capabilities             *Capabilities   `yaml:"capabilities,omitempty"`
+	Privileged               *bool           `yaml:"privileged,omitempty"`
+	RunAsUser                *int64          `yaml:"runAsUser,omitempty"`
+	RunAsGroup               *int64          `yaml:"runAsGroup,omitempty"`
+	RunAsNonRoot             *bool           `yaml:"runAsNonRoot,omitempty"`
+	ReadOnlyRootFilesystem   *bool           `yaml:"readOnlyRootFilesystem,omitempty"`
+	AllowPrivilegeEscalation *bool           `yaml:"allowPrivilegeEscalation,omitempty"`
+	ProcMount                *string         `yaml:"procMount,omitempty"`
+	SeccompProfile           *SeccompProfile `yaml:"seccompProfile,omitempty"`
+}
+
+// Capability represents the Capability string of the Kubernetes security context
+type Capability string
+
+// Capabilities contains the add and drop arrays for the Kubernetes security context
+type Capabilities struct {
+	Add  []Capability `yaml:"add,omitempty"`
+	Drop []Capability `yaml:"drop,omitempty"`
+}
+
+// SELinuxOptions represents the Kubernetes SELinuxOptions in the security context
+type SELinuxOptions struct {
+	User  string `yaml:"user,omitempty"`
+	Role  string `yaml:"role,omitempty"`
+	Type  string `yaml:"type,omitempty"`
+	Level string `yaml:"level,omitempty"`
+}
+
+// SeccompProfile represents the Kubernetes SeccompProfile in the security context
+type SeccompProfile struct {
+	Type             *string `yaml:"type"`
+	LocalhostProfile *string `yaml:"localhostProfile,omitempty"`
 }
 
 // NewConfig creates a new configuration from the provided config file content

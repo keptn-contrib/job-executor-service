@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: job-security-context
+data:
+  job-defaultSecurityContext.json: {{ toJson .Values.jobConfig.jobSecurityContext | quote }}
+  job-podSecurityContext.json: {{ toJson .Values.jobConfig.podSecurityContext | quote }}

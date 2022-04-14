@@ -15,7 +15,9 @@
     - [Resource quotas](#resource-quotas)
     - [Poll duration](#poll-duration)
     - [Job namespace](#job-namespace)
+    - [Job security context](#job-security-context)
     - [Job image pull policy](#job-image-pull-policy)
+    - [Restrict job images](#restrict-job-images)
     - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
     - [Additional Event Data](#additional-event-data)
     - [Remote Control Plane](#remote-control-plane)
@@ -422,6 +424,31 @@ tasks:
     namespace: carts
 ```
 
+### Job security context
+
+By default the jobs will use the default security context, which was specified at the time of the installation of the 
+job-executor-service. The job configuration provides a way to overwrite this context on a task level:
+
+```yaml
+tasks:
+  - name: "Run as different user"
+    image: "alpine"
+    securityContext:
+      runAsUser: 7000
+      runAsGroup: 9000
+    cmd:
+      - id
+  - name: "Allow modifications to root FS"
+    image: "alpine"
+    securityContext:
+      readOnlyRootFilesystem: false
+    cmd:
+      - sh
+    args:
+      - -c
+      - "echo WriteableFilesystem > test.txt"
+```
+
 ### Job Image Pull Policy
 By default the image for the tasks will be pulled according to 
 [kubernetes pull policy defaults](https://kubernetes.io/docs/concepts/containers/images/#imagepullpolicy-defaulting).
@@ -452,6 +479,28 @@ Allowed values for image pull policy are the same as the [ones accepted by kuber
 
 Note: the job executor service does not perform any validation on the image pull policy value. We delegate any validation
 to kubernetes api server.
+
+### Restrict job images
+
+During the installation of the *job-executor-service* a comma separated allow-list of images can be specified
+(`jobConfig.allowedImageList`), which is used to restrict the amount of images that can be used in job workloads. 
+This allow-list also supports simple globs like `docker.io/*`.
+
+For example, to allow only images from a specific user from `docker.io` and images from a custom registry, the installation
+of the *job-executor-service* can be adapted as follows:
+```bash
+KEPTN_API_PROTOCOL=http # or https
+KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
+ KEPTN_API_TOKEN=<INSERT-YOUR-KEPTN-API-TOKEN-HERE>
+
+TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
+ALLOWED_IMAGE_LIST="docker.io/my-user/*,custom.registry.io/*"
+
+helm upgrade --install --create-namespace -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+ --set jobConfig.allowedImageList=${ALLOWED_IMAGE_LIST},remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
+```
+
 
 ### Send start/finished event if the job config.yaml can't be found
 

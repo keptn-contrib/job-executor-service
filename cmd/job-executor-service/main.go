@@ -48,21 +48,36 @@ type envConfig struct {
 	// Default resource requests memory for job and init container
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
 	// Respond with .finished event if no configuration found
-	AlwaysSendFinishedEvent string `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
+	AlwaysSendFinishedEvent bool `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
 	// Whether jobs can access Kubernetes API
-	EnableKubernetesAPIAccess string `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
+	EnableKubernetesAPIAccess bool `envconfig:"ENABLE_KUBERNETES_API_ACCESS"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
 	// A list of all allowed images that can be used in jobs
 	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
+	// A flag if privileged job workloads should be allowed by the job-executor-context
+	AllowPrivilegedJobs bool `envconfig:"ALLOW_PRIVILEGED_JOBS"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
 const ServiceName = "job-executor-service"
 
+// jobSecurityContextFilePath describes the path of the security config file that is defined in the deployment.yaml
+const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
+
+// podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
+const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
+
 // DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
 // startup from env (treat as const)
 var /* const */ DefaultResourceRequirements *v1.ResourceRequirements
+
+// DefaultJobSecurityContext contains the default security context for jobs that are started by the job-executor-service
+// the default configuration can be overwritten by job specific configuration
+var /* const */ DefaultJobSecurityContext *v1.SecurityContext
+
+// DefaultPodSecurityContext contains the default pod security context for jobs
+var /* const */ DefaultPodSecurityContext *v1.PodSecurityContext
 
 /**
  * This method gets called when a new event is received from the Keptn Event Distributor
@@ -94,13 +109,16 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			AlwaysSendFinishedEvent:     false,
 			EnableKubernetesAPIAccess:   false,
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
+			DefaultSecurityContext:      DefaultJobSecurityContext,
+			DefaultPodSecurityContext:   DefaultPodSecurityContext,
+			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
 		},
 	}
-	if env.AlwaysSendFinishedEvent == "true" {
+	if env.AlwaysSendFinishedEvent {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
 	}
 
-	if env.EnableKubernetesAPIAccess == "true" {
+	if env.EnableKubernetesAPIAccess {
 		eventHandler.JobSettings.EnableKubernetesAPIAccess = true
 	}
 
@@ -131,6 +149,25 @@ func main() {
 	)
 	if err != nil {
 		log.Fatalf("unable to create default resource requirements: %v", err.Error())
+	}
+
+	if env.AllowPrivilegedJobs {
+		log.Println("WARNING: Privileged job workloads are allowed!")
+	}
+
+	DefaultJobSecurityContext, err = utils.ReadDefaultJobSecurityContext(jobSecurityContextFilePath)
+	if err != nil {
+		log.Fatalf("unable to read default job security context: %v", err.Error())
+	}
+
+	DefaultPodSecurityContext, err = utils.ReadDefaultPodSecurityContext(podSecurityContextFilePath)
+	if err != nil {
+		log.Fatalf("unable to read default pod security context: %v", err.Error())
+	}
+
+	err = utils.VerifySecurityContext(DefaultPodSecurityContext, DefaultJobSecurityContext, env.AllowPrivilegedJobs)
+	if err != nil {
+		log.Fatalf("Failed to verify security context: %s", err.Error())
 	}
 
 	os.Exit(_main(os.Args[1:], env))
