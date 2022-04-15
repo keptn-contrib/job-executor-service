@@ -82,8 +82,8 @@ func (k8s *k8sImpl) CreateK8sJob(
 		SizeLimit: &quantity,
 	}
 
-	// If not further specified use default service account otherwise use the
-	// service account that was specified in the task configuration
+	// Use default service account but allow overriding
+	// from the task configuration
 	serviceAccountName := jobSettings.DefaultJobServiceAccount
 	if task.ServiceAccount != nil {
 		serviceAccountName = *task.ServiceAccount

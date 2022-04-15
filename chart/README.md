@@ -25,9 +25,9 @@ The following table lists the configurable parameters of the job-executor-servic
 | `jobConfig.allowPrivilegedJobs`         | Allows privileged job workloads. ***Allowing privileged job workloads can be considered dangerous!*** | `false` |
 | `jobConfig.podSecurityContext`          | The default pod security context for job workloads | [See values.yaml](values.yaml)  |
 | `jobConfig.jobSecurityContext`          | The default security context for job workloads | [See values.yaml](values.yaml) |
-| `jobConfig.serviceAccount.create`       | Enables the service account creation for job workloads | `true` | 
-| `jobConfig.serviceAccount.name`         | The name of the default service account that should be used for job workloads | `default-job-account` | 
-| `jobConfig.serviceAccount.annotations`  | Any additional annotations which whould be contained in the service account | `{}` | 
+| `jobConfig.serviceAccount.create`       | Enables the creation of the default service account used for job workloads | `true` | 
+| `jobConfig.serviceAccount.name`         | The name of the default service account used for job workloads | `default-job-account` | 
+| `jobConfig.serviceAccount.annotations`  | Additional annotations for the default service account used for job workloads | `{}` | 
 | `remoteControlPlane.enabled`            | Enables remote execution plane mode | `true` |
 | `remoteControlPlane.api.protocol`       | Used protocol (http, https | `"https"` |
 | `remoteControlPlane.api.hostname`       | Hostname of the control plane cluster (and port) | `""` |

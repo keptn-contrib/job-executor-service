@@ -483,10 +483,10 @@ to kubernetes api server.
 
 ### Job service account
 
-By default, a service account without any permissions is used for job workloads, and therefore no access to the Kubernetes 
-API is possible within jobs. Although it is possible to set the default service account used by job workloads during the 
-installation using the `jobConfig.serviceAccount.name` helm value, it is recommended to define a custom service account 
-for job workloads that require these permissions.
+Job workloads use a service account separate from the one used by Job Executor Service pod.
+The default service account used for workloads has no permissions and does not automount the service account token,  therefore it has no access to the Kubernetes API. 
+During Job Executor Service installation it is possible to specify a different service account used by default for job workloads changing the `jobConfig.serviceAccount.name` helm value.
+It is recommended however to keep the default serviceAccount setting without any permission and specify an existing service account directly in the job config only for tasks that require more access.
 A custom service account can be used as follows:
 
 ```yaml
