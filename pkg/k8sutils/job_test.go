@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/batch/v1"
 
 	"keptn-contrib/job-executor-service/pkg/config"
 
@@ -71,7 +74,7 @@ func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{}
+	k8s := K8sImpl{}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.EqualError(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
 }
@@ -121,7 +124,7 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{}
+	k8s := K8sImpl{}
 	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
@@ -164,7 +167,10 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 		{Name: "LABELS_BUILD_DATETIME", Value: "202202212056"},
 	}
 
-	assert.Subset(t, jobEnv, expectedEnv, "Prepared Job Environment does not contain the expected environment variables (or values)")
+	assert.Subset(
+		t, jobEnv, expectedEnv,
+		"Prepared Job Environment does not contain the expected environment variables (or values)",
+	)
 }
 
 func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
@@ -187,7 +193,7 @@ func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{}
+	k8s := K8sImpl{}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
 	assert.Contains(t, err.Error(), "unknown key undeploymentstrategy")
 }
@@ -211,7 +217,7 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 
@@ -265,11 +271,14 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
-	assert.EqualError(t, err, "could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found")
+	assert.EqualError(
+		t, err,
+		"could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found",
+	)
 }
 
 func TestPrepareJobEnvFromString(t *testing.T) {
@@ -294,7 +303,7 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 	var eventAsInterface interface{}
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 
@@ -321,26 +330,28 @@ func TestSetWorkingDir(t *testing.T) {
 
 	k8sClientSet := k8sfake.NewSimpleClientset()
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sClientSet,
 	}
 
-	err := k8s.CreateK8sJob(jobName, &config.Action{
-		Name: jobName,
-	}, config.Task{
-		Name:       jobName,
-		Image:      "alpine",
-		Cmd:        []string{"ls"},
-		WorkingDir: workingDir,
-	}, &eventData, JobSettings{
-		JobNamespace: testNamespace,
-		DefaultResourceRequirements: &corev1.ResourceRequirements{
-			Limits:   make(corev1.ResourceList),
-			Requests: make(corev1.ResourceList),
-		},
-		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
-		DefaultSecurityContext:    new(corev1.SecurityContext),
-	}, "", testNamespace)
+	err := k8s.CreateK8sJob(
+		jobName, &config.Action{
+			Name: jobName,
+		}, config.Task{
+			Name:       jobName,
+			Image:      "alpine",
+			Cmd:        []string{"ls"},
+			WorkingDir: workingDir,
+		}, &eventData, JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+		}, "", testNamespace,
+	)
 
 	require.NoError(t, err)
 
@@ -377,25 +388,27 @@ func TestSetCustomNamespace(t *testing.T) {
 
 	k8sClientSet := k8sfake.NewSimpleClientset()
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sClientSet,
 	}
 
-	err := k8s.CreateK8sJob(jobName, &config.Action{
-		Name: jobName,
-	}, config.Task{
-		Name:  jobName,
-		Image: "alpine",
-		Cmd:   []string{"ls"},
-	}, &eventData, JobSettings{
-		JobNamespace: namespace,
-		DefaultResourceRequirements: &corev1.ResourceRequirements{
-			Limits:   make(corev1.ResourceList),
-			Requests: make(corev1.ResourceList),
-		},
-		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
-		DefaultSecurityContext:    new(corev1.SecurityContext),
-	}, "", namespace)
+	err := k8s.CreateK8sJob(
+		jobName, &config.Action{
+			Name: jobName,
+		}, config.Task{
+			Name:  jobName,
+			Image: "alpine",
+			Cmd:   []string{"ls"},
+		}, &eventData, JobSettings{
+			JobNamespace: namespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+		}, "", namespace,
+	)
 
 	require.NoError(t, err)
 
@@ -420,25 +433,27 @@ func TestSetEmptyNamespace(t *testing.T) {
 
 	k8sClientSet := k8sfake.NewSimpleClientset()
 
-	k8s := k8sImpl{
+	k8s := K8sImpl{
 		clientset: k8sClientSet,
 	}
 
-	err := k8s.CreateK8sJob(jobName, &config.Action{
-		Name: jobName,
-	}, config.Task{
-		Name:  jobName,
-		Image: "alpine",
-		Cmd:   []string{"ls"},
-	}, &eventData, JobSettings{
-		JobNamespace: namespace,
-		DefaultResourceRequirements: &corev1.ResourceRequirements{
-			Limits:   make(corev1.ResourceList),
-			Requests: make(corev1.ResourceList),
-		},
-		DefaultPodSecurityContext: new(corev1.PodSecurityContext),
-		DefaultSecurityContext:    new(corev1.SecurityContext),
-	}, "", namespace)
+	err := k8s.CreateK8sJob(
+		jobName, &config.Action{
+			Name: jobName,
+		}, config.Task{
+			Name:  jobName,
+			Image: "alpine",
+			Cmd:   []string{"ls"},
+		}, &eventData, JobSettings{
+			JobNamespace: namespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+		}, "", namespace,
+	)
 
 	require.NoError(t, err)
 
@@ -487,7 +502,7 @@ func TestImagePullPolicy(t *testing.T) {
 			test.name, func(t *testing.T) {
 
 				k8sClientSet := k8sfake.NewSimpleClientset()
-				k8s := k8sImpl{clientset: k8sClientSet}
+				k8s := K8sImpl{clientset: k8sClientSet}
 
 				jobName := fmt.Sprintf("ipp-job-%d", i)
 
@@ -561,7 +576,7 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 			test.name, func(t *testing.T) {
 
 				k8sClientSet := k8sfake.NewSimpleClientset()
-				k8s := k8sImpl{clientset: k8sClientSet}
+				k8s := K8sImpl{clientset: k8sClientSet}
 
 				jobName := fmt.Sprintf("ipp-job-%d", i)
 
@@ -602,6 +617,190 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 		)
 	}
 
+}
+
+func TestAwaitK8sJobDoneHappyPath(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "happy-path-job"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{
+				{
+					Type:   v1.JobComplete,
+					Status: corev1.ConditionTrue,
+					Reason: "Job has completed successfully!",
+				},
+			},
+		},
+	}
+	namespace := "happy-path-ns"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+
+	assert.NoError(t, err)
+}
+
+func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "failed-job"
+	failedReason := "Job has gone horribly wrong!"
+	failureMessage := "there has been a problem somewhere"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{
+				{
+					Type:    v1.JobFailed,
+					Status:  corev1.ConditionTrue,
+					Reason:  failedReason,
+					Message: failureMessage,
+				},
+			},
+		},
+	}
+	namespace := "job-pain-and-misery-ns"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+
+	require.Error(t, err)
+
+	assert.ErrorContains(
+		t, err,
+		fmt.Sprintf(
+			"job %s failed. Reason: %s, Message: %s", jobName, failedReason,
+			failureMessage,
+		),
+	)
+}
+
+func TestAwaitK8sJobDoneErrorJobSuspended(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "suspender-job"
+	suspendedReason := "Job has been suspended"
+	suspendedMessage := "some admin suspended your job"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{
+				{
+					Type:    v1.JobSuspended,
+					Status:  corev1.ConditionTrue,
+					Reason:  suspendedReason,
+					Message: suspendedMessage,
+				},
+			},
+		},
+	}
+	namespace := "job-suspended-ns"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+
+	require.Error(t, err)
+
+	assert.ErrorContains(
+		t, err,
+		fmt.Sprintf(
+			"job %s was suspended. Reason: %s, Message: %s", jobName,
+			suspendedReason,
+			suspendedMessage,
+		),
+	)
+}
+
+func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "looong-running-job"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{},
+		},
+	}
+	namespace := "never-ending-jobs-land"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, 50*time.Millisecond, namespace)
+
+	require.Error(t, err)
+
+	assert.ErrorContains(
+		t, err, fmt.Sprintf(
+			"max poll count reached for job %s. Timing out after", jobName,
+		),
+	)
+}
+
+func TestAwaitK8sJobDoneSuccessAfterPolling(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "slow-running-job"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{},
+		},
+	}
+	namespace := "slow-ns"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	jobCompletionTimer := time.NewTimer(500 * time.Millisecond)
+
+	go func() {
+		select {
+		case <-jobCompletionTimer.C:
+			job.Status.Conditions = []v1.JobCondition{
+				{
+					Type:    v1.JobComplete,
+					Status:  corev1.ConditionTrue,
+					Reason:  "Job completed eventually!",
+					Message: "Hooray!",
+				},
+			}
+			k8sClientSet.BatchV1().Jobs(namespace).Update(context.Background(), &job, metav1.UpdateOptions{})
+		}
+	}()
+
+	err := k8s.AwaitK8sJobDone(jobName, 2*time.Second, 50*time.Millisecond, namespace)
+
+	require.NoError(t, err)
 }
 
 func createK8sSecretObj(name string, namespace string, data map[string][]byte) *corev1.Secret {

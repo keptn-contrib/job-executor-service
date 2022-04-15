@@ -10,6 +10,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
+	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/utils"
 
 	"keptn-contrib/job-executor-service/pkg/eventhandler"
@@ -95,9 +96,10 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 	log.Printf("gotEvent(%s): %s - %s", event.Type(), myKeptn.KeptnContext, event.Context.GetID())
 
 	var eventHandler = &eventhandler.EventHandler{
-		Keptn:       myKeptn,
-		ServiceName: ServiceName,
-		Mapper:      new(eventhandler.KeptnCloudEventMapper),
+		Keptn:           myKeptn,
+		JobConfigReader: &config.JobConfigReader{Keptn: myKeptn},
+		ServiceName:     ServiceName,
+		Mapper:          new(eventhandler.KeptnCloudEventMapper),
 		ImageFilter: imageFilterImpl{
 			imageFilterList: allowList,
 		},
@@ -113,6 +115,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
 		},
+		K8s: k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
 	}
 	if env.AlwaysSendFinishedEvent {
 		eventHandler.JobSettings.AlwaysSendFinishedEvent = true

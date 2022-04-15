@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"time"
+
+	"github.com/keptn/go-utils/pkg/lib/keptn"
 
 	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
@@ -16,9 +17,11 @@ import (
 )
 
 const (
-	pollIntervalInSeconds = 5
-	defaultMaxPollCount   = 60
+	pollInterval           = 5 * time.Second
+	defaultMaxPollDuration = 5 * time.Minute
 )
+
+//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader,K8s
 
 // ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
@@ -32,13 +35,33 @@ type EventMapper interface {
 	Map(cloudevents.Event) (map[string]interface{}, error)
 }
 
+// JobConfigReader retrieves the job-executor-service configuration
+type JobConfigReader interface {
+	GetJobConfig() (*config.Config, error)
+}
+
+// K8s is used to interact with kubernetes jobs
+type K8s interface {
+	ConnectToCluster() error
+	CreateK8sJob(
+		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
+		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
+	) error
+	AwaitK8sJobDone(
+		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
+	) error
+	GetLogsOfPod(jobName string, namespace string) (string, error)
+}
+
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn       *keptnv2.Keptn
-	ServiceName string
-	JobSettings k8sutils.JobSettings
-	ImageFilter ImageFilter
-	Mapper      EventMapper
+	Keptn           *keptnv2.Keptn
+	ServiceName     string
+	JobConfigReader JobConfigReader
+	JobSettings     k8sutils.JobSettings
+	ImageFilter     ImageFilter
+	Mapper          EventMapper
+	K8s             K8s
 }
 
 type jobLogs struct {
@@ -66,9 +89,10 @@ func (eh *EventHandler) HandleEvent() error {
 	)
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
-	resource, err := eh.Keptn.GetKeptnResource("job/config.yaml")
+	configuration, err := eh.JobConfigReader.GetJobConfig()
+
 	if err != nil {
-		log.Printf("Could not find config for job-executor-service: %s", err.Error())
+		log.Printf("Could not retrieve config for job-executor-service: %s", err.Error())
 
 		if eh.JobSettings.AlwaysSendFinishedEvent {
 			_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -78,13 +102,6 @@ func (eh *EventHandler) HandleEvent() error {
 			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil, dataForFinishedEvent{})
 		}
 
-		return err
-	}
-
-	configuration, err := config.NewConfig(resource)
-	if err != nil {
-		log.Printf("Could not parse config: %s", err)
-		log.Printf("The config was: %s", string(resource))
 		return err
 	}
 
@@ -102,13 +119,12 @@ func (eh *EventHandler) HandleEvent() error {
 		eh.Keptn.CloudEvent.Type(), action.Name,
 	)
 
-	k8s := k8sutils.NewK8s(eh.JobSettings.JobNamespace)
-	eh.startK8sJob(k8s, action, eventAsInterface)
+	eh.startK8sJob(action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -118,7 +134,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 		}
 	}
 
-	err := k8s.ConnectToCluster()
+	err := eh.K8s.ConnectToCluster()
 	if err != nil {
 		log.Printf("Error while connecting to cluster: %s\n", err.Error())
 		if !action.Silent {
@@ -159,7 +175,7 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			namespace = task.Namespace
 		}
 
-		err := k8s.CreateK8sJob(
+		err := eh.K8s.CreateK8sJob(
 			jobName, action, task, eh.Keptn.Event, eh.JobSettings,
 			jsonEventData, namespace,
 		)
@@ -172,13 +188,13 @@ func (eh *EventHandler) startK8sJob(k8s k8sutils.K8s, action *config.Action, jso
 			return
 		}
 
-		maxPollCount := defaultMaxPollCount
+		maxPollDuration := defaultMaxPollDuration
 		if task.MaxPollDuration != nil {
-			maxPollCount = int(math.Ceil(float64(*task.MaxPollDuration) / pollIntervalInSeconds))
+			maxPollDuration = time.Duration(*task.MaxPollDuration) * time.Second
 		}
-		jobErr := k8s.AwaitK8sJobDone(jobName, maxPollCount, pollIntervalInSeconds, namespace)
+		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollDuration, pollInterval, namespace)
 
-		logs, err := k8s.GetLogsOfPod(jobName, namespace)
+		logs, err := eh.K8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {
 			log.Printf("Error while retrieving logs: %s\n", err.Error())
 		}

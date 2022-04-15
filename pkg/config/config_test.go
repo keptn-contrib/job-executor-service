@@ -181,6 +181,153 @@ func TestSimpleConfigUnmarshalling(t *testing.T) {
 	assert.Equal(t, config.Actions[0].Tasks[0].WorkingDir, "/bin")
 }
 
+func TestInvalidYamlUnmarshalling(t *testing.T) {
+	tests := []struct {
+		name string
+		yaml string
+	}{
+		{
+			name: "extra top-level tags in config",
+			yaml: `
+                apiVersion: v2
+                extraneousTopLevelTag: some weird stuff here 
+                actions:
+                  - name: "Run whatever you like with JES"
+                    events:
+                      - name: "sh.keptn.event.fancy-custom-event"
+                    tasks:
+                      - name: "task1"
+                        workingDir: "/bin"
+                        image: "somefancyimage"
+                        cmd:
+                          - cmd
+                        args:
+                          - arg1
+                          - arg2
+                `,
+		},
+		{
+			name: "extra nested tags in config",
+			yaml: `
+                    apiVersion: v2
+                    actions:
+                      - name: "Run whatever you like with JES"
+                        events:
+                          - name: "sh.keptn.event.fancy-custom-event"
+                        unsupportedTag: true
+                        tasks:
+                          - name: "task1"
+                            workingDir: "/bin"
+                            image: "somefancyimage"
+                            cmd:
+                              - cmd
+                            args:
+                              - arg1
+                              - arg2
+                    `,
+		},
+		{
+			name: "plain invalid yaml specifying string instead of lists values",
+			yaml: `
+                    apiVersion: v2
+                    actions:
+                      - name: "Run whatever you like with JES"
+                        events:
+                        tasks:
+                          - name: "task1"
+                            workingDir: "/bin"
+                            image: "somefancyimage"
+                            cmd: wrong value
+                            args: another wrong value
+                    `,
+		},
+	}
+	for _, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				config, err := NewConfig([]byte(test.yaml))
+				assert.Error(t, err)
+				assert.Nil(t, config)
+			},
+		)
+	}
+}
+
+func TestGetAction(t *testing.T) {
+	configYaml := `
+                apiVersion: v2
+                actions:
+                  - name: "Action1"
+                    events:
+                      - name: "sh.keptn.event.fancy-custom-event"
+                    tasks:
+                      - name: "task1"
+                        workingDir: "/bin"
+                        image: "somefancyimage"
+                        cmd:
+                          - cmd
+                        args:
+                          - arg1
+                          - arg2
+                      - name: "task2"
+                        workingDir: "/bin"
+                        image: "somefancyimage"
+                        cmd:
+                          - cmd
+                        args:
+                          - arg1
+                          - arg2
+                `
+	config, err := NewConfig([]byte(configYaml))
+	require.NoError(t, err)
+	found, actionPtr := config.FindActionByName("non-existing-action")
+	assert.False(t, found)
+	assert.Nil(t, actionPtr)
+	found, actionPtr = config.FindActionByName("Action1")
+	assert.True(t, found)
+	require.NotNil(t, actionPtr)
+	assert.Equal(t, "Action1", actionPtr.Name)
+}
+
+func TestGetTasks(t *testing.T) {
+	configYaml := `
+                apiVersion: v2
+                actions:
+                  - name: "Action1"
+                    events:
+                      - name: "sh.keptn.event.fancy-custom-event"
+                    tasks:
+                      - name: "task1"
+                        workingDir: "/bin"
+                        image: "somefancyimage"
+                        cmd:
+                          - cmd
+                        args:
+                          - arg1
+                          - arg2
+                      - name: "task2"
+                        workingDir: "/bin"
+                        image: "somefancyimage"
+                        cmd:
+                          - cmd
+                        args:
+                          - arg1
+                          - arg2
+                `
+	config, err := NewConfig([]byte(configYaml))
+	require.NoError(t, err)
+	found, actionPtr := config.FindActionByName("Action1")
+	require.True(t, found)
+	require.NotNil(t, actionPtr)
+	found, taskPtr := actionPtr.FindTaskByName("non-existing-task")
+	assert.False(t, found)
+	assert.Nil(t, taskPtr)
+	found, taskPtr = actionPtr.FindTaskByName("task2")
+	assert.True(t, found)
+	require.NotNil(t, taskPtr)
+	assert.Equal(t, "task2", taskPtr.Name)
+}
+
 func TestComplexConfigUnmarshalling(t *testing.T) {
 
 	config, err := NewConfig([]byte(complexConfig))

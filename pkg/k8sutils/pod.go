@@ -4,20 +4,23 @@ import (
 	"bytes"
 	"context"
 	"io"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetLogsOfPod returns the k8s logs of a job in a namespace
-func (k8s *k8sImpl) GetLogsOfPod(jobName string, namespace string) (string, error) {
+func (k8s *K8sImpl) GetLogsOfPod(jobName string, namespace string) (string, error) {
 
 	// TODO include the logs of the initcontainer
 
 	podLogOpts := v1.PodLogOptions{}
 
-	list, err := k8s.clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: "job-name=" + jobName,
-	})
+	list, err := k8s.clientset.CoreV1().Pods(namespace).List(
+		context.TODO(), metav1.ListOptions{
+			LabelSelector: "job-name=" + jobName,
+		},
+	)
 	if err != nil {
 		return "", err
 	}
