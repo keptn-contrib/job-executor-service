@@ -1,0 +1,17 @@
+apiVersion: v2
+actions:
+  - name: "Files e2e test"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Print sha1sum of files"
+        image: "alpine"
+        files:
+          - small.file
+          - folder/file.py
+          - folder/big.file
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - 'find /keptn -type f -name "*" -exec sha1sum {} \;'
