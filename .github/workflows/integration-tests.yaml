@@ -109,7 +109,6 @@ jobs:
         run: go test -v -run "^\QTestEnvironmentVariables\E$"
 
       - name: Run "Job cleanup" test
-        if: false
         id: test_job_cleanup
         continue-on-error: true
         working-directory: test/e2e
@@ -161,6 +160,8 @@ jobs:
           name: test-report
           path: ${{ env.TEST_REPORTS_PATH }}
 
+      # This step collects all test reports and merges them into one
+      # As output a markdown and a json version will be generated
       - name: Build final test report
         id: build_final_test_report
         uses: actions/github-script@v6.0.0
@@ -185,6 +186,8 @@ jobs:
             const jsonReportData = [];
             const markdownReportData = [];
             
+            let transposedTable = {};
+            
             const keptnVersionRegex = /test-report-\d+-(.*).json/;
             
             const fileList = fs.readdirSync(TEST_REPORTS_PATH);
@@ -196,6 +199,10 @@ jobs:
               const keptnVersion = keptnVersionRegex.exec(fileName)[1];
               const testResult = ndJsonParser(platformReportFile)[0];
               
+              function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
+              }
+              
               if (testResult === undefined) {
                 console.log(`Unable to parse file, did the pipeline fail?`);
               } else {
@@ -205,30 +212,34 @@ jobs:
                 });
                   
                 jsonReportData.push(jsonResultObject);
-                
-                // Transform the markdown output to be better to read, we remove
-                // test_ and replace the outcome with github emojis
-                let markdownResultObject = {keptn_version: keptnVersion};
+            
+            
+                // For the markdown version we transpose the table layout such that tests are listed in rows and the 
+                // Keptn version are in the columns:
+                let keptnVersionRuns = {};
+                keptnVersionRuns[keptnVersion] = {};
                 testResult.forEach(element => {
-                  let markdownTestName = element.name.substring("test_".length);
-                  switch(element.outcome) {
-                    case 'success': markdownResultObject[markdownTestName] = ':heavy_check_mark:'; break;
-                    case 'failure': markdownResultObject[markdownTestName] = ':x:';                break;
-                    default:        markdownResultObject[markdownTestName] = ':yellow_circle:';
+                  if (transposedTable[element.name] === undefined) {
+                    transposedTable[element.name] = {"Test": capitalizeFirstLetter(element.name.substring('test_'.length).replace('_', ' '))};
                   }
-                });
-                
-                markdownReportData.push(markdownResultObject);
+              
+                  switch(element.outcome) {
+                    case 'success': transposedTable[element.name][keptnVersion] = ':heavy_check_mark:'; break;
+                    case 'failure': transposedTable[element.name][keptnVersion] = ':x:';                break;
+                    default:        transposedTable[element.name][keptnVersion] = ':yellow_circle:';
+                  }
+                })
               }
             });
             
-            const maxColumns = Math.max(...jsonReportData.map(report => Object.keys(report).length));
+            transposedTable = Object.values(transposedTable)
+            const maxColumns = jsonReportData.length;
             let columns = [{ align: "left" }];
             for(let i = 0; i < maxColumns; i++){ 
               columns.push({ align: "center" });
             }
             
-            const markdownReport = tablemark(markdownReportData, { columns: columns });
+            const markdownReport = tablemark(transposedTable, {caseHeaders: false, columns: columns});
             
             fs.mkdirSync(FINAL_TEST_REPORTS_FOLDER);
             fs.writeFileSync(FINAL_TEST_REPORT_FILEPATH_JSON, JSON.stringify(jsonReportData));
@@ -248,21 +259,16 @@ jobs:
           name: final-test-report-markdown
           path: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
 
-      #- name: Test
-      #  env:
-      #    TO_TEST: ${{ (github.event_name == 'schedule' && github.event_name) || format('@{0}', github.actor) }}
-      #  run: |
-      #    echo $TO_TEST
-
+      # Check if a integration test failed
       - name: Check test status
         if: always()
         id: check_test_status
         env:
-          FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
+          FINAL_TEST_REPORT_FILEPATH_JSON: ${{ env.FINAL_TEST_REPORT_FILEPATH_JSON }}
         run: |
-          REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
+          REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_JSON")
           
-          if [[ "$REPORT" == *":x:"* ]]; then
+          if [[ "$REPORT" == *"failure"* ]]; then
             echo "INTEGRATION TESTS FAILED!"
             echo "##[set-output name=INTEGRATION_TESTS_FAILED;]true"
           fi
@@ -300,9 +306,9 @@ jobs:
           Note: This issue was auto-generated from [integration_tests.yaml]($INTEGRATION_FILE_LINK)
           EOT
 
+      # Create a GitHub issue if scheduled tests failed
       - name: Create issue if tests failed
-        # github.event_name == 'schedule'
-        if: always() && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        if: always() && github.event_name == 'schedule' && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
         uses: JasonEtco/create-an-issue@v2.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
