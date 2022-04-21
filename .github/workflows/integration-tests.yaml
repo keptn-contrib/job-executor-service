@@ -58,6 +58,7 @@ jobs:
       - name: Install Keptn
         id: install_keptn
         uses: keptn-sandbox/action-install-keptn@v1.0.0
+        timeout-minutes: 5
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
@@ -108,6 +109,7 @@ jobs:
         run: go test -v -run "^\QTestEnvironmentVariables\E$"
 
       - name: Run "Job cleanup" test
+        if: false
         id: test_job_cleanup
         continue-on-error: true
         working-directory: test/e2e
@@ -168,6 +170,7 @@ jobs:
           FINAL_TEST_REPORT_FILEPATH_JSON: ${{ env.FINAL_TEST_REPORT_FILEPATH_JSON }}
           FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
         with:
+          result-encoding: string
           script: |
             ndJsonParser = require('ndjson-parse');
             tablemark = require('tablemark');
@@ -178,7 +181,7 @@ jobs:
                    FINAL_TEST_REPORT_FILEPATH_MARKDOWN,
                    FINAL_TEST_REPORTS_FOLDER
                   } = process.env
-            
+
             const jsonReportData = [];
             const markdownReportData = [];
             
@@ -197,24 +200,25 @@ jobs:
                 console.log(`Unable to parse file, did the pipeline fail?`);
               } else {
                 let jsonResultObject = {keptn_version: keptnVersion};
-                jsonResultObject[element.name] = element.outcome;
-                
-                jsonReportData.push(jsonResultObject)
+                testResult.forEach(element => {
+                  jsonResultObject[element.name] = element.outcome;
+                });
+                  
+                jsonReportData.push(jsonResultObject);
                 
                 // Transform the markdown output to be better to read, we remove
                 // test_ and replace the outcome with github emojis
                 let markdownResultObject = {keptn_version: keptnVersion};
-                let markdownTestName = element.name.substring("test_".length);
-            
-                markdownResultObject.forEach(element => {
+                testResult.forEach(element => {
+                  let markdownTestName = element.name.substring("test_".length);
                   switch(element.outcome) {
-                    case 'success': resultObject[markdownTestName] = ':heavy_check_mark:'; break;
-                    case 'failure': resultObject[markdownTestName] = ':x:'; break;
-                    default: resultObject[markdownTestName] = ':yellow_circle:';
+                    case 'success': markdownResultObject[markdownTestName] = ':heavy_check_mark:'; break;
+                    case 'failure': markdownResultObject[markdownTestName] = ':x:';                break;
+                    default:        markdownResultObject[markdownTestName] = ':yellow_circle:';
                   }
-                })
+                });
                 
-                markdownReportData.push(markdownResultObject)
+                markdownReportData.push(markdownResultObject);
               }
             });
             
@@ -244,44 +248,61 @@ jobs:
           name: final-test-report-markdown
           path: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
 
-      - name: Create GitHub bug issue on errors
-        id: create_github_bug_issue
+      #- name: Test
+      #  env:
+      #    TO_TEST: ${{ (github.event_name == 'schedule' && github.event_name) || format('@{0}', github.actor) }}
+      #  run: |
+      #    echo $TO_TEST
+
+      - name: Check test status
+        if: always()
+        id: check_test_status
         env:
           FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
         run: |
           REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
+          
           if [[ "$REPORT" == *":x:"* ]]; then
-            echo "INTEGRATION TESTS FAILED! - Creating GH issue description now..."
-
-            # create a markdown file that contains details about the error
-            echo "---" > integration-tests-failed.md
-            echo "title: Integration tests failed" >> integration-tests-failed.md
-            echo "labels: type:critical" >> integration-tests-failed.md
-            echo "---" >> integration-tests-failed.md
-            echo "" >> integration-tests-failed.md
-            echo "* Link to run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> integration-tests-failed.md
-            if [[ $GITHUB_EVENT_NAME == 'schedule' ]]; then
-              echo "* Triggered by: Scheduled build" >> integration-tests-failed.md
-            else
-              echo "* Triggered by: @$GITHUB_ACTOR" >> integration-tests-failed.md
-            fi
-            echo "* Branch: $BRANCH" >> integration-tests-failed.md
-            echo "* Version: $VERSION" >> integration-tests-failed.md
-            echo "* Datetime: $DATETIME" >> integration-tests-failed.md
-            echo "* Commit: $GIT_SHA" >> integration-tests-failed.md
-            echo "" >> integration-tests-failed.md
-            # print report
-            echo "$REPORT" >> integration-tests-failed.md
-            echo "" >> integration-tests-failed.md
-            echo "Note: This issue was auto-generated from [integration_tests.yml](.github/workflows/integration_tests.yml)" >> integration-tests-failed.md
+            echo "INTEGRATION TESTS FAILED!"
             echo "##[set-output name=INTEGRATION_TESTS_FAILED;]true"
-          else
-            echo "Integration tests passed, moving on..."
           fi
+
+      - name: Create GitHub bug issue on errors
+        id: create_github_bug_issue
+        if: always() && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        env:
+          FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
+        run: |
+          REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
+          
+          if [[ $GITHUB_EVENT_NAME == 'schedule' ]]; then
+            TRIGGERED_BY="Scheduled build"
+          else
+            TRIGGERED_BY="@$GITHUB_ACTOR"
+          fi
+          
+          INTEGRATION_FILE_LINK=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$BRANCH/.github/workflows/integration_tests.yaml
+            
+          # Create issue for the failed integration test:  
+          cat <<EOT >> integration-tests-failed.md
+          ---
+          title: Integration tests failed
+          labels: type:critical
+          ---
+          
+          * Link to run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          * Triggered by: $TRIGGERED_BY
+          * Branch: $BRANCH
+          * Commit: $GITHUB_SHA
+        
+          $REPORT
+        
+          Note: This issue was auto-generated from [integration_tests.yaml]($INTEGRATION_FILE_LINK)
+          EOT
 
       - name: Create issue if tests failed
         # github.event_name == 'schedule'
-        if: always() && steps.create_github_bug_issue.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        if: always() && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
         uses: JasonEtco/create-an-issue@v2.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
