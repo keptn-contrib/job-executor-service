@@ -124,10 +124,10 @@ func TestGetLogsOfPodHappyPath(t *testing.T) {
 
 	logsOfPod, err := k8s.GetLogsOfPod(jobName, namespace)
 	assert.NoError(t, err)
-	assert.Equal(t, logsOfPod, "fake logs")
+	assert.Contains(t, logsOfPod, "fake logs")
 
 	// Assert that the fake received the call
-	getLogAction := k8stesting.GenericActionImpl{
+	getLogActionInitContainer := k8stesting.GenericActionImpl{
 		ActionImpl: k8stesting.ActionImpl{
 			Namespace: namespace,
 			Verb:      "get",
@@ -138,8 +138,27 @@ func TestGetLogsOfPodHappyPath(t *testing.T) {
 			},
 			Subresource: "log",
 		},
-		Value: &v1.PodLogOptions{},
+		Value: &v1.PodLogOptions{
+			Container: initContainerName,
+		},
 	}
 
-	assert.Contains(t, k8sClientSet.Actions(), getLogAction)
+	getLogActionContainer := k8stesting.GenericActionImpl{
+		ActionImpl: k8stesting.ActionImpl{
+			Namespace: namespace,
+			Verb:      "get",
+			Resource: schema.GroupVersionResource{
+				Group:    "",
+				Version:  "v1",
+				Resource: "pods",
+			},
+			Subresource: "log",
+		},
+		Value: &v1.PodLogOptions{
+			Container: jobName,
+		},
+	}
+
+	assert.Contains(t, k8sClientSet.Actions(), getLogActionInitContainer)
+	assert.Contains(t, k8sClientSet.Actions(), getLogActionContainer)
 }
