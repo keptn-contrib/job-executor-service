@@ -12,12 +12,6 @@ import (
 	"time"
 )
 
-type resourceFile struct {
-	size    int
-	content string
-	sha1    string
-}
-
 func TestResourceFiles(t *testing.T) {
 	if !isE2ETestingAllowed() {
 		t.Skip("Skipping TestResourceFiles, not allowed by environment")
@@ -32,13 +26,13 @@ func TestResourceFiles(t *testing.T) {
 	defer testEnv.CleanupFunc()
 
 	// Generate and upload some resource files:
-	files := map[string]resourceFile{
-		"small.file":     newResourceFile(t, 1024),
-		"folder/file.py": newResourceFile(t, 128*1024),
+	files := map[string]randomResourceFile{
+		"small.file":     newRandomResourceFile(t, 1024),
+		"folder/file.py": newRandomResourceFile(t, 128*1024),
 
 		// NOTE: This seems to be the max file size that we can push to the API endpoint:
-		// NOTE: via keptn add-resource, resource can only be 767KiB big!
-		"folder/big.file": newResourceFile(t, 255*1024),
+		// NOTE: Even via keptn add-resource, resource files can only be 767KiB big!
+		"folder/big.file": newRandomResourceFile(t, 767*1024),
 	}
 
 	for path, file := range files {
@@ -53,7 +47,7 @@ func TestResourceFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// Checking if the job executor service responded with a .started event
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,
@@ -75,7 +69,7 @@ func TestResourceFiles(t *testing.T) {
 
 	filesRegex, err := regexp.Compile(`(?P<hash>[a-f0-9]+) {2}/keptn/(?P<file>[/a-z.]+)\n`)
 
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,
@@ -108,16 +102,28 @@ func TestResourceFiles(t *testing.T) {
 	)
 }
 
-func newResourceFile(t *testing.T, size int) resourceFile {
-	fileContent, err := goutils.RandomNonAlphaNumeric(size)
+type randomResourceFile struct {
+	size    int
+	content string
+	sha1    string
+}
+
+// newRandomResourceFile generates a new randomResourceFile struct and fills the content with random bytes, the size
+// is of the resulting file will be slightly bigger or smaller depending on the encoding of the random bytes in the
+// string datatype
+func newRandomResourceFile(t *testing.T, size int) randomResourceFile {
+	// Since RandomNonAlphaNumeric generates a string from random data, the size in bytes on the string depends
+	// on the contents. E.g.: if a lot of symbols are generated with runes the size is 3-4 times bigger then a single
+	// byte. size / 3 is an approximation to generate files with around the requested size
+	fileContent, err := goutils.RandomNonAlphaNumeric(size / 3)
 	require.NoError(t, err)
 
 	hasher := sha1.New()
 	hasher.Write([]byte(fileContent))
 	hash := hasher.Sum(nil)
 
-	return resourceFile{
-		size:    size,
+	return randomResourceFile{
+		size:    len(fileContent),
 		content: fileContent,
 		sha1:    hex.EncodeToString(hash),
 	}

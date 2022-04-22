@@ -20,11 +20,13 @@ import (
 	"time"
 )
 
+// KeptnConnectionDetails contains the endpoint and the API token for Keptn
 type KeptnConnectionDetails struct {
 	Endpoint string
 	APIToken string
 }
 
+// readKeptnConnectionDetailsFromEnv parses the environment variables and creates a KeptnConnectionDetails
 func readKeptnConnectionDetailsFromEnv() KeptnConnectionDetails {
 	return KeptnConnectionDetails{
 		Endpoint: os.Getenv("KEPTN_ENDPOINT"),
@@ -32,6 +34,7 @@ func readKeptnConnectionDetailsFromEnv() KeptnConnectionDetails {
 	}
 }
 
+// isE2ETestingAllowed checks if the E2E tests are allowed to run by parsing environment variables
 func isE2ETestingAllowed() bool {
 	boolean, err := strconv.ParseBool(os.Getenv("JES_E2E_TEST"))
 	if err != nil {
@@ -41,7 +44,8 @@ func isE2ETestingAllowed() bool {
 	return boolean
 }
 
-func logKeptnModelError(keptnError *models.Error) string {
+// convertKeptnModelToErrorString transforms the models.Error structure to an error string
+func convertKeptnModelToErrorString(keptnError *models.Error) string {
 	if keptnError == nil {
 		return ""
 	}
@@ -53,6 +57,7 @@ func logKeptnModelError(keptnError *models.Error) string {
 	return fmt.Sprintf("%d <no error message>", keptnError.Code)
 }
 
+// readKeptnContextExtendedCE reads a file from a given path and returnes the parsed models.KeptnContextExtendedCE struct
 func readKeptnContextExtendedCE(path string) (*models.KeptnContextExtendedCE, error) {
 	fileContents, err := ioutil.ReadFile(path)
 
@@ -70,6 +75,7 @@ func readKeptnContextExtendedCE(path string) (*models.KeptnContextExtendedCE, er
 	return &keptnContextExtendedCE, nil
 }
 
+// eventData structure contains common fields in the data part of a  models.KeptnContextExtendedCE struct that are needed by E2E tests
 type eventData struct {
 	Message string `mapstruct:"message,omitempty"`
 	Project string `mapstruct:"project,omitempty"`
@@ -132,6 +138,7 @@ func createK8sSecret(ctx context.Context, clientset *kubernetes.Clientset, names
 	}, nil
 }
 
+// testEnvironment structure holds different structures and information that are commonly used by the E2E test environment
 type testEnvironment struct {
 	K8s         *kubernetes.Clientset
 	API         KeptnAPI
@@ -141,8 +148,10 @@ type testEnvironment struct {
 	CleanupFunc func()
 }
 
-// setupE2ETTestEnvironment creates the basic e2e test environment, which includes creating a service and a project in Keptn
-func setupE2ETTestEnvironment(t *testing.T, eventJsonPath string, shipyardPath string, jobConfigPath string) testEnvironment {
+// setupE2ETTestEnvironment creates the basic e2e test environment, which includes creating a service and a project in Keptn,
+// additionally also the given job configuration is uploaded to Keptn such that simple E2E tests can continue by sending
+// the desired events or continue to customize the project
+func setupE2ETTestEnvironment(t *testing.T, eventJSONFilePath string, shipyardPath string, jobConfigPath string) testEnvironment {
 
 	// Read the namespace where the job executor service is
 	jesNamespace := os.Getenv("JES_NAMESPACE")
@@ -154,10 +163,10 @@ func setupE2ETTestEnvironment(t *testing.T, eventJsonPath string, shipyardPath s
 	assert.NotNil(t, clientset)
 
 	// Create a new Keptn api for the use of the E2E test
-	keptnApi := NewKeptAPI(readKeptnConnectionDetailsFromEnv())
+	keptnAPI := NewKeptAPI(readKeptnConnectionDetailsFromEnv())
 
 	// Read the event we want to trigger and extract the project, service and stage
-	keptnEvent, err := readKeptnContextExtendedCE(eventJsonPath)
+	keptnEvent, err := readKeptnContextExtendedCE(eventJSONFilePath)
 	require.NoError(t, err)
 
 	eventData, err := parseKeptnEventData(keptnEvent)
@@ -167,30 +176,30 @@ func setupE2ETTestEnvironment(t *testing.T, eventJsonPath string, shipyardPath s
 	shipyardFile, err := ioutil.ReadFile(shipyardPath)
 	require.NoError(t, err)
 
-	err = keptnApi.CreateProject(eventData.Project, shipyardFile)
+	err = keptnAPI.CreateProject(eventData.Project, shipyardFile)
 	require.NoError(t, err)
 
 	// deferred function must be called by the caller
 	deleteProjectFunc := func() {
-		if err := keptnApi.DeleteProject(eventData.Project); err != nil {
+		if err := keptnAPI.DeleteProject(eventData.Project); err != nil {
 			t.Log(err.Error())
 		}
 	}
 
 	// Create a service in Keptn
-	err = keptnApi.CreateService(eventData.Project, eventData.Service)
+	err = keptnAPI.CreateService(eventData.Project, eventData.Service)
 	require.NoError(t, err)
 
 	// Upload the job configuration for the E2E test
 	jobConfigYaml, err := ioutil.ReadFile(jobConfigPath)
 	require.NoError(t, err)
 
-	err = keptnApi.CreateJobConfig(eventData.Project, eventData.Stage, eventData.Service, jobConfigYaml)
+	err = keptnAPI.CreateJobConfig(eventData.Project, eventData.Stage, eventData.Service, jobConfigYaml)
 	require.NoError(t, err)
 
 	return testEnvironment{
 		K8s:         clientset,
-		API:         keptnApi,
+		API:         keptnAPI,
 		EventData:   eventData,
 		Event:       keptnEvent,
 		Namespace:   jesNamespace,
@@ -198,9 +207,9 @@ func setupE2ETTestEnvironment(t *testing.T, eventJsonPath string, shipyardPath s
 	}
 }
 
-// waitForEvent checks if an event occurred in a specific time frame while polling the event bus of keptn, the eventValidator
+// requireWaitForEvent checks if an event occurred in a specific time frame while polling the event bus of keptn, the eventValidator
 // should return true if the desired event was found
-func waitForEvent(t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext, eventType string, eventValidator func(c *models.KeptnContextExtendedCE) bool) {
+func requireWaitForEvent(t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext, eventType string, eventValidator func(c *models.KeptnContextExtendedCE) bool) {
 	checkForEventsToMatch := func() bool {
 		events, err := api.GetEvents(keptnContext.KeptnContext)
 		require.NoError(t, err)
@@ -219,5 +228,7 @@ func waitForEvent(t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.D
 		return false
 	}
 
+	// We require waiting for a keptn event, this is useful to exit out tests if no .started event occurred.
+	// It doesn't make sense in these cases to wait for a .finished or other .triggered events ...
 	require.Eventuallyf(t, checkForEventsToMatch, waitFor, tick, "did not receive keptn event: %s", eventType)
 }

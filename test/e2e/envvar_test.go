@@ -37,7 +37,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	require.NoError(t, err)
 
 	// Checking if the job executor service responded with a .started event
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,
@@ -74,7 +74,7 @@ func TestEnvironmentVariables(t *testing.T) {
 		Status:  "succeeded",
 	}
 
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,

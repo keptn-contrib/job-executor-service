@@ -28,12 +28,12 @@ func TestLocust(t *testing.T) {
 		"../data/locust.conf":     "locust/locust.conf",
 	}
 
-	for sourceFilePath, resourceUri := range files {
+	for sourceFilePath, resourceURI := range files {
 		sourceFileContent, err := ioutil.ReadFile(sourceFilePath)
 		require.NoError(t, err)
 
 		err = testEnv.API.AddServiceResource(testEnv.EventData.Project, testEnv.EventData.Stage, testEnv.EventData.Service,
-			resourceUri, string(sourceFileContent))
+			resourceURI, string(sourceFileContent))
 
 		require.NoError(t, err)
 	}
@@ -43,7 +43,7 @@ func TestLocust(t *testing.T) {
 	require.NoError(t, err)
 
 	// Checking if the job executor service responded with a .started event
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,
@@ -63,7 +63,7 @@ func TestLocust(t *testing.T) {
 		Status:  "succeeded",
 	}
 
-	waitForEvent(t,
+	requireWaitForEvent(t,
 		testEnv.API,
 		2*time.Minute,
 		1*time.Second,
