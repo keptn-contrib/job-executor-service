@@ -73,8 +73,6 @@ func TestJobCleanupWithSmallTTL(t *testing.T) {
 }
 
 func TestJobCleanupWith0TTLMultipleJobs(t *testing.T) {
-	t.Skip("Skipping TestJobCleanupWith0TTLMultipleJobs since TTL=0 is not currently supported/working")
-
 	if !isE2ETestingAllowed() {
 		t.Skip("Skipping TestJobCleanupWith0TTLMultipleJobs, not allowed by environment")
 	}
@@ -108,8 +106,6 @@ func TestJobCleanupWith0TTLMultipleJobs(t *testing.T) {
 	)
 
 	// If the started event was sent by the job executor we wait for a .finished with the following data:
-
-	// TODO: This is set to fail because JES can never collect logs of jobs with TTL 0s
 	expectedEventData := eventData{
 		Project: testEnv.EventData.Project,
 		Result:  "pass",

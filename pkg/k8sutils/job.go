@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"log"
 	"reflect"
 	"strings"
@@ -279,7 +281,39 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 		}
 
 		job, err := jobs.Get(context.TODO(), jobName, metav1.GetOptions{})
+
+		// FIXME: This is a workaround to prevent the job executor from failing, but may make things worse
 		if err != nil {
+			err = fmt.Errorf("unable to await completion of job %s: %w", jobName, err)
+
+			// Construct a valid field selector
+			kindSelector, _ := labels.NewRequirement("involvedObject.kind", selection.Equals, []string{"Job"})
+			nameSelector, _ := labels.NewRequirement("involvedObject.name", selection.Equals, []string{jobName})
+			selector := labels.NewSelector()
+			selector = selector.Add(*kindSelector, *nameSelector)
+
+			// Search for the job in the events list
+			events, errEvents := k8s.clientset.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{
+				FieldSelector: selector.String(),
+			})
+			if errEvents == nil {
+
+				// Search for a job completed event, if we don't find one we just do nothing
+				// and assume that the default error we return is sufficient, as there could be
+				// other problems
+				for _, event := range events.Items {
+					// If the job was completed, we just return and hope everything is handled
+					// somewhat correctly ...
+					if event.Reason == "Completed" {
+						return nil
+					}
+				}
+
+				err = fmt.Errorf("unable to find job 'Completed' event: %w", err)
+			} else {
+				err = fmt.Errorf("unable to list events for job %s: %w", jobName, errEvents)
+			}
+
 			return err
 		}
 
