@@ -105,7 +105,7 @@ func TestErrorMappingEvent(t *testing.T) {
 		mappingError,
 	)
 
-	myKeptn, _, _, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, _, err := initializeTestObjects("../../test/events/action.triggered.json")
 
 	require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestErrorGettingJobConfig(t *testing.T) {
 		errorGettingJobConfig,
 	).Times(1)
 
-	myKeptn, _, _, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, _, err := initializeTestObjects("../../test/events/action.triggered.json")
 	require.NoError(t, err)
 
 	sut := EventHandler{
@@ -164,7 +164,7 @@ func TestErrorGettingJobConfigAlwaysSendFinishedEvent(t *testing.T) {
 		errorGettingJobConfig,
 	).Times(1)
 
-	myKeptn, _, mockEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, mockEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
 	require.NoError(t, err)
 
 	sut := EventHandler{
@@ -249,7 +249,7 @@ func TestErrorConnectingToK8s(t *testing.T) {
 				connectionError := errors.New("error connecting to k8s cluster")
 				mockK8s.EXPECT().ConnectToCluster().Return(connectionError).Times(1)
 
-				myKeptn, _, mockEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+				myKeptn, _, mockEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
 				require.NoError(t, err)
 
 				sut := EventHandler{
@@ -345,7 +345,7 @@ func TestEventMatching(t *testing.T) {
 		{
 			name: "Event matching test action",
 			inputs: testInput{
-				eventFile:               "../../test-events/test.triggered.json",
+				eventFile:               "../../test/events/test.triggered.json",
 				alwaysSendFinishedEvent: true,
 			},
 			expected: testExpectations{
@@ -361,7 +361,7 @@ func TestEventMatching(t *testing.T) {
 		{
 			name: "No match",
 			inputs: testInput{
-				eventFile:               "../../test-events/action.triggered.json",
+				eventFile:               "../../test/events/action.triggered.json",
 				alwaysSendFinishedEvent: true,
 			},
 			expected: testExpectations{
@@ -455,7 +455,7 @@ func TestEventMatching(t *testing.T) {
 func TestStartK8s(t *testing.T) {
 	jobNamespace1 := "keptn"
 	jobNamespace2 := "keptn-2"
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
 	require.NoError(t, err)
 
 	k8sMock := createK8sMock(t)
@@ -514,7 +514,7 @@ func TestStartK8s(t *testing.T) {
 }
 
 func TestStartK8sJobSilent(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/action.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
 	require.NoError(t, err)
 
 	k8sMock := createK8sMock(t)
@@ -563,7 +563,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 }
 
 func TestStartK8s_TestFinishedEvent(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/test.triggered.json")
 	require.NoError(t, err)
 
 	k8sMock := createK8sMock(t)
@@ -634,7 +634,7 @@ func (f disallowAllImagesFilter) IsImageAllowed(_ string) bool {
 }
 
 func TestExpectImageNotAllowedError(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test-events/test.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/test.triggered.json")
 	require.NoError(t, err)
 
 	k8sMock := createK8sMock(t)
