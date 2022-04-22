@@ -7,7 +7,7 @@ The integration tests can be run in two different ways: locally with `go test` o
 ### Locally
 For running the integration tests locally, you have to clone the repository and install the required Go version.
 Additionally, the following environment variables have to be defined: 
-* `KEPTN_ENDPOINT` - The API endpint from Keptn (e.g.: `http://10.201.4.2/api`)
+* `KEPTN_ENDPOINT` - The API endpoint from Keptn (e.g.: `http://10.201.4.2/api`)
 * `KEPTN_API_TOKEN` - The auth token for Keptn
 * `JES_E2E_TEST` - Must be set to `true` to enable the integration tests
 * `JES_NAMESPACE` - The namespace in which the job-executor-service was installed (e.g.: `keptn-jes`)
@@ -27,14 +27,14 @@ Depending on the repository, executing the [Integration Tests](https://github.co
 GitHub action may require additional setup. On the *keptn-contrib/job-executor-service* repository this action should be able to 
 run on any given branch that has at least one successful CI build.
 
-However, if you forked the repository you have to configure / change the following properties:
+If you forked the repository you have to configure / change the following properties:
 * You have to change the `DOCKER_ORGANIZATION` in [.ci_env](../.ci_env) to a docker hub organization / account where
 you can push images to
 * Create the `REGISTRY_USER` and `REGISTRY_PASSWORD` secrets, which should contain the Docker user and PAT token
 * Change the value of `image.repository` in the [helm values](../chart/values.yaml) to reflect the change of the docker organization
 * Change the value of `jobexecutorserviceinitcontainer.image.repository` in the [helm values](../chart/values.yaml) to reflect the change of the docker organization
 
-After this modifications you should be able to run the CI and the Integration tests workflow.
+After these modifications you should be able to run the CI and the Integration tests workflow.
 
 ## Adding integration tests
 
