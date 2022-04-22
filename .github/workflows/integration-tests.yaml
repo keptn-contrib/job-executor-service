@@ -109,10 +109,17 @@ jobs:
         run: go test -v -run "^\QTestEnvironmentVariables\E$"
 
       - name: Run "Job cleanup" test
+        if: false
         id: test_job_cleanup
         continue-on-error: true
         working-directory: test/e2e
         run: go test -v -run "^TestJobCleanup*"
+
+      - name: Run "Locust" test
+        id: test_locust
+        continue-on-error: true
+        working-directory: test/e2e
+        run: go test -v -run "^\QTestLocust\E$"
 
       #########################################################################
 
