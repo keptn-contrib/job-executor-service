@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: [ "0.12.6", "0.13.4" ]
+        keptn-version: [ "0.11.4", "0.12.6", "0.13.4", "0.14.1" ]
     env:
       GO_VERSION: 1.17
       GO111MODULE: "on"
@@ -314,3 +314,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           filename: integration-tests-failed.md
+
+      # This ensures that if the pipeline was triggered by hand that the user gets informed
+      - name: Fail pipeline if tests failed
+        if: always() && github.event_name != 'schedule' && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        run: exit 1
