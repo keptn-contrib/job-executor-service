@@ -27,10 +27,11 @@ The following table lists the configurable parameters of the job-executor-servic
 | `jobConfig.jobSecurityContext`          | The default security context for job workloads | [See values.yaml](values.yaml) |
 | `jobConfig.serviceAccount.create`       | Enables the creation of the default service account used for job workloads | `true` | 
 | `jobConfig.serviceAccount.name`         | The name of the default service account used for job workloads | `default-job-account` | 
-| `jobConfig.serviceAccount.annotations`  | Additional annotations for the default service account used for job workloads | `{}` | 
-| `remoteControlPlane.enabled`            | Enables remote execution plane mode | `true` |
+| `jobConfig.serviceAccount.annotations`  | Additional annotations for the default service account used for job workloads | `{}` |
+| `remoteControlPlane.autoDetect.enabled`   | Enables auto detection of a Keptn installation | `false` |
+| `remoteControlPlane.autoDetect.namespace` | Namespace which should be used by the auto-detection | `""` |
 | `remoteControlPlane.api.protocol`       | Used protocol (http, https | `"https"` |
-| `remoteControlPlane.api.hostname`       | Hostname of the control plane cluster (and port) | `""` |
+| `remoteControlPlane.api.hostname`       | Hostname of the control plane cluster (and port) | `"api-gateway-nginx.keptn"` |
 | `remoteControlPlane.api.apiValidateTls` | Defines if the control plane certificate should be validated | `true` |
 | `remoteControlPlane.api.token`          | Keptn api token | `""` |
 | `imagePullSecrets`                      | Secrets to use for container registry credentials | `[]` |

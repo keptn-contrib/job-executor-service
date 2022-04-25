@@ -72,6 +72,58 @@ Create the name of the job service account to use
 {{- end }}
 {{- end }}
 
+{{- define "job-executor-service.remote-control-plane.endpoint" }}
+    {{- if ((.Values.remoteControlPlane).autoDetect).enabled }}
+        {{- $detectedNamespace := include "job-executor-service.remote-control-plane.namespace" .}}
+        {{- (printf "http://api-gateway-nginx.%s/api" $detectedNamespace) }}
+    {{- else }}
+        {{- (printf "%s://%s/api" .Values.remoteControlPlane.api.protocol .Values.remoteControlPlane.api.hostname) }}
+    {{- end }}
+{{- end }}
+
+{{- define "job-executor-service.remote-control-plane.configuration-endpoint" }}
+    {{- (printf "%s/configuration-service" (include "job-executor-service.remote-control-plane.endpoint" .)) }}
+{{- end }}
+
+
+{{/*
+Helper functions of the auto detection feature of Keptn
+*/}}
+{{- define "job-executor-service.remote-control-plane.namespace" -}}
+    {{- if .Values.remoteControlPlane.autoDetect.namespace }}
+        {{- .Values.remoteControlPlane.autoDetect.namespace }}
+    {{- else }}
+    {{- $detectedKeptnNamespaces := list }}
+
+    {{- /* Find api-gateway-nginx service, which is used as keptn api gatway */ -}}
+    {{- range $index, $srv := (lookup "v1" "Service" "" "").items }}
+        {{- if and (eq $srv.metadata.name "api-gateway-nginx") (hasPrefix "keptn-" (index $srv.metadata.labels "app.kubernetes.io/part-of")) }}
+            {{- $detectedKeptnNamespaces = append $detectedKeptnNamespaces $srv.metadata.namespace }}
+        {{- end }}
+    {{- end }}
+
+    {{- if eq (len $detectedKeptnNamespaces) 0 }}
+        {{- fail "Unable to detect Kepn in the kubernetes cluster!" }}
+    {{- end }}
+    {{- if gt (len $detectedKeptnNamespaces) 1 }}
+        {{- fail "Detected more than one Keptn installation!" }}
+    {{- end }}
+
+    {{- index $detectedKeptnNamespaces 0 }}
+    {{- end }}
+{{- end }}
+
 {{- define "job-executor-service.remote-control-plane.token" -}}
-{{- required "A valid Keptn API token is needed for the installation in the remote-control-plane" .Values.remoteControlPlane.api.token }}
+    {{- if ((.Values.remoteControlPlane).autoDetect).enabled }}
+        {{- $detectedNamespace := include "job-executor-service.remote-control-plane.namespace" . }}
+        {{- $apisecret := (lookup "v1" "Secret" $detectedNamespace "keptn-api-token") }}
+
+        {{- if $apisecret }}
+            {{- b64dec (index $apisecret.data "keptn-api-token") }}
+        {{- else }}
+            {{- fail "Please provide an api token" }}
+        {{- end }}
+    {{- else }}
+        {{- required "A valid API Token is required!" .Values.remoteControlPlane.api.token }}
+    {{- end }}
 {{- end }}

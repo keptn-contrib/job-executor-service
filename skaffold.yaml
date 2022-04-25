@@ -31,8 +31,13 @@ deploy:
           helm: { }
         setValueTemplates:
           remoteControlPlane:
+            autoDetect:
+              enabled: true       # If no auto-detection of Keptn should be done, set to false and fill out the information below
+              namespace: ""       # For multiple Keptn version this should be set to the desired Keptn namespace
             api:
-              token: "{{.KEPTN_API_TOKEN}}" # please set KEPTN_API_TOKEN as an environment variable
+              protocol: ""
+              hostname: ""
+              token: ""
         overrides:
           distributor:
             image:
