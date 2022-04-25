@@ -16,9 +16,9 @@ func TestHelloWorldDeployment(t *testing.T) {
 
 	// Setup the E2E test environment
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.jes.triggered.json",
-		"../shipyard/e2e.deployment.yaml",
-		"../data/helloworld.config.yaml",
+		"../events/e2e/helloworld.triggered.json",
+		"../shipyard/e2e/helloworld.deployment.yaml",
+		"../data/e2e/helloworld.config.yaml",
 	)
 
 	// Make sure project is delete after the tests are completed

@@ -2,7 +2,7 @@
 
 ## Running integration tests
 
-The integration tests can be run in two different ways: locally with `go test` or via a GitHub Workflow.
+Integration tests can be run in two different ways: locally with `go test` or via triggering the "Integration Tests" GitHub Workflow.
 
 ### Locally
 For running the integration tests locally, you have to clone the repository and install the required Go version.

@@ -5,11 +5,6 @@ on:
     - cron: '0 3 * * 1-5' # run integration tests at 3 AM, monday to friday (1-5)
 
   workflow_dispatch: # run integration tests only when triggered manually
-    inputs:
-      branch:
-        description: 'Take CI build artifacts from branch (e.g., main, release-x.y.z)'
-        required: true
-        default: 'main'
 
 defaults:
   run:

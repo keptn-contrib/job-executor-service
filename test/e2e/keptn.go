@@ -21,8 +21,8 @@ type KeptnAPI struct {
 	EventHandler    *api.EventHandler
 }
 
-// NewKeptAPI creates a KeptnAPI structure from KeptnConnectionDetails
-func NewKeptAPI(details KeptnConnectionDetails) KeptnAPI {
+// NewKeptnAPI creates a KeptnAPI structure from KeptnConnectionDetails
+func NewKeptnAPI(details KeptnConnectionDetails) KeptnAPI {
 	httpClient := http.Client{}
 
 	return KeptnAPI{

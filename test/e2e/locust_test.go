@@ -15,17 +15,17 @@ func TestLocust(t *testing.T) {
 	}
 
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.locust.qa.test.triggered.json",
-		"../shipyard/e2e.locust.yaml",
-		"../data/locust.config.yaml",
+		"../events/e2e/locust.qa.test.triggered.json",
+		"../shipyard/e2e/locust.deployment.yaml",
+		"../data/e2e/locust.config.yaml",
 	)
 
 	defer testEnv.CleanupFunc()
 
 	// Files to upload:
 	files := map[string]string{
-		"../data/locust.basic.py": "locust/basic.py",
-		"../data/locust.conf":     "locust/locust.conf",
+		"../data/e2e/locust.basic.py": "locust/basic.py",
+		"../data/e2e/locust.conf":     "locust/locust.conf",
 	}
 
 	for sourceFilePath, resourceURI := range files {

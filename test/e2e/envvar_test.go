@@ -17,9 +17,9 @@ func TestEnvironmentVariables(t *testing.T) {
 	}
 
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.jes.triggered-labels.json",
-		"../shipyard/e2e.deployment.yaml",
-		"../data/envvar.config.yaml",
+		"../events/e2e/envvar.triggered.json",
+		"../shipyard/e2e/envvar.deployment.yaml",
+		"../data/e2e/envvar.config.yaml",
 	)
 
 	defer testEnv.CleanupFunc()
@@ -28,7 +28,7 @@ func TestEnvironmentVariables(t *testing.T) {
 	secretContext, cancelFunc := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancelFunc()
 
-	secretDeleteFunc, err := createK8sSecret(secretContext, testEnv.K8s, testEnv.Namespace, "../data/envvar.secret.json")
+	secretDeleteFunc, err := createK8sSecret(secretContext, testEnv.K8s, testEnv.Namespace, "../data/e2e/envvar.secret.json")
 	require.NoError(t, err)
 	defer secretDeleteFunc(context.Background())
 

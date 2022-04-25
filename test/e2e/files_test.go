@@ -18,9 +18,9 @@ func TestResourceFiles(t *testing.T) {
 	}
 
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.jes.triggered.json",
-		"../shipyard/e2e.deployment.yaml",
-		"../data/files.config.yaml",
+		"../events/e2e/files.triggered.json",
+		"../shipyard/e2e/files.deployment.yaml",
+		"../data/e2e/files.config.yaml",
 	)
 
 	defer testEnv.CleanupFunc()

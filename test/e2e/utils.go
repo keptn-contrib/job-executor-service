@@ -163,7 +163,7 @@ func setupE2ETTestEnvironment(t *testing.T, eventJSONFilePath string, shipyardPa
 	assert.NotNil(t, clientset)
 
 	// Create a new Keptn api for the use of the E2E test
-	keptnAPI := NewKeptAPI(readKeptnConnectionDetailsFromEnv())
+	keptnAPI := NewKeptnAPI(readKeptnConnectionDetailsFromEnv())
 
 	// Read the event we want to trigger and extract the project, service and stage
 	keptnEvent, err := readKeptnContextExtendedCE(eventJSONFilePath)

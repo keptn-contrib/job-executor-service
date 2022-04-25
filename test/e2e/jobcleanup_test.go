@@ -14,9 +14,9 @@ func TestJobCleanupWithSmallTTL(t *testing.T) {
 	}
 
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.jes.triggered-sleep.json",
-		"../shipyard/e2e.deployment.yaml",
-		"../data/jobcleanup.config.yaml",
+		"../events/e2e/jobcleanup.triggered.json",
+		"../shipyard/e2e/jobcleanup.deployment.yaml",
+		"../data/e2e/jobcleanup.config.yaml",
 	)
 
 	defer testEnv.CleanupFunc()
@@ -72,9 +72,9 @@ func TestJobCleanupWith0TTLMultipleJobs(t *testing.T) {
 	}
 
 	testEnv := setupE2ETTestEnvironment(t,
-		"../events/e2e.jes.triggered-sleep.json",
-		"../shipyard/e2e.deployment.yaml",
-		"../data/jobcleanup.0ttl.config.yaml",
+		"../events/e2e/jobcleanup.triggered.json",
+		"../shipyard/e2e/jobcleanup.deployment.yaml",
+		"../data/e2e/jobcleanup.0ttl.config.yaml",
 	)
 
 	defer testEnv.CleanupFunc()
