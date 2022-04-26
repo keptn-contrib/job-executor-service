@@ -17,6 +17,7 @@
     - [Job namespace](#job-namespace)
     - [Job security context](#job-security-context)
     - [Job image pull policy](#job-image-pull-policy)
+    - [Job service account](#job-service-account)
     - [Restrict job images](#restrict-job-images)
     - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
     - [Additional Event Data](#additional-event-data)
@@ -479,6 +480,26 @@ Allowed values for image pull policy are the same as the [ones accepted by kuber
 
 Note: the job executor service does not perform any validation on the image pull policy value. We delegate any validation
 to kubernetes api server.
+
+### Job service account
+
+Job workloads use a service account separate from the one used by Job Executor Service pod.
+The default service account used for workloads has no permissions and does not automount the service account token,  therefore it has no access to the Kubernetes API. 
+During Job Executor Service installation it is possible to specify a different service account used by default for job workloads changing the `jobConfig.serviceAccount.name` helm value.
+It is recommended however to keep the default serviceAccount setting without any permission and specify an existing service account directly in the job config only for tasks that require more access.
+A custom service account can be used as follows:
+
+```yaml
+tasks:
+  - name: "Run kubectl"
+    image: "alpine/k8s"
+    serviceAccount: "your-service-account-name"
+    cmd:
+      - kubectl
+    args:
+      - get
+      - pods
+```
 
 ### Restrict job images
 

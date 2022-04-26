@@ -96,11 +96,6 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: always_send_finished_event
-          - name: ENABLE_KUBERNETES_API_ACCESS
-            valueFrom:
-              configMapKeyRef:
-                name: job-service-config
-                key: enable_kubernetes_api_access
           - name: DEFAULT_JOB_SERVICE_ACCOUNT
             valueFrom:
               configMapKeyRef:

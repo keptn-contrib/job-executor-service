@@ -42,7 +42,6 @@ type JobSettings struct {
 	InitContainerImage          string
 	DefaultResourceRequirements *v1.ResourceRequirements
 	AlwaysSendFinishedEvent     bool
-	EnableKubernetesAPIAccess   bool
 	DefaultJobServiceAccount    string
 	DefaultSecurityContext      *v1.SecurityContext
 	DefaultPodSecurityContext   *v1.PodSecurityContext
@@ -106,12 +105,12 @@ func (k8s *K8sImpl) CreateK8sJob(
 		Medium:    v1.StorageMediumDefault,
 		SizeLimit: &quantity,
 	}
-	automountServiceAccountToken := jobSettings.EnableKubernetesAPIAccess
-	serviceAccountName := jobSettings.DefaultJobServiceAccount
 
-	if jobSettings.EnableKubernetesAPIAccess {
-		automountServiceAccountToken = true
-		serviceAccountName = "job-executor-service"
+	// Use default service account but allow overriding
+	// from the task configuration
+	serviceAccountName := jobSettings.DefaultJobServiceAccount
+	if task.ServiceAccount != nil {
+		serviceAccountName = *task.ServiceAccount
 	}
 
 	jobEnv, err := k8s.prepareJobEnv(task, eventData, jsonEventData, namespace)
@@ -242,8 +241,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 							},
 						},
 					},
-					AutomountServiceAccountToken: &automountServiceAccountToken,
-					ServiceAccountName:           serviceAccountName,
+					ServiceAccountName: serviceAccountName,
 				},
 			},
 			BackoffLimit:            &backOffLimit,

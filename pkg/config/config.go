@@ -52,6 +52,7 @@ type Task struct {
 	Namespace               string          `yaml:"namespace"`
 	TTLSecondsAfterFinished *int32          `yaml:"ttlSecondsAfterFinished"`
 	SecurityContext         SecurityContext `yaml:"securityContext,omitempty"`
+	ServiceAccount          *string         `yaml:"serviceAccount,omitempty"`
 }
 
 // Env value from the event which will be added as env to the job
