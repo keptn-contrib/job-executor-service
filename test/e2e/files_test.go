@@ -3,10 +3,10 @@ package e2e
 import (
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/Masterminds/goutils"
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"math/rand"
 	"regexp"
 	"testing"
 	"time"
@@ -17,13 +17,19 @@ func TestResourceFiles(t *testing.T) {
 		t.Skip("Skipping TestResourceFiles, not allowed by environment")
 	}
 
-	testEnv := setupE2ETTestEnvironment(t,
+	testEnv, err := newTestEnvironment(
 		"../events/e2e/files.triggered.json",
 		"../shipyard/e2e/files.deployment.yaml",
 		"../data/e2e/files.config.yaml",
 	)
 
-	defer testEnv.CleanupFunc()
+	require.NoError(t, err)
+
+	err = testEnv.SetupTestEnvironment()
+	require.NoError(t, err)
+
+	// Make sure project is delete after the tests are completed
+	defer testEnv.Cleanup()
 
 	// Generate and upload some resource files:
 	files := map[string]randomResourceFile{
@@ -112,19 +118,21 @@ type randomResourceFile struct {
 // is of the resulting file will be slightly bigger or smaller depending on the encoding of the random bytes in the
 // string datatype
 func newRandomResourceFile(t *testing.T, size int) randomResourceFile {
-	// Since RandomNonAlphaNumeric generates a string from random data, the size in bytes on the string depends
-	// on the contents. E.g.: if a lot of symbols are generated with runes the size is 3-4 times bigger then a single
-	// byte. size / 3 is an approximation to generate files with around the requested size
-	fileContent, err := goutils.RandomNonAlphaNumeric(size / 3)
+	var src = rand.NewSource(time.Now().UnixNano()) // global var to initialize once per run
+
+	random := rand.New(src)
+	buffer := make([]byte, size)
+	n, err := random.Read(buffer)
 	require.NoError(t, err)
+	require.Equal(t, n, size)
 
 	hasher := sha1.New()
-	hasher.Write([]byte(fileContent))
+	hasher.Write(buffer)
 	hash := hasher.Sum(nil)
 
 	return randomResourceFile{
-		size:    len(fileContent),
-		content: fileContent,
+		size:    n,
+		content: string(buffer),
 		sha1:    hex.EncodeToString(hash),
 	}
 }

@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/common/log"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
@@ -140,71 +140,136 @@ func createK8sSecret(ctx context.Context, clientset *kubernetes.Clientset, names
 
 // testEnvironment structure holds different structures and information that are commonly used by the E2E test environment
 type testEnvironment struct {
-	K8s         *kubernetes.Clientset
-	API         KeptnAPI
-	EventData   *eventData
-	Event       *models.KeptnContextExtendedCE
-	Namespace   string
-	CleanupFunc func()
+	K8s       *kubernetes.Clientset
+	API       KeptnAPI
+	EventData *eventData
+	Event     *models.KeptnContextExtendedCE
+	Namespace string
+	shipyard  []byte
+	jobConfig []byte
 }
 
-// setupE2ETTestEnvironment creates the basic e2e test environment, which includes creating a service and a project in Keptn,
-// additionally also the given job configuration is uploaded to Keptn such that simple E2E tests can continue by sending
-// the desired events or continue to customize the project
-func setupE2ETTestEnvironment(t *testing.T, eventJSONFilePath string, shipyardPath string, jobConfigPath string) testEnvironment {
+// newTestEnvironment creates the basic e2e test environment, by establishing a connection to keptn and parsing the given
+// files and extracting the necessary information form it.
+func newTestEnvironment(eventJSONFilePath string, shipyardPath string, jobConfigPath string) (*testEnvironment, error) {
 
 	// Read the namespace where the job executor service is
 	jesNamespace := os.Getenv("JES_NAMESPACE")
-	require.NotEmpty(t, jesNamespace, "JES_NAMESPACE must be defined!")
+	if jesNamespace == "" {
+		return nil, fmt.Errorf("environment variable JES_NAMESPACE must be defined")
+	}
 
 	// Just test if we can connect to the cluster
 	clientset, err := keptnutils.GetClientset(false)
-	require.NoError(t, err)
-	assert.NotNil(t, clientset)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get clientset: %w", err)
+	}
 
 	// Create a new Keptn api for the use of the E2E test
 	keptnAPI := NewKeptnAPI(readKeptnConnectionDetailsFromEnv())
 
 	// Read the event we want to trigger and extract the project, service and stage
 	keptnEvent, err := readKeptnContextExtendedCE(eventJSONFilePath)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("unable parse JSON event file: %w", err)
+	}
 
 	eventData, err := parseKeptnEventData(keptnEvent)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("unable parse event data of the JSON event: %w", err)
+	}
 
 	// Load shipyard file and create the project in Keptn
 	shipyardFile, err := ioutil.ReadFile(shipyardPath)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read the shipyard file: %w", err)
+	}
 
-	err = keptnAPI.CreateProject(eventData.Project, shipyardFile)
-	require.NoError(t, err)
+	// Load the job configuration for the E2E test
+	jobConfigYaml, err := ioutil.ReadFile(jobConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read the job configuration file: %w", err)
+	}
 
-	// deferred function must be called by the caller
-	deleteProjectFunc := func() {
-		if err := keptnAPI.DeleteProject(eventData.Project); err != nil {
-			t.Log(err.Error())
-		}
+	return &testEnvironment{
+		K8s:       clientset,
+		API:       keptnAPI,
+		EventData: eventData,
+		Event:     keptnEvent,
+		Namespace: jesNamespace,
+		shipyard:  shipyardFile,
+		jobConfig: jobConfigYaml,
+	}, nil
+}
+
+// SetupTestEnvironment Creates the required Project, Service and uploads the Job configuration to Keptn
+func (env testEnvironment) SetupTestEnvironment() error {
+
+	err := env.API.CreateProject(env.EventData.Project, env.shipyard)
+	if err != nil {
+		return fmt.Errorf("unable to create a project in keptn: %w", err)
 	}
 
 	// Create a service in Keptn
-	err = keptnAPI.CreateService(eventData.Project, eventData.Service)
-	require.NoError(t, err)
-
-	// Upload the job configuration for the E2E test
-	jobConfigYaml, err := ioutil.ReadFile(jobConfigPath)
-	require.NoError(t, err)
-
-	err = keptnAPI.CreateJobConfig(eventData.Project, eventData.Stage, eventData.Service, jobConfigYaml)
-	require.NoError(t, err)
-
-	return testEnvironment{
-		K8s:         clientset,
-		API:         keptnAPI,
-		EventData:   eventData,
-		Event:       keptnEvent,
-		Namespace:   jesNamespace,
-		CleanupFunc: deleteProjectFunc,
+	err = env.API.CreateService(env.EventData.Project, env.EventData.Service)
+	if err != nil {
+		return fmt.Errorf("unable to create a service in keptn: %w", err)
 	}
+
+	err = env.API.CreateJobConfig(env.EventData.Project, env.EventData.Stage, env.EventData.Service, env.jobConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteProject deletes the project that was created in the test environment
+func (env testEnvironment) DeleteProject() error {
+	return env.API.DeleteProject(env.EventData.Project)
+}
+
+// Cleanup deletes all created Keptn resources / services projects
+func (env testEnvironment) Cleanup() error {
+	if err := env.DeleteProject(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetKeptnVersion returns the current version of the Keptn server as semver
+func (env testEnvironment) GetKeptnVersion() (*semver.Version, error) {
+	metadata, errModel := env.API.APIHandler.GetMetadata()
+	if errModel != nil {
+		return nil, fmt.Errorf("unable to query keptn metadata: %s", convertKeptnModelToErrorString(errModel))
+	}
+
+	keptnVersion, err := semver.NewVersion(metadata.Keptnversion)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert keptn version to semver: %w", err)
+	}
+
+	return keptnVersion, nil
+}
+
+// ShouldRun returns an error if the integration test should be skipped based on the given constraint
+func (env testEnvironment) ShouldRun(semverConstraint string) error {
+	constraint, err := semver.NewConstraint(semverConstraint)
+	if err != nil {
+		return err
+	}
+
+	keptnVersion, err := env.GetKeptnVersion()
+	if err != nil {
+		return err
+	}
+
+	if !constraint.Check(keptnVersion) {
+		return fmt.Errorf("skipping test, Keptn version %s does not satisfy expression %s", keptnVersion, constraint)
+	}
+
+	return nil
 }
 
 // requireWaitForEvent checks if an event occurred in a specific time frame while polling the event bus of keptn, the eventValidator

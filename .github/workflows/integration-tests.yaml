@@ -25,6 +25,7 @@ jobs:
       JES_E2E_TEST: true
       JES_NAMESPACE: keptn-jes-e2e
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}.json
     steps:
       - name: Install Go
         uses: actions/setup-go@v3.0.0
@@ -82,53 +83,20 @@ jobs:
           echo "KEPTN_API_TOKEN=${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}" >> $GITHUB_ENV
           go mod download
 
-      #########################################################################
-      #                           Integration Tests                           #
-      #########################################################################
-      - name: Run "Hello World" test
-        id: test_hello_world
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run "^\QTestHelloWorldDeployment\E$"
-
-      - name: Run "Files" test
-        id: test_files
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run "^\QTestResourceFiles\E$"
-
-      - name: Run "Env. variables" test
-        id: test_env_vars
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run "^\QTestEnvironmentVariables\E$"
-
-      - name: Run "Job cleanup" test
-        if: false
-        id: test_job_cleanup
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run "^TestJobCleanup*"
-
-      - name: Run "Locust" test
-        id: test_locust
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run "^\QTestLocust\E$"
-
-      #########################################################################
-
-      # Collect all test reports of the matrix in report files
-      - name: Write test report
-        if: always()
-        env:
-          TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}.json
+      - name: Run Integration tests
         run: |
-          echo "Write test report to $TEST_REPORT_FILENAME"
-          TEST_RESULT_JSON=$(echo '${{ toJson(steps) }}' | jq '. | with_entries( select(.key|contains("test_"))) | to_entries | map( {name: .key, outcome: .value.outcome} )')
+          TEST_OUTPUT=$(go test ./test/e2e/... -json | jq -c --argjson actionList '["pass","fail","skip"]' 'select(any(.Action == $actionList[]; .) and .Test != null)')
           
-          echo $TEST_RESULT_JSON > $TEST_REPORT_FILENAME
-          cat $TEST_REPORT_FILENAME
+          echo "$TEST_OUTPUT" > $TEST_REPORT_FILENAME
+          echo "Test Report: "
+          echo "$TEST_OUTPUT"
+
+      # If we failed any previous step we might have a problem and not reporting anything for the version
+      - name: Create pipeline failure report
+        if: failure()
+        run: |
+          echo "Failed to run integration tests!"
+          echo '{"Test": "TestGitHub Pipeline", "Action": "skip"}' >> $TEST_REPORT_FILENAME
 
       # Upload the report files, so we can use them in later jobs
       - name: Upload test report as an artifact
@@ -199,39 +167,28 @@ jobs:
               const platformReportFile = fs.readFileSync(TEST_REPORTS_PATH + fileName, {encoding:'utf8', flag:'r'});
               
               const keptnVersion = keptnVersionRegex.exec(fileName)[1];
-              const testResult = ndJsonParser(platformReportFile)[0];
-              
-              function capitalizeFirstLetter(string) {
-                return string.charAt(0).toUpperCase() + string.slice(1);
-              }
-              
-              if (testResult === undefined) {
-                console.log(`Unable to parse file, did the pipeline fail?`);
-              } else {
-                let jsonResultObject = {keptn_version: keptnVersion};
-                testResult.forEach(element => {
-                  jsonResultObject[element.name] = element.outcome;
-                });
-                  
-                jsonReportData.push(jsonResultObject);
+              const testResults = ndJsonParser(platformReportFile);
             
+              let jsonResultObject = {keptn_version: keptnVersion};
+              testResults.forEach(testResult => {
+                // Strip Test prefix from the name of the test
+                name = testResult.Test.substring(4)
+                jsonResultObject[name] = testResult.Action;
             
                 // For the markdown version we transpose the table layout such that tests are listed in rows and the 
                 // Keptn version are in the columns:
-                let keptnVersionRuns = {};
-                keptnVersionRuns[keptnVersion] = {};
-                testResult.forEach(element => {
-                  if (transposedTable[element.name] === undefined) {
-                    transposedTable[element.name] = {"Test": capitalizeFirstLetter(element.name.substring('test_'.length).replace('_', ' '))};
-                  }
-              
-                  switch(element.outcome) {
-                    case 'success': transposedTable[element.name][keptnVersion] = ':heavy_check_mark:'; break;
-                    case 'failure': transposedTable[element.name][keptnVersion] = ':x:';                break;
-                    default:        transposedTable[element.name][keptnVersion] = ':yellow_circle:';
-                  }
-                })
-              }
+                if (transposedTable[name] === undefined) {
+                  transposedTable[name] = {"Test": name};
+                }
+                switch(testResult.Action) {
+                  case 'pass': transposedTable[name][keptnVersion] = ':heavy_check_mark:'; break;
+                  case 'fail': transposedTable[name][keptnVersion] = ':x:';                break;
+                  case 'skip': transposedTable[name][keptnVersion] = ':yellow_circle:';    break;
+                  default:     transposedTable[name][keptnVersion] = testResult.Action;
+                }
+              });
+            
+              jsonReportData.push(jsonResultObject);
             });
             
             transposedTable = Object.values(transposedTable)
@@ -261,7 +218,7 @@ jobs:
           name: final-test-report-markdown
           path: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
 
-      # Check if a integration test failed
+      # Check if an integration test failed
       - name: Check test status
         if: always()
         id: check_test_status
@@ -275,8 +232,8 @@ jobs:
             echo "##[set-output name=INTEGRATION_TESTS_FAILED;]true"
           fi
 
-      - name: Create GitHub bug issue on errors
-        id: create_github_bug_issue
+      - name: Finalize GitHub issue template
+        id: finalize_github_issue_template
         if: always() && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
         env:
           FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}

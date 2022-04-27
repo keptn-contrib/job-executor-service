@@ -14,13 +14,19 @@ func TestLocust(t *testing.T) {
 		t.Skip("Skipping TestLocust, not allowed by environment")
 	}
 
-	testEnv := setupE2ETTestEnvironment(t,
+	testEnv, err := newTestEnvironment(
 		"../events/e2e/locust.qa.test.triggered.json",
 		"../shipyard/e2e/locust.deployment.yaml",
 		"../data/e2e/locust.config.yaml",
 	)
 
-	defer testEnv.CleanupFunc()
+	require.NoError(t, err)
+
+	err = testEnv.SetupTestEnvironment()
+	require.NoError(t, err)
+
+	// Make sure project is delete after the tests are completed
+	defer testEnv.Cleanup()
 
 	// Files to upload:
 	files := map[string]string{

@@ -12,7 +12,7 @@ Additionally, the following environment variables have to be defined:
 * `JES_E2E_TEST` - Must be set to `true` to enable the integration tests
 * `JES_NAMESPACE` - The namespace in which the job-executor-service was installed (e.g.: `keptn-jes`)
 
-After these environment variables have been defined, the test can be run with `go test -v test/e2e/*` or you can
+After these environment variables have been defined, the test can be run with `go test -v test/e2e/...` or you can
 pick specific tests by defining a filter via the `-run` parameter:
 
 ```bash
@@ -38,36 +38,22 @@ After these modifications you should be able to run the CI and the Integration t
 
 ## Adding integration tests
 
-To add integration tests to the job-executor-service, a few steps are necessary:
-* Add your test into the integration test folder (`test/e2e`) such hat it can be executed by `go test`
-* Add your test to the [integration-tests.yaml](../.github/workflows/integration-tests.yaml) by using the following
-template:
-```yaml
-      - name: <Name of the test in the workflow>
-        id: test_<name of the test in the report>
-        continue-on-error: true
-        working-directory: test/e2e
-        run: go test -v -run <Function to test>
-```
+To add integration tests to the job-executor-service, you have to add your test into the integration test folder 
+(`test/e2e`) such hat it can be executed by `go test`.
 
 ## Skipping integration tests
 
-Integration tests can be skipped entirely or just for specific versions of Keptn. For that the `if` property of the step
-has to be configured in the GitHub workflow: 
-```yaml
-  # This test will be skipped entirely 
-  - name: Run "Hello World" test
-    if: false
-    id: test_hello_world
-    continue-on-error: true
-    working-directory: test/e2e
-    run: go test -v -run "^\QTestHelloWorldDeployment\E$"
+Integration tests can be skipped entirely (`t.Skip(...)`) or just for specific versions of Keptn. For skipping the integration tests
+for a specific version, the `ShouldRun` function can be used to determine if the given Keptn version satisfies the version
+requirements.
+```go
+    testEnv, err := newTestEnvironment(/* ... */)    
 
-  # This test will be skipped for a specific Keptn version
-  - name: Run "Files" test
-    if: ${{ matrix.keptn-version != '0.12.4' }}
-    id: test_files
-    continue-on-error: true
-    working-directory: test/e2e
-    run: go test -v -run "^\QTestResourceFiles\E$"
+	// Skip this test conditionally depending on the version
+    err = testEnv.ShouldRun(">=0.12.4")
+	if err != nil {
+		t.Skip(err.Error())
+	}
+	
+	testEnv.SetupTestEnvironment()
 ```

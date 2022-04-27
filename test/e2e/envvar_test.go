@@ -16,13 +16,19 @@ func TestEnvironmentVariables(t *testing.T) {
 		t.Skip("Skipping TestEnvironmentVariables, not allowed by environment")
 	}
 
-	testEnv := setupE2ETTestEnvironment(t,
+	testEnv, err := newTestEnvironment(
 		"../events/e2e/envvar.triggered.json",
 		"../shipyard/e2e/envvar.deployment.yaml",
 		"../data/e2e/envvar.config.yaml",
 	)
 
-	defer testEnv.CleanupFunc()
+	require.NoError(t, err)
+
+	err = testEnv.SetupTestEnvironment()
+	require.NoError(t, err)
+
+	// Make sure project is delete after the tests are completed
+	defer testEnv.Cleanup()
 
 	// Create a secret for the jobs
 	secretContext, cancelFunc := context.WithTimeout(context.Background(), 1*time.Minute)

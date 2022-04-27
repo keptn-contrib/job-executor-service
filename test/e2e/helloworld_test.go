@@ -15,14 +15,19 @@ func TestHelloWorldDeployment(t *testing.T) {
 	}
 
 	// Setup the E2E test environment
-	testEnv := setupE2ETTestEnvironment(t,
+	testEnv, err := newTestEnvironment(
 		"../events/e2e/helloworld.triggered.json",
 		"../shipyard/e2e/helloworld.deployment.yaml",
 		"../data/e2e/helloworld.config.yaml",
 	)
 
+	require.NoError(t, err)
+
+	err = testEnv.SetupTestEnvironment()
+	require.NoError(t, err)
+
 	// Make sure project is delete after the tests are completed
-	defer testEnv.CleanupFunc()
+	defer testEnv.Cleanup()
 
 	// Send the event to keptn
 	keptnContext, err := testEnv.API.SendEvent(testEnv.Event)
