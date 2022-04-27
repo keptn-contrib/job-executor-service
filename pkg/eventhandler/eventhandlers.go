@@ -21,7 +21,7 @@ const (
 	defaultMaxPollDuration = 5 * time.Minute
 )
 
-//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader,K8s
+//go:generate mockgen -destination=fake/eventhandlers_mock.go -package=fake .  ImageFilter,EventMapper,JobConfigReader,K8s,ErrorLogSender
 
 // ImageFilter provides an interface for the EventHandler to check if an image is allowed to be used in the job tasks
 type ImageFilter interface {
@@ -38,6 +38,11 @@ type EventMapper interface {
 // JobConfigReader retrieves the job-executor-service configuration
 type JobConfigReader interface {
 	GetJobConfig() (*config.Config, error)
+}
+
+// ErrorLogSender is used to send error logs that will appear in Uniform UI
+type ErrorLogSender interface {
+	SendErrorLogEvent(initialCloudEvent *cloudevents.Event, applicationError error) error
 }
 
 // K8s is used to interact with kubernetes jobs
@@ -62,6 +67,7 @@ type EventHandler struct {
 	ImageFilter     ImageFilter
 	Mapper          EventMapper
 	K8s             K8s
+	ErrorSender     ErrorLogSender
 }
 
 type jobLogs struct {
@@ -92,14 +98,17 @@ func (eh *EventHandler) HandleEvent() error {
 	configuration, err := eh.JobConfigReader.GetJobConfig()
 
 	if err != nil {
-		log.Printf("Could not retrieve config for job-executor-service: %s", err.Error())
+		errorLogErr := eh.ErrorSender.SendErrorLogEvent(
+			eh.Keptn.CloudEvent, fmt.Errorf(
+				"could not retrieve config for job-executor-service: %w", err,
+			),
+		)
 
-		if eh.JobSettings.AlwaysSendFinishedEvent {
-			_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
-			if err != nil {
-				log.Printf("Error while sending started event: %s\n", err.Error())
-			}
-			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil, dataForFinishedEvent{})
+		if errorLogErr != nil {
+			log.Printf(
+				"Failed sending error log for keptn context %s: %v. Initial error: %v", eh.Keptn.KeptnContext,
+				errorLogErr, err,
+			)
 		}
 
 		return err
