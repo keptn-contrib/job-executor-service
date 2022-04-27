@@ -1,0 +1,280 @@
+name: Integration Tests
+on:
+  schedule:
+    # * is a special character in YAML, so you have to quote this string
+    - cron: '0 3 * * 1-5' # run integration tests at 3 AM, monday to friday (1-5)
+
+  workflow_dispatch: # run integration tests only when triggered manually
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  integration_test:
+    name: "Integration Tests"
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        keptn-version: [ "0.11.4", "0.12.6", "0.13.4", "0.14.1" ]
+    env:
+      GO_VERSION: 1.17
+      GO111MODULE: "on"
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+      JES_E2E_TEST: true
+      JES_NAMESPACE: keptn-jes-e2e
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}.json
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v3.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      # Checkout code for the integrations tests in test/e2e
+      - name: Check out code.
+        uses: actions/checkout@v3
+
+      # Download artifacts from last CI run
+      - name: Download artifacts
+        uses: dawidd6/action-download-artifact@v2.19.0
+        id: download_artifacts_push
+        with:
+          # Download last successful artifact from a CI build
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: CI.yml
+          branch: ${{ env.BRANCH }}
+          path: ./dist
+
+      # Prepare K3d + Keptn environment
+      - name: Install and start K3s
+        run: curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" sh -
+
+      - name: Install Keptn
+        id: install_keptn
+        uses: keptn-sandbox/action-install-keptn@v1.0.0
+        timeout-minutes: 5
+        with:
+          KEPTN_VERSION: ${{ matrix.keptn-version }}
+          KUBECONFIG: ${{ env.KUBECONFIG }}
+
+      - name: Test connection to keptn
+        run: |
+          curl -X GET "${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }}/v1/metadata" -H  "accept: application/json" -H  "x-token: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}"
+
+      # Install job executor from downloaded helm chart
+      - name: Install Job-executor-service
+        env:
+          KEPTN_API_PROTOCOL: http
+          KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
+        run: |
+          ls -lah ./dist/helm-charts/
+          
+          KEPTN_API_HOST=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)\/api/\1/')
+          helm upgrade --install --create-namespace -n $JES_NAMESPACE job-executor-service \
+            ./dist/helm-charts/job-executor-service-*.tgz \
+            --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
+            --wait
+
+      - name: Prepare test environment
+        run: |
+          echo "KEPTN_ENDPOINT=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)/\1/')" >> $GITHUB_ENV
+          echo "KEPTN_API_TOKEN=${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}" >> $GITHUB_ENV
+          go mod download
+
+      - name: Run Integration tests
+        run: |
+          TEST_OUTPUT=$(go test ./test/e2e/... -json | jq -c --argjson actionList '["pass","fail","skip"]' 'select(any(.Action == $actionList[]; .) and .Test != null)')
+          
+          echo "$TEST_OUTPUT" > $TEST_REPORT_FILENAME
+          echo "Test Report: "
+          echo "$TEST_OUTPUT"
+
+      # If we failed any previous step we might have a problem and not reporting anything for the version
+      - name: Create pipeline failure report
+        if: failure()
+        run: |
+          echo "Failed to run integration tests!"
+          echo '{"Test": "TestGitHub Pipeline", "Action": "skip"}' >> $TEST_REPORT_FILENAME
+
+      # Upload the report files, so we can use them in later jobs
+      - name: Upload test report as an artifact
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-report
+          path: test-report-*.json
+
+  publish_final_test_report:
+    name: Finalize tests reports
+    needs: integration_test
+    if: always()
+    runs-on: ubuntu-20.04
+    env:
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+      TEST_REPORTS_PATH: "./test-reports/"
+      FINAL_TEST_REPORTS_FOLDER: "./final-test-reports/"
+      FINAL_TEST_REPORT_FILEPATH_JSON: "./final-test-reports/final-test-report.json"
+      FINAL_TEST_REPORT_FILEPATH_MARKDOWN: "./final-test-reports/final-test-report.md"
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@v3.1.1
+        with:
+          node-version: 16
+      - run: npm install ndjson-parse@1.0.4 tablemark@v2.0.0
+
+      - name: Download test reports
+        uses: actions/download-artifact@v3
+        with:
+          name: test-report
+          path: ${{ env.TEST_REPORTS_PATH }}
+
+      # This step collects all test reports and merges them into one
+      # As output a markdown and a json version will be generated
+      - name: Build final test report
+        id: build_final_test_report
+        uses: actions/github-script@v6.0.0
+        env:
+          TEST_REPORTS_PATH: ${{ env.TEST_REPORTS_PATH }}
+          FINAL_TEST_REPORTS_FOLDER: ${{ env.FINAL_TEST_REPORTS_FOLDER }}
+          FINAL_TEST_REPORT_FILEPATH_JSON: ${{ env.FINAL_TEST_REPORT_FILEPATH_JSON }}
+          FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
+        with:
+          result-encoding: string
+          script: |
+            ndJsonParser = require('ndjson-parse');
+            tablemark = require('tablemark');
+            fs = require('fs');
+
+            const {TEST_REPORTS_PATH, 
+                   FINAL_TEST_REPORT_FILEPATH_JSON, 
+                   FINAL_TEST_REPORT_FILEPATH_MARKDOWN,
+                   FINAL_TEST_REPORTS_FOLDER
+                  } = process.env
+
+            const jsonReportData = [];
+            const markdownReportData = [];
+            
+            let transposedTable = {};
+            
+            const keptnVersionRegex = /test-report-\d+-(.*).json/;
+            
+            const fileList = fs.readdirSync(TEST_REPORTS_PATH);
+            fileList.forEach(fileName => {
+              console.log(`Reading file: ${fileName}`);
+              
+              const platformReportFile = fs.readFileSync(TEST_REPORTS_PATH + fileName, {encoding:'utf8', flag:'r'});
+              
+              const keptnVersion = keptnVersionRegex.exec(fileName)[1];
+              const testResults = ndJsonParser(platformReportFile);
+            
+              let jsonResultObject = {keptn_version: keptnVersion};
+              testResults.forEach(testResult => {
+                // Strip Test prefix from the name of the test
+                name = testResult.Test.substring(4)
+                jsonResultObject[name] = testResult.Action;
+            
+                // For the markdown version we transpose the table layout such that tests are listed in rows and the 
+                // Keptn version are in the columns:
+                if (transposedTable[name] === undefined) {
+                  transposedTable[name] = {"Test": name};
+                }
+                switch(testResult.Action) {
+                  case 'pass': transposedTable[name][keptnVersion] = ':heavy_check_mark:'; break;
+                  case 'fail': transposedTable[name][keptnVersion] = ':x:';                break;
+                  case 'skip': transposedTable[name][keptnVersion] = ':yellow_circle:';    break;
+                  default:     transposedTable[name][keptnVersion] = testResult.Action;
+                }
+              });
+            
+              jsonReportData.push(jsonResultObject);
+            });
+            
+            transposedTable = Object.values(transposedTable)
+            const maxColumns = jsonReportData.length;
+            let columns = [{ align: "left" }];
+            for(let i = 0; i < maxColumns; i++){ 
+              columns.push({ align: "center" });
+            }
+            
+            const markdownReport = tablemark(transposedTable, {caseHeaders: false, columns: columns});
+            
+            fs.mkdirSync(FINAL_TEST_REPORTS_FOLDER);
+            fs.writeFileSync(FINAL_TEST_REPORT_FILEPATH_JSON, JSON.stringify(jsonReportData));
+            fs.writeFileSync(FINAL_TEST_REPORT_FILEPATH_MARKDOWN, markdownReport);
+
+      - name: Upload final JSON test report as an artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: final-test-report-json
+          path: ${{ env.FINAL_TEST_REPORT_FILEPATH_JSON }}
+
+      - name: Upload final Markdown test report as an artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: final-test-report-markdown
+          path: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
+
+      # Check if an integration test failed
+      - name: Check test status
+        if: always()
+        id: check_test_status
+        env:
+          FINAL_TEST_REPORT_FILEPATH_JSON: ${{ env.FINAL_TEST_REPORT_FILEPATH_JSON }}
+        run: |
+          REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_JSON")
+          
+          if [[ "$REPORT" == *"failure"* ]]; then
+            echo "INTEGRATION TESTS FAILED!"
+            echo "##[set-output name=INTEGRATION_TESTS_FAILED;]true"
+          fi
+
+      - name: Finalize GitHub issue template
+        id: finalize_github_issue_template
+        if: always() && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        env:
+          FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
+        run: |
+          REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
+          
+          if [[ $GITHUB_EVENT_NAME == 'schedule' ]]; then
+            TRIGGERED_BY="Scheduled build"
+          else
+            TRIGGERED_BY="@$GITHUB_ACTOR"
+          fi
+          
+          INTEGRATION_FILE_LINK=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$BRANCH/.github/workflows/integration_tests.yaml
+            
+          # Create issue for the failed integration test:  
+          cat <<EOT >> integration-tests-failed.md
+          ---
+          title: Integration tests failed
+          labels: type:critical
+          ---
+          
+          * Link to run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          * Triggered by: $TRIGGERED_BY
+          * Branch: $BRANCH
+          * Commit: $GITHUB_SHA
+        
+          $REPORT
+        
+          Note: This issue was auto-generated from [integration_tests.yaml]($INTEGRATION_FILE_LINK)
+          EOT
+
+      # Create a GitHub issue if scheduled tests failed
+      - name: Create issue if tests failed
+        if: always() && github.event_name == 'schedule' && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        uses: JasonEtco/create-an-issue@v2.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          filename: integration-tests-failed.md
+
+      # This ensures that if the pipeline was triggered by hand that the user gets informed
+      - name: Fail pipeline if tests failed
+        if: always() && github.event_name != 'schedule' && steps.check_test_status.outputs.INTEGRATION_TESTS_FAILED == 'true'
+        run: exit 1

@@ -1,0 +1,20 @@
+{
+  "data": {
+    "project": "e2e-project",
+    "service": "e2e-service",
+    "stage": "e2e",
+    "labels": {
+      "e2e-label": "EXAMPLE_LABEL",
+      "jsonPathLabel": "JSON_PATH_LABEL_VALUE"
+    },
+    "additionalData": {
+      "jsonPathArray": [
+        "<not-displayed>",
+        "<displayed>"
+      ]
+    }
+  },
+  "source": "e2e-test",
+  "specversion": "1.0",
+  "type": "sh.keptn.event.e2e.jes.triggered"
+}

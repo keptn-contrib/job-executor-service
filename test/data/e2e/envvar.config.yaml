@@ -1,0 +1,55 @@
+apiVersion: v2
+actions:
+  - name: "Env vars e2e test"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Print Labels"
+        image: "alpine"
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - "env|grep LABELS_"
+
+      - name: "Print json path from event"
+        image: "alpine"
+        env:
+          - name: "E2E-jsonPathLabel"
+            value: "$.data.labels.jsonPathLabel"
+            valueFrom: event
+          - name: "E2E-jsonPathArray"
+            value: "$.data.additionalData.jsonPathArray[1]"
+            valueFrom: event
+          - name: "E2E-EVENT"
+            value: "$.data.additionalData"
+            valueFrom: event
+            as: json
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - "env|grep E2E"
+
+      - name: "Print kubernetes secrets"
+        image: "alpine"
+        env:
+          - name: "e2e-kubernetes-secret"
+            valueFrom: "secret"
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - "env|grep E2E"
+
+      - name: "Print from string literal"
+        image: "alpine"
+        env:
+          - name: E2E_DATA_DIR
+            valueFrom: string
+            value: /tmp/data
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - "env|grep E2E"

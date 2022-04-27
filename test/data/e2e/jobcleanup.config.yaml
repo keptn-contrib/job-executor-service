@@ -1,0 +1,14 @@
+apiVersion: v2
+actions:
+  - name: "Job cleanup e2e test"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Sleep a while"
+        ttlSecondsAfterFinished: 5
+        image: "alpine"
+        cmd:
+          - sh
+        args:
+          - "-c"
+          - "sleep $LABELS_SLEEP && echo sleeping done"

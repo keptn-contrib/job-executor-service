@@ -1,0 +1,13 @@
+apiVersion: v2
+actions:
+  - name: "Job cleanup e2e test"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Just print something"
+        ttlSecondsAfterFinished: 0
+        image: "alpine"
+        cmd:
+          - echo
+        args:
+          - "Bye!"

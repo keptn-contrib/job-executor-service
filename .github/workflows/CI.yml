@@ -12,6 +12,9 @@ on:
       - 'master'
       - 'main'
       - 'release-*'
+  # Allow users to manual run the CI pipeline for a specific branch, this may
+  # be needed for the integration tests as they need the generated artifacts / images
+  workflow_dispatch: # run integration tests only when triggered manually
 defaults:
   run:
     shell: bash
