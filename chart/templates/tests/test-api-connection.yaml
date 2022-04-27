@@ -1,19 +1,28 @@
-{{- if .Values.remoteControlPlane.enabled -}}
 apiVersion: v1
 kind: Pod
 metadata:
   name: "{{ include "job-executor-service.fullname" . }}-test-api-connection"
   labels:
-  {{- include "job-executor-service.labels" . | nindent 4 }}
+    {{- include "job-executor-service.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": test
 spec:
+  restartPolicy: Never
   containers:
     - name: wget
       image: busybox
+      env:
+        - name: KEPTN_API_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: job-service-config
+              key: keptn_api_endpoint
+        - name: KEPTN_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: job-service-keptn-secrets
+              key: token
       args:
-        - wget
-        - '--header=x-token: {{ .Values.remoteControlPlane.api.token }}'
-        - {{ .Values.remoteControlPlane.api.protocol }}://{{ .Values.remoteControlPlane.api.hostname }}/api/v1/metadata
-  restartPolicy: Never
-  {{- end -}}
+        - sh
+        - '-c'
+        - 'wget -q -O - --header="x-token:$KEPTN_API_TOKEN" "$KEPTN_API_ENDPOINT/v1/metadata"'
