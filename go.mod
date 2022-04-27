@@ -11,7 +11,7 @@ require (
 	github.com/keptn/go-utils v0.12.0
 	github.com/keptn/kubernetes-utils v0.12.0
 	github.com/mitchellh/mapstructure v1.4.3
-	github.com/prometheus/common v0.10.0
+	github.com/prometheus/common v0.34.0
 	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
