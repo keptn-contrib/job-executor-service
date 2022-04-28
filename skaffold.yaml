@@ -36,7 +36,7 @@ deploy:
         overrides:
           distributor:
             image:
-              tag: 0.12.6
+              tag: 0.13.4
             securityContext:
               seccompProfile:
                 type: Unconfined # needed for debugging
