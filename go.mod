@@ -11,7 +11,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.13.0
 	github.com/keptn/kubernetes-utils v0.13.0
-	github.com/mitchellh/mapstructure v1.4.3
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.7.1
 	gopkg.in/yaml.v2 v2.4.0
