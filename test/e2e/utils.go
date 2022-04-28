@@ -8,12 +8,12 @@ import (
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"github.com/mitchellh/mapstructure"
-	"github.com/prometheus/common/log"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"log"
 	"os"
 	"strconv"
 	"testing"
@@ -133,7 +133,7 @@ func createK8sSecret(ctx context.Context, clientset *kubernetes.Clientset, names
 	return func(ctx2 context.Context) {
 		err := clientset.CoreV1().Secrets(namespace).Delete(ctx2, secret.Name, metav1.DeleteOptions{})
 		if err != nil {
-			log.Error("Unable to delete secret!")
+			log.Println("Unable to delete secret!")
 		}
 	}, nil
 }
