@@ -387,6 +387,8 @@ func TestEventMatching(t *testing.T) {
 					mockK8s.EXPECT().ConnectToCluster().Return(nil).Times(0)
 				}
 
+				mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
+
 				myKeptn, _, mockEventSender, err := initializeTestObjects(test.inputs.eventFile)
 
 				require.NoError(t, err)
@@ -433,6 +435,7 @@ func TestEventMatching(t *testing.T) {
 					ImageFilter:     mockFilter,
 					Mapper:          new(KeptnCloudEventMapper),
 					K8s:             mockK8s,
+					ErrorSender:     mockUniformErrorSender,
 				}
 
 				err = sut.HandleEvent()

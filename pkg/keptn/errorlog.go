@@ -13,25 +13,32 @@ import (
 
 const errorType = "sh.keptn.log.error"
 
+// ErrorInitialCloudEventNotSpecified is returned when the cloud event passed to ErrorLogSender#SendErrorLogEvent is nil
 var /*const*/ ErrorInitialCloudEventNotSpecified = errors.New("initial cloudevent not specified")
+
+// ErrorProcessingErrorNotSpecified is returned when the error passed to ErrorLogSender#SendErrorLogEvent is nil
 var /*const*/ ErrorProcessingErrorNotSpecified = errors.New("processing error is nil")
 
+// UniformClient represents the interface implemented  by the Keptn Uniform API client
 type UniformClient interface {
 	GetRegistrations() ([]*models.Integration, error)
 }
 
+// CloudEventSender represents the interface implemented by the Keptn API client for sending cloudevents
 type CloudEventSender interface {
 	SendCloudEvent(event cloudevents.Event) error
 }
 
 //go:generate mockgen -destination=fake/errorlog_mock.go -package=fake .  UniformClient,CloudEventSender
 
+// ErrorLogSender creates and sends the error log cloudevents for the registered job-executor-service extension
 type ErrorLogSender struct {
 	uniformHandler  UniformClient
 	ceSender        CloudEventSender
 	integrationName string
 }
 
+// NewErrorLogSender returns an initialized ErrorLogSender
 func NewErrorLogSender(integrationName string, uniformClient UniformClient, sender CloudEventSender) *ErrorLogSender {
 	return &ErrorLogSender{
 		uniformHandler:  uniformClient,
@@ -40,12 +47,17 @@ func NewErrorLogSender(integrationName string, uniformClient UniformClient, send
 	}
 }
 
+// ErrorData represents the cloudevent payload of the error log. See https://github.com/keptn/spec/blob/master/cloudevents.md#error-log
 type ErrorData struct {
 	Message       string `json:"message"`
 	IntegrationID string `json:"integrationid"`
 	Task          string `json:"task,omitempty"`
 }
 
+// SendErrorLogEvent will retrieve the current registration for the job-executor-service,
+// create a cloudevent of type sh.keptn.log.error and send it back to keptn using the information retrieved from the
+// triggering cloud event and the encountered error.
+// If retrieving the integration registration or sending the error log fails, an error will be returned
 func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Event, applicationError error) error {
 
 	if initialCloudEvent == nil {
@@ -61,21 +73,21 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Even
 		return fmt.Errorf("error retrieving uniform registrations: %w", err)
 	}
 
-	var integrationId string
+	var integrationID string
 	for _, registration := range registrations {
 		if registration.Name == els.integrationName {
-			if integrationId != "" {
+			if integrationID != "" {
 				return fmt.Errorf("found multiple uniform registrations with name %s", els.integrationName)
 			}
-			integrationId = registration.ID
+			integrationID = registration.ID
 		}
 	}
 
-	if integrationId == "" {
+	if integrationID == "" {
 		return fmt.Errorf("no registration found with name %s", els.integrationName)
 	}
 
-	errorCloudEvent, err := createErrorLogCloudEvent(integrationId, initialCloudEvent, applicationError)
+	errorCloudEvent, err := createErrorLogCloudEvent(integrationID, initialCloudEvent, applicationError)
 	if err != nil {
 		return fmt.Errorf("unable to create error log cloudevent: %w", err)
 	}
@@ -96,6 +108,7 @@ func createErrorLogCloudEvent(
 
 	ev := cloudevents.NewEvent()
 	ev.SetSource(initialEvent.Source())
+	ev.SetExtension("triggeredid", initialEvent.ID())
 	ev.SetDataContentType(cloudevents.ApplicationJSON)
 	ev.SetType(errorType)
 
@@ -108,7 +121,7 @@ func createErrorLogCloudEvent(
 
 	err = ev.SetData(cloudevents.ApplicationJSON, errorData)
 	if err != nil {
-		return ev, fmt.Errorf("could not marshal cloud event payload: %v", err)
+		return ev, fmt.Errorf("could not marshal cloud event payload: %w", err)
 	}
 
 	return ev, nil

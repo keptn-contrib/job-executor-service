@@ -175,6 +175,7 @@ func TestSendErrorLogHappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedErrorCloudEvent.SetExtension("shkeptncontext", expectedKeptnCtx)
+	expectedErrorCloudEvent.SetExtension("triggeredid", initialCloudEvent.ID())
 
 	testError := errors.New("some job executor error")
 	expectedErrorData := ErrorData{

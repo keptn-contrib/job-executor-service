@@ -41,7 +41,6 @@ type JobSettings struct {
 	KeptnAPIToken               string
 	InitContainerImage          string
 	DefaultResourceRequirements *v1.ResourceRequirements
-	AlwaysSendFinishedEvent     bool
 	DefaultJobServiceAccount    string
 	DefaultSecurityContext      *v1.SecurityContext
 	DefaultPodSecurityContext   *v1.PodSecurityContext
