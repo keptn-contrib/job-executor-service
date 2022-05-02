@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	api "github.com/keptn/go-utils/pkg/api/utils"
 	v1 "k8s.io/api/core/v1"
 
 	"keptn-contrib/job-executor-service/pkg/config"
@@ -20,6 +21,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	keptn_interface "keptn-contrib/job-executor-service/pkg/keptn"
 )
 
 var keptnOptions = keptn.KeptnOpts{}
@@ -48,8 +51,6 @@ type envConfig struct {
 	DefaultResourceRequestsCPU string `envconfig:"DEFAULT_RESOURCE_REQUESTS_CPU"`
 	// Default resource requests memory for job and init container
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
-	// Respond with .finished event if no configuration found
-	AlwaysSendFinishedEvent bool `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
 	// A list of all allowed images that can be used in jobs
@@ -93,6 +94,8 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 
 	log.Printf("gotEvent(%s): %s - %s", event.Type(), myKeptn.KeptnContext, event.Context.GetID())
 
+	// create a uniform handler talking to the distributor
+	uniformHandler := api.NewUniformHandler("localhost:8081/controlPlane")
 	var eventHandler = &eventhandler.EventHandler{
 		Keptn:           myKeptn,
 		JobConfigReader: &config.JobConfigReader{Keptn: myKeptn},
@@ -106,16 +109,13 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			KeptnAPIToken:               env.KeptnAPIToken,
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,
-			AlwaysSendFinishedEvent:     false,
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
 		},
-		K8s: k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
-	}
-	if env.AlwaysSendFinishedEvent {
-		eventHandler.JobSettings.AlwaysSendFinishedEvent = true
+		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
+		ErrorSender: keptn_interface.NewErrorLogSender(ServiceName, uniformHandler, myKeptn),
 	}
 
 	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888

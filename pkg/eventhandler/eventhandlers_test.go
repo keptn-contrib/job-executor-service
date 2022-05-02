@@ -98,6 +98,7 @@ func TestErrorMappingEvent(t *testing.T) {
 	mockMapper := eventhandlerfake.NewMockEventMapper(mockCtrl)
 	mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
 	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 	mappingError := errors.New("some weird error happened during mapping")
 	mockMapper.EXPECT().Map(gomock.Any()).Times(1).Return(
@@ -116,10 +117,29 @@ func TestErrorMappingEvent(t *testing.T) {
 		JobSettings:     k8sutils.JobSettings{},
 		ImageFilter:     mockFilter,
 		Mapper:          mockMapper,
+		ErrorSender:     mockUniformErrorSender,
 	}
 	err = sut.HandleEvent()
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, mappingError)
+}
+
+type matcherErrorIs struct {
+	targetErr error
+}
+
+func (mei *matcherErrorIs) Matches(x interface{}) bool {
+
+	actualErr, ok := x.(error)
+	if !ok {
+		return false
+	}
+
+	return errors.Is(actualErr, mei.targetErr)
+}
+
+func (mei *matcherErrorIs) String() string {
+	return fmt.Sprintf("%#v", mei.targetErr)
 }
 
 func TestErrorGettingJobConfig(t *testing.T) {
@@ -128,6 +148,7 @@ func TestErrorGettingJobConfig(t *testing.T) {
 
 	mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
 	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 	errorGettingJobConfig := errors.New("error getting resource")
 	mockJobConfigReader.EXPECT().GetJobConfig().Return(
@@ -135,8 +156,13 @@ func TestErrorGettingJobConfig(t *testing.T) {
 		errorGettingJobConfig,
 	).Times(1)
 
-	myKeptn, _, _, err := initializeTestObjects("../../test/events/action.triggered.json")
+	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
 	require.NoError(t, err)
+
+	mockUniformErrorSender.EXPECT().SendErrorLogEvent(
+		myKeptn.CloudEvent,
+		&matcherErrorIs{targetErr: errorGettingJobConfig},
+	).Times(1)
 
 	sut := EventHandler{
 		Keptn:           myKeptn,
@@ -145,46 +171,12 @@ func TestErrorGettingJobConfig(t *testing.T) {
 		JobSettings:     k8sutils.JobSettings{},
 		ImageFilter:     mockFilter,
 		Mapper:          new(KeptnCloudEventMapper),
+		ErrorSender:     mockUniformErrorSender,
 	}
 
 	err = sut.HandleEvent()
 	assert.ErrorIs(t, err, errorGettingJobConfig)
-}
-
-func TestErrorGettingJobConfigAlwaysSendFinishedEvent(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
-	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
-
-	errorGettingJobConfig := errors.New("error getting resource")
-	mockJobConfigReader.EXPECT().GetJobConfig().Return(
-		nil,
-		errorGettingJobConfig,
-	).Times(1)
-
-	myKeptn, _, mockEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
-	require.NoError(t, err)
-
-	sut := EventHandler{
-		Keptn:           myKeptn,
-		JobConfigReader: mockJobConfigReader,
-		ServiceName:     "test-jes",
-		JobSettings:     k8sutils.JobSettings{AlwaysSendFinishedEvent: true},
-		ImageFilter:     mockFilter,
-		Mapper:          new(KeptnCloudEventMapper),
-	}
-
-	err = sut.HandleEvent()
-	assert.ErrorIs(t, err, errorGettingJobConfig)
-	assert.NoError(
-		t, mockEventSender.AssertSentEventTypes(
-			[]string{
-				"sh.keptn.event.action.started", "sh.keptn.event.action.finished",
-			},
-		),
-	)
+	assert.NoError(t, fakeEventSender.AssertSentEventTypes([]string{}))
 }
 
 func TestErrorConnectingToK8s(t *testing.T) {
@@ -217,6 +209,7 @@ func TestErrorConnectingToK8s(t *testing.T) {
 
 				mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
 				mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+				mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 				mockJobConfigReader.EXPECT().GetJobConfig().Return(
 					&config.Config{
@@ -256,10 +249,11 @@ func TestErrorConnectingToK8s(t *testing.T) {
 					Keptn:           myKeptn,
 					JobConfigReader: mockJobConfigReader,
 					ServiceName:     "test-jes",
-					JobSettings:     k8sutils.JobSettings{AlwaysSendFinishedEvent: true},
+					JobSettings:     k8sutils.JobSettings{},
 					ImageFilter:     mockFilter,
 					Mapper:          new(KeptnCloudEventMapper),
 					K8s:             mockK8s,
+					ErrorSender:     mockUniformErrorSender,
 				}
 
 				err = sut.HandleEvent()
@@ -328,8 +322,7 @@ func TestEventMatching(t *testing.T) {
 	}
 
 	type testInput struct {
-		eventFile               string
-		alwaysSendFinishedEvent bool
+		eventFile string
 	}
 
 	type testExpectations struct {
@@ -345,8 +338,7 @@ func TestEventMatching(t *testing.T) {
 		{
 			name: "Event matching test action",
 			inputs: testInput{
-				eventFile:               "../../test/events/test.triggered.json",
-				alwaysSendFinishedEvent: true,
+				eventFile: "../../test/events/test.triggered.json",
 			},
 			expected: testExpectations{
 				events: []string{"sh.keptn.event.test.started", "sh.keptn.event.test.finished"},
@@ -361,8 +353,7 @@ func TestEventMatching(t *testing.T) {
 		{
 			name: "No match",
 			inputs: testInput{
-				eventFile:               "../../test/events/action.triggered.json",
-				alwaysSendFinishedEvent: true,
+				eventFile: "../../test/events/action.triggered.json",
 			},
 			expected: testExpectations{
 				events:          []string{},
@@ -396,6 +387,8 @@ func TestEventMatching(t *testing.T) {
 					mockK8s.EXPECT().ConnectToCluster().Return(nil).Times(0)
 				}
 
+				mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
+
 				myKeptn, _, mockEventSender, err := initializeTestObjects(test.inputs.eventFile)
 
 				require.NoError(t, err)
@@ -412,7 +405,7 @@ func TestEventMatching(t *testing.T) {
 								taskName,
 							},
 							gomock.Eq(myKeptn.Event),
-							gomock.Eq(k8sutils.JobSettings{AlwaysSendFinishedEvent: test.inputs.alwaysSendFinishedEvent}),
+							gomock.Eq(k8sutils.JobSettings{}),
 							gomock.Any(),
 							gomock.Eq(""),
 						).Times(1)
@@ -438,10 +431,11 @@ func TestEventMatching(t *testing.T) {
 					Keptn:           myKeptn,
 					JobConfigReader: mockJobConfigReader,
 					ServiceName:     "test-jes",
-					JobSettings:     k8sutils.JobSettings{AlwaysSendFinishedEvent: true},
+					JobSettings:     k8sutils.JobSettings{},
 					ImageFilter:     mockFilter,
 					Mapper:          new(KeptnCloudEventMapper),
 					K8s:             mockK8s,
+					ErrorSender:     mockUniformErrorSender,
 				}
 
 				err = sut.HandleEvent()
