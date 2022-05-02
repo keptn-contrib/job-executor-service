@@ -442,3 +442,13 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 
 	return generatedEnv, nil
 }
+
+// ExistsServiceAccount returns true of the given service account exists in the namespace
+func (k8s *K8sImpl) ExistsServiceAccount(saName string, namespace string) bool {
+	_, err := k8s.clientset.CoreV1().ServiceAccounts(namespace).Get(context.TODO(), saName, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	return true
+}

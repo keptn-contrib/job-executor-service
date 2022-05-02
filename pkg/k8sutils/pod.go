@@ -57,9 +57,12 @@ func (k8s *K8sImpl) GetLogsOfPod(jobName string, namespace string) (string, erro
 				logsOfContainer = fmt.Sprintf("Unable to query logs of container: %s", err.Error())
 			}
 
-			// Build the final logging output for the container
-			logs.WriteString(buildLogOutputForContainer(container, logsOfContainer))
-			logs.WriteString("\n")
+			// If the container did not put out any logs, we skip it entirely to prevent polluting the
+			// log output too much by appending a lot of empty lines for each container
+			if logsOfContainer != "" {
+				logs.WriteString(buildLogOutputForContainer(pod, container, logsOfContainer))
+				logs.WriteString("\n")
+			}
 		}
 	}
 
@@ -140,27 +143,23 @@ func getTerminatedContainersWithStatusOfPod(pod v1.Pod) []containerStatus {
 // format. Depending on the status the output changes slightly (output will be empty of no logs are produced):
 //
 // - Normal output:
-// 		Container <container.name>:
+// 		Container <container.name> of pod <pod.name>:
 //  	<logsOfContainer>
 //
 // - In case of an error:
-// 		Container <container.name> terminated with an error (Reason: <reason> [, Message: <message> |, ExitCode: <code>]):
+// 		Container <container.name> of pod <pod.name> terminated with an error (Reason: <reason> [, Message: <message> |, ExitCode: <code>]):
 // 		<logsOfContainer>
 //
-func buildLogOutputForContainer(container containerStatus, logsOfContainer string) string {
+func buildLogOutputForContainer(pod v1.Pod, container containerStatus, logsOfContainer string) string {
 	var logs strings.Builder
-
-	// If the container did not put out any logs, we skip it entirely to prevent polluting the
-	// log output too much by appending <no logs available for container> for each container
-	if logsOfContainer == "" {
-		return ""
-	}
 
 	// Prepend the container name at the beginning, so we are able to separate logs of different containers
 	// and display a termination error at the beginning, may be more interesting than the logs of the container
 	if container.status.Reason != "Completed" {
 		logs.WriteString("Container ")
 		logs.WriteString(container.name)
+		logs.WriteString(" of pod ")
+		logs.WriteString(pod.Name)
 		logs.WriteString(" terminated with an error (Reason: ")
 		logs.WriteString(container.status.Reason)
 
@@ -180,6 +179,8 @@ func buildLogOutputForContainer(container containerStatus, logsOfContainer strin
 	} else {
 		logs.WriteString("Container ")
 		logs.WriteString(container.name)
+		logs.WriteString(" of pod ")
+		logs.WriteString(pod.Name)
 		logs.WriteString(":\n")
 	}
 

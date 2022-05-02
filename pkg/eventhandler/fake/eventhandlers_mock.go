@@ -193,6 +193,20 @@ func (mr *MockK8sMockRecorder) CreateK8sJob(arg0, arg1, arg2, arg3, arg4, arg5, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
+// ExistsServiceAccount mocks base method.
+func (m *MockK8s) ExistsServiceAccount(arg0, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExistsServiceAccount", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ExistsServiceAccount indicates an expected call of ExistsServiceAccount.
+func (mr *MockK8sMockRecorder) ExistsServiceAccount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsServiceAccount", reflect.TypeOf((*MockK8s)(nil).ExistsServiceAccount), arg0, arg1)
+}
+
 // GetLogsOfPod mocks base method.
 func (m *MockK8s) GetLogsOfPod(arg0, arg1 string) (string, error) {
 	m.ctrl.T.Helper()

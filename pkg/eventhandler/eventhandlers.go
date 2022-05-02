@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keptn/go-utils/pkg/lib/keptn"
@@ -56,6 +57,7 @@ type K8s interface {
 		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
 	) error
 	GetLogsOfPod(jobName string, namespace string) (string, error)
+	ExistsServiceAccount(saName string, namespace string) bool
 }
 
 // EventHandler contains all information needed to process an event
@@ -147,7 +149,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 	if err != nil {
 		log.Printf("Error while connecting to cluster: %s\n", err.Error())
 		if !action.Silent {
-			sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, err, "")
+			sendJobFailedEvent(eh.Keptn, "", eh.ServiceName, err)
 		}
 		return
 	}
@@ -157,15 +159,32 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 		start: time.Now(),
 	}
 
-	// To execute all tasks atomically, we check all images
-	// before we start executing a single task of a job
+	// To execute all tasks atomically, we check all images before we start executing a single task of a job
+	// Additionally we want to check if the job configuration is sound (like validating the specified serviceAccounts)
 	for _, task := range action.Tasks {
+
+		namespace := eh.JobSettings.JobNamespace
+		if len(task.Namespace) > 0 {
+			namespace = task.Namespace
+		}
+
 		if !eh.ImageFilter.IsImageAllowed(task.Image) {
 			errorText := fmt.Sprintf("Forbidden: Image %s does not match configured image allowlist.\n", task.Image)
 
 			log.Printf(errorText)
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, "", eh.ServiceName, errors.New(errorText), "")
+				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, errors.New(errorText), "")
+			}
+
+			return
+		}
+
+		if task.ServiceAccount != nil && !eh.K8s.ExistsServiceAccount(*task.ServiceAccount, namespace) {
+			errorText := fmt.Sprintf("Error: service account %s does not exist!\n", *task.ServiceAccount)
+
+			log.Printf(errorText)
+			if !action.Silent {
+				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, errors.New(errorText), "")
 			}
 
 			return
@@ -192,7 +211,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 		if err != nil {
 			log.Printf("Error while creating job: %s\n", err)
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, err, "")
+				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, err, "")
 			}
 			return
 		}
@@ -211,14 +230,14 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 		if jobErr != nil {
 			log.Printf("Error while creating job: %s\n", jobErr.Error())
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, jobName, eh.ServiceName, jobErr, logs)
+				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, jobErr, logs)
 			}
 			return
 		}
 
 		allJobLogs = append(
 			allJobLogs, jobLogs{
-				name: jobName,
+				name: task.Name,
 				logs: logs,
 			},
 		)
@@ -233,13 +252,13 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 	}
 }
 
-func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error, logs string) {
+func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, taskName string, serviceName string, err error, logs string) {
 	var message string
 
 	if logs != "" {
-		message = fmt.Sprintf("Job %s failed: %s\n\nLogs: \n%s", jobName, err, logs)
+		message = fmt.Sprintf("Task '%s' failed: %s\n\nLogs: \n%s", taskName, err.Error(), logs)
 	} else {
-		message = fmt.Sprintf("Job %s failed: %s", jobName, err)
+		message = fmt.Sprintf("Task '%s' failed: %s", taskName, err.Error())
 	}
 
 	_, err = myKeptn.SendTaskFinishedEvent(
@@ -255,18 +274,33 @@ func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName str
 	}
 }
 
+func sendJobFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName string, err error) {
+	_, err = myKeptn.SendTaskFinishedEvent(
+		&keptnv2.EventData{
+			Status:  keptnv2.StatusErrored,
+			Result:  keptnv2.ResultFailed,
+			Message: fmt.Sprintf("Job %s failed: %s", jobName, err.Error()),
+		}, serviceName,
+	)
+
+	if err != nil {
+		log.Printf("Error while sending started event: %s\n", err)
+	}
+}
+
 func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs []jobLogs, data dataForFinishedEvent) {
-	var message string
+	var logMessage strings.Builder
 
 	for _, jobLogs := range jobLogs {
-		message += fmt.Sprintf("Job %s finished successfully!\n\nLogs:\n%s\n\n", jobLogs.name, jobLogs.logs)
+		logMessage.WriteString(
+			fmt.Sprintf("Task '%s' finished successfully!\n\nLogs:\n%s\n\n", jobLogs.name, jobLogs.logs),
+		)
 	}
 
 	eventData := &keptnv2.EventData{
-
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
-		Message: message,
+		Message: logMessage.String(),
 	}
 
 	var err error
