@@ -65,6 +65,7 @@ In order to install the *job-executor-service* on the remote execution plane, so
 * `remoteControlPlane.api.token` - Keptn API Token (can be obtained from Bridge)
 
 **Example**
+
 ```bash
 KEPTN_API_PROTOCOL=http # or https
 KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
@@ -81,6 +82,22 @@ Please replace `<VERSION>` with the actual version you want to install from the 
 [GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases).
 
 To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
+
+**Example (with auto-detection)**
+
+For easier installation of the *job-executor-service* a Keptn installation on the same kubernetes cluster can be discovered automatically. This only
+works if no `remoteControlPlane.api.token`, `remoteControlPlane.api.protocol` or `remoteControlPlane.api.hostname` is provided.
+If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.namespace` must be set to the desired Keptn instance.
+The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.
+
+```bash
+TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
+
+helm upgrade --install --create-namespace -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+ --set remoteControlPlane.autoDetect.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
+```
+
 
 ### Update API Token on Remote Execution-Plane
 
@@ -118,6 +135,15 @@ helm upgrade -n <NAMESPACE> \
   --reuse-values
 ```
 
+To upgrade to a newer version of *job-executor-service* and automatically use the auto-detection to configure the Keptn API token, run
+
+```bash
+helm upgrade -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  --reuse-values \
+  --set remoteControlPlane.autoDetect.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
+```
+
 ## Uninstall
 
 To uninstall *job-executor-service*, run
@@ -136,7 +162,8 @@ When writing code, it is recommended to follow the coding style suggested by the
 
 * Run tests: `go test -race -v ./...`
 * Deploy the service during development using [Skaffold](https://skaffold.dev/):  
-  `skaffold run --default-repo=<your-docker-registry> --tail` (Note: replace `<your-docker-registry>` with your DockerHub username)
+  `skaffold run --default-repo=<your-docker-registry> --tail`
+(Note: replace `<your-docker-registry>` with your DockerHub username; The development deployment assumes that only one Keptn version is present on the cluster)
 * Watch the deployment using `kubectl`: `kubectl -n keptn get deployment job-executor-service -o wide`
 * Get logs using `kubectl`: `kubectl -n keptn logs deployment/job-executor-service -f`
 * Watch the deployed pods using `kubectl`: `kubectl -n keptn get pods -l run=job-executor-service`

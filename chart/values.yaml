@@ -31,10 +31,13 @@ distributor:
 
 remoteControlPlane:
   topicSubscription: "sh.keptn.event.test.triggered,sh.keptn.event.deployment.triggered,sh.keptn.event.evaluation.triggered,sh.keptn.event.release.triggered,sh.keptn.event.approval.triggered" # Specify list of CloudEvents to subscribe to in the case of remote control plane
+  autoDetect:                                # The auto-detection feature enables helm to query the API token from the Keptn installation, no api.token, api.protocol, api.hostname must be specified
+    enabled: false                           # Enable of the auto-detection of the Keptn install
+    namespace: ""                            # If multiple instances of Keptn are installed, the namespace of the target instance must be given
   api:
     protocol: "http"                         # Used Protocol (http, https)
-    hostname: "api-gateway-nginx.keptn"      # Hostname of the control plane cluster (and Port)
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
+    hostname: "api-gateway-nginx.keptn"      # Hostname of the control plane cluster, Port
     token: ""                                # Keptn API Token
 
 jobConfig:

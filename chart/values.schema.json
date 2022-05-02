@@ -4,28 +4,82 @@
     "remoteControlPlane": {
       "type": "object",
       "properties": {
-        "api": {
+        "autoDetect": {
           "type": "object",
           "required": [
-            "protocol",
-            "hostname",
-            "token"
+            "enabled"
           ],
           "properties": {
-            "hostname": {
-              "pattern": "^[a-z0-9][a-z0-9-.]{2,63}$"
-            },
-            "protocol": {
+            "enabled": {
               "enum": [
-                "http",
-                "https"
+                true,
+                false
               ]
             },
+            "namespace": {
+              "pattern": "^[a-z0-9][a-z0-9-.]{2,62}[a-z0-9]|$"
+            }
+          }
+        },
+        "api": {
+          "type": "object",
+          "required": [],
+          "properties": {
             "apiValidateTls": {
               "type": "boolean"
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "autoDetect": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "api": {
+            "properties": {
+              "hostname": {
+                "pattern": "^[a-z0-9][a-z0-9-.]{2,63}$"
+              },
+              "protocol": {
+                "enum": [
+                  "http",
+                  "https"
+                ]
+              },
+              "token": {
+                "pattern": "^[A-Za-z0-9-.]{2,63}|$"
+              }
             },
-            "token": {
-              "pattern": "^[A-Za-z0-9-.]{2,63}|$"
+            "required": [
+              "protocol",
+              "hostname",
+              "token"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "api": {
+            "properties": {
+              "protocol": {
+                "pattern": "^$"
+              },
+              "hostname": {
+                "pattern": "^$"
+              },
+              "token": {
+                "pattern": "^$"
+              }
             }
           }
         }
