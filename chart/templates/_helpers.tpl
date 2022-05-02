@@ -97,7 +97,7 @@ Helper functions of the auto detection feature of Keptn
 
     {{- /* Find api-gateway-nginx service, which is used as keptn api gatway */ -}}
     {{- range $index, $srv := (lookup "v1" "Service" "" "").items }}
-        {{- if and (eq $srv.metadata.name "api-gateway-nginx") (hasPrefix "keptn-" (index $srv.metadata.labels "app.kubernetes.io/part-of")) }}
+        {{- if and (eq $srv.metadata.name "api-gateway-nginx") (hasPrefix "keptn-" ((get $srv.metadata.labels "app.kubernetes.io/part-of") | default "")) }}
             {{- $detectedKeptnNamespaces = append $detectedKeptnNamespaces $srv.metadata.namespace }}
         {{- end }}
     {{- end }}
