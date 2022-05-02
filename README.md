@@ -85,7 +85,7 @@ To verify that everything works you can visit Bridge, select a project, go to Un
 
 **Example (with auto-detection)**
 
-For easier installation of the *job-executor-service* a single Keptn installation can be auto-detected. This only
+For easier installation of the *job-executor-service* a Keptn installation on the same kubernetes cluster can be discovered automatically. This only
 works if no `remoteControlPlane.api.token`, `remoteControlPlane.api.protocol` or `remoteControlPlane.api.hostname` is provided.
 If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.namespace` must be set to the desired Keptn instance.
 The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.

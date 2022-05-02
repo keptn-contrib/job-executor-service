@@ -17,6 +17,7 @@ build:
 deploy:
   helm:
     flags:
+      install: [ "--create-namespace" ]
       upgrade: [ "--install", "--create-namespace", "--reuse-values"] # keep configuration (e.g., Keptn API Token)
     releases:
       - name: job-executor-service # needs to be the same name as currently used (check via helm ls -n keptn)

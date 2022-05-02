@@ -90,27 +90,24 @@ Create the name of the job service account to use
 Helper functions of the auto detection feature of Keptn
 */}}
 {{- define "job-executor-service.remote-control-plane.namespace" -}}
-    {{- if .Values.remoteControlPlane.autoDetect.namespace }}
-        {{- .Values.remoteControlPlane.autoDetect.namespace }}
-    {{- else }}
-    {{- $detectedKeptnNamespaces := list }}
+    {{- $detectedKeptnApiGateways := list }}
 
     {{- /* Find api-gateway-nginx service, which is used as keptn api gatway */ -}}
-    {{- range $index, $srv := (lookup "v1" "Service" "" "").items }}
-        {{- if and (eq $srv.metadata.name "api-gateway-nginx") (hasPrefix "keptn-" ((get $srv.metadata.labels "app.kubernetes.io/part-of") | default "")) }}
-            {{- $detectedKeptnNamespaces = append $detectedKeptnNamespaces $srv.metadata.namespace }}
+    {{- $services := lookup "v1" "Service" (.Values.remoteControlPlane.autoDetect.namespace | default "") "" }}
+    {{- range $index, $srv := $services.items }}
+        {{- if and (eq "api-gateway-nginx" $srv.metadata.name ) (hasPrefix "keptn-" ( get $srv.metadata.labels "app.kubernetes.io/part-of" )) }}
+            {{- $detectedKeptnApiGateways = append $detectedKeptnApiGateways $srv }}
         {{- end }}
     {{- end }}
 
-    {{- if eq (len $detectedKeptnNamespaces) 0 }}
-        {{- fail "Unable to detect Kepn in the kubernetes cluster!" }}
+    {{- if eq (len $detectedKeptnApiGateways) 0 }}
+        {{- fail "Unable to detect Keptn in the kubernetes cluster!" }}
     {{- end }}
-    {{- if gt (len $detectedKeptnNamespaces) 1 }}
-        {{- fail "Detected more than one Keptn installation!" }}
+    {{- if gt (len $detectedKeptnApiGateways) 1 }}
+        {{- fail (printf "Detected more than one Keptn installation: %+v" $detectedKeptnApiGateways) }}
     {{- end }}
 
-    {{- index $detectedKeptnNamespaces 0 }}
-    {{- end }}
+    {{- (index $detectedKeptnApiGateways 0).metadata.namespace }}
 {{- end }}
 
 {{- define "job-executor-service.remote-control-plane.token" -}}
