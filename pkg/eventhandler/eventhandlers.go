@@ -57,7 +57,6 @@ type K8s interface {
 		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
 	) error
 	GetLogsOfPod(jobName string, namespace string) (string, error)
-	ExistsServiceAccount(saName string, namespace string) bool
 }
 
 // EventHandler contains all information needed to process an event
@@ -159,28 +158,11 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 		start: time.Now(),
 	}
 
-	// To execute all tasks atomically, we check all images before we start executing a single task of a job
-	// Additionally we want to check if the job configuration is sound (like validating the specified serviceAccounts)
+	// To execute all tasks atomically, we check all images
+	// before we start executing a single task of a job
 	for _, task := range action.Tasks {
-
-		namespace := eh.JobSettings.JobNamespace
-		if len(task.Namespace) > 0 {
-			namespace = task.Namespace
-		}
-
 		if !eh.ImageFilter.IsImageAllowed(task.Image) {
 			errorText := fmt.Sprintf("Forbidden: Image %s does not match configured image allowlist.\n", task.Image)
-
-			log.Printf(errorText)
-			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, errors.New(errorText), "")
-			}
-
-			return
-		}
-
-		if task.ServiceAccount != nil && !eh.K8s.ExistsServiceAccount(*task.ServiceAccount, namespace) {
-			errorText := fmt.Sprintf("Error: service account %s does not exist!\n", *task.ServiceAccount)
 
 			log.Printf(errorText)
 			if !action.Silent {
