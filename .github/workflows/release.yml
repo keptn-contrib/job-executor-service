@@ -13,7 +13,7 @@ jobs:
   release:
     needs: test
     name: Release
-    uses: keptn/gh-automation/.github/workflows/release-integration.yml@v1.5.2
+    uses: keptn/gh-automation/.github/workflows/release-integration.yml@v1.5.3
 
   docker_build:
     needs: [release]
@@ -33,7 +33,7 @@ jobs:
 
       - name: Docker Build
         id: docker_build_service
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.2
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.3
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
@@ -45,7 +45,7 @@ jobs:
 
       - name: Docker Build Initcontainer
         id: docker_build_initcontainer
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.2
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.3
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
