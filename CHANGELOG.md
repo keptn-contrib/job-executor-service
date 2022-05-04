@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/keptn-contrib/job-executor-service/compare/0.1.8...0.2.0) (2022-05-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* The `enableKubernetesApiAccess` flag is removed in favor of the serviceAccount configuration for jobs
+* - The job-executor-service is moved into it's own namespace (e.g.: keptn-jes) to isolate the jobs from other Keptn services
+- A valid Keptn API token is needed for the job-executor-service to function properly
+- A more restrictive service account is used for jobs
+
+Signed-off-by: Raphael Ludwig <raphael.ludwig@dynatrace.com>
+
+### Features
+
+* Add allowlist for job images ([#213](https://github.com/keptn-contrib/job-executor-service/issues/213)) ([f3febab](https://github.com/keptn-contrib/job-executor-service/commit/f3febab8ed8791f550e5f109cf205d5b632eb263))
+* Add Keptn auto-detection ([#227](https://github.com/keptn-contrib/job-executor-service/issues/227)) ([741c876](https://github.com/keptn-contrib/job-executor-service/commit/741c876c3e8da52a9df89790726234b9bc078dcf))
+* Create a security context for the job-executor-service  ([#205](https://github.com/keptn-contrib/job-executor-service/issues/205)) ([17b58a7](https://github.com/keptn-contrib/job-executor-service/commit/17b58a7ce5d905f5d07478b5148c663beb216b7c))
+* Introduce serviceAccount for job workloads ([#223](https://github.com/keptn-contrib/job-executor-service/issues/223)) ([1192649](https://github.com/keptn-contrib/job-executor-service/commit/119264941f2081d9552a2917aba695c74f3fcccf))
+* Job security context ([#221](https://github.com/keptn-contrib/job-executor-service/issues/221)) ([9185e8e](https://github.com/keptn-contrib/job-executor-service/commit/9185e8e3ec1ec1dbdf6070ded245c102208d362f))
+* Move job-executor-service to it's own namespace ([#207](https://github.com/keptn-contrib/job-executor-service/issues/207)) ([8139bd5](https://github.com/keptn-contrib/job-executor-service/commit/8139bd5d228bca1686fbaff752da62290584e141))
+* Restrict service account of jobs ([#204](https://github.com/keptn-contrib/job-executor-service/issues/204)) ([07dd337](https://github.com/keptn-contrib/job-executor-service/commit/07dd33713383d264b9f2627aad96df0737e3b975))
+* send error log when error occurs before starting any job ([5768b46](https://github.com/keptn-contrib/job-executor-service/commit/5768b46cf4ea5a90024db59bddd2fbbfaa30364e))
+* Upgrade to Keptn 0.13 ([#228](https://github.com/keptn-contrib/job-executor-service/issues/228)) ([c287632](https://github.com/keptn-contrib/job-executor-service/commit/c287632ccc865e33b8798cfb365d6f83a21fb49a))
+
+
+### Docs
+
+* fixed documentation for the usage of labels ([#216](https://github.com/keptn-contrib/job-executor-service/issues/216)) ([cb3f9f5](https://github.com/keptn-contrib/job-executor-service/commit/cb3f9f534f146e9123c0597b2e682266ce6a6b91))
+* Provide incompatibility warning for Keptn 0.14.x ([#218](https://github.com/keptn-contrib/job-executor-service/issues/218)) ([4cb3380](https://github.com/keptn-contrib/job-executor-service/commit/4cb3380b8f529dfe0486ab053696d26cebec0ed3))
+* updated compatibility matrix ([#211](https://github.com/keptn-contrib/job-executor-service/issues/211)) ([0ef5cb2](https://github.com/keptn-contrib/job-executor-service/commit/0ef5cb2e89318962a0da1add00c49194ff875277))
+
+
+### Refactoring
+
+* remove prometheus dependency ([#232](https://github.com/keptn-contrib/job-executor-service/issues/232)) ([5ab969c](https://github.com/keptn-contrib/job-executor-service/commit/5ab969c9ffe9d258860ef4b350c67d23cd43d514))
+* separate event data mapping from handling and remove redundant EventHandler attributes ([dfe009d](https://github.com/keptn-contrib/job-executor-service/commit/dfe009d0ee1b01f8bc0fb54592f5c8a3f3cd0d9e))
+
 ### [0.1.8](https://github.com/keptn-contrib/job-executor-service/compare/0.1.7...0.1.8) (2022-03-30)
 
 
