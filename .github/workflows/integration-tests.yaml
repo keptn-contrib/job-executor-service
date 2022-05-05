@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
         keptn-version: [ "0.11.4", "0.12.6", "0.13.4", "0.14.1" ]
     env:
@@ -62,6 +63,7 @@ jobs:
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
+          KEPTN_INSTALL_PARAMETERS: -v --endpoint-service-type=LoadBalancer
 
       - name: Test connection to keptn
         run: |
@@ -105,6 +107,24 @@ jobs:
         with:
           name: test-report
           path: test-report-*.json
+
+      - name: keptn generate support-archive
+        if: always()
+        env:
+          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}
+        timeout-minutes: 5
+        run: |
+          mkdir support-archive/
+          echo "y" | keptn generate support-archive -n keptn
+          mv support-archive/keptn*.zip support-archive/${SUPPORT_ARCHIVE_FILENAME}.zip
+
+      # Upload the keptn support archive files, so we can use them for debugging
+      - name: Upload keptn support archive
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: keptn-support-archive-${{matrix.keptn-version}}
+          path: support-archive/*.zip
 
   publish_final_test_report:
     name: Finalize tests reports
