@@ -86,7 +86,7 @@ func (k8s *K8sImpl) ConnectToCluster() error {
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 // returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
 func (k8s *K8sImpl) CreateK8sJob(
-	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
+	jobName string, action *config.Action, actionID string, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
 
@@ -166,15 +166,20 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
+	jobLabels, err := generateJobLabelsFromEventData(jobName, actionID, jsonEventData)
+	if err != nil {
+		return err
+	}
+
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
 			Namespace: namespace,
+			Labels:    jobLabels,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-
 					SecurityContext: jobSettings.DefaultPodSecurityContext,
 					InitContainers: []v1.Container{
 						{
@@ -472,4 +477,39 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 	}
 
 	return generatedEnv, nil
+}
+
+func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventData interface{}) (map[string]string, error) {
+	eventAsMap, ok := jsonEventData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unable to process jsonEventData")
+	}
+
+	keptnContext, ok := eventAsMap["shkeptncontext"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jsonEventData does not contain the field shkeptncontext")
+	}
+
+	eventId, ok := eventAsMap["id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jsonEventData does not contain the field id")
+	}
+
+	gitCommitId, ok := eventAsMap["gitcommitid"].(string)
+	if !ok {
+		// For legacy events that have no git commit id we just set it to an empty string
+		gitCommitId = ""
+	}
+
+	splitJobName := strings.Split(jobName, "-")
+	jobIndex := splitJobName[len(splitJobName)-1]
+
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "job-executor-service",
+		"keptn.sh/context":             keptnContext,
+		"keptn.sh/ceid":                eventId,
+		"keptn.sh/commitid":            gitCommitId,
+		"keptn.sh/jes-action":          actionID,
+		"keptn.sh/jes-task-index":      jobIndex,
+	}, nil
 }

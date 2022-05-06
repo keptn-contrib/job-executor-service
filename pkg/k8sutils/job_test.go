@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
+	k8stesting "k8s.io/client-go/testing"
 	"strings"
 	"testing"
 	"time"
@@ -337,7 +340,7 @@ func TestSetWorkingDir(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, config.Task{
+		}, "0", config.Task{
 			Name:       jobName,
 			Image:      "alpine",
 			Cmd:        []string{"ls"},
@@ -350,7 +353,7 @@ func TestSetWorkingDir(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", testNamespace,
+		}, eventAsInterface, testNamespace,
 	)
 
 	require.NoError(t, err)
@@ -395,7 +398,7 @@ func TestSetCustomNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, config.Task{
+		}, "0", config.Task{
 			Name:  jobName,
 			Image: "alpine",
 			Cmd:   []string{"ls"},
@@ -407,7 +410,7 @@ func TestSetCustomNamespace(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", namespace,
+		}, eventAsInterface, namespace,
 	)
 
 	require.NoError(t, err)
@@ -440,7 +443,7 @@ func TestSetEmptyNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, config.Task{
+		}, "0", config.Task{
 			Name:  jobName,
 			Image: "alpine",
 			Cmd:   []string{"ls"},
@@ -452,7 +455,7 @@ func TestSetEmptyNamespace(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", namespace,
+		}, eventAsInterface, namespace,
 	)
 
 	require.NoError(t, err)
@@ -521,8 +524,11 @@ func TestImagePullPolicy(t *testing.T) {
 
 				namespace := "test-namespace"
 
+				var eventAsInterface interface{}
+				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName, &config.Action{Name: jobName}, "0", task, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -530,7 +536,7 @@ func TestImagePullPolicy(t *testing.T) {
 						},
 						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 						DefaultSecurityContext:    new(corev1.SecurityContext),
-					}, "", namespace,
+					}, eventAsInterface, namespace,
 				)
 				require.NoError(t, err)
 
@@ -595,8 +601,11 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 
 				namespace := "test-namespace"
 
+				var eventAsInterface interface{}
+				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName, &config.Action{Name: jobName}, "0", task, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -604,7 +613,7 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 						},
 						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 						DefaultSecurityContext:    new(corev1.SecurityContext),
-					}, "", namespace,
+					}, eventAsInterface, namespace,
 				)
 				require.NoError(t, err)
 
@@ -922,5 +931,144 @@ func createK8sSecretObj(name string, namespace string, data map[string][]byte) *
 		},
 		Data: data,
 		Type: "Opaque",
+	}
+}
+
+func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	// Prepend reactor that we are able to assert metadata labels
+	k8sClientSet.PrependReactor(
+		"create", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+			job := action.(k8stesting.CreateAction).GetObject().(*v1.Job)
+
+			for name, value := range job.ObjectMeta.Labels {
+				assert.Regexpf(t, "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$", value,
+					"Label %s does not match k8s label specification", name,
+				)
+			}
+
+			return false, nil, nil
+		},
+	)
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterfaceWithoutGitCommitId map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterfaceWithoutGitCommitId)
+	require.NoError(t, err)
+
+	var eventAsInterfaceWithGitCommitId map[string]interface{}
+	data, err := ioutil.ReadFile("../../test/events/test.triggered.with-gitcommitid.json")
+	require.NoError(t, err)
+
+	err = json.Unmarshal(data, &eventAsInterfaceWithGitCommitId)
+	require.NoError(t, err)
+
+	namespace := testNamespace
+	actionName := "job-action"
+
+	tests := []struct {
+		name     string
+		actionID string
+		jobName  string
+		event    interface{}
+		labels   map[string]string
+	}{
+		{
+			name:     "Test normal Event with gitcommitid",
+			actionID: "0",
+			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-1",
+			event:    eventAsInterfaceWithGitCommitId,
+			labels: map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/jes-action":          "0",
+				"keptn.sh/jes-task-index":      "1",
+			},
+		},
+		{
+			name:     "Test normal Event without gitcommitid",
+			jobName:  "job-executor-service-job-6c15c921-4d6e-49ea-a3d3-f2f1-1",
+			actionID: "some-unique-identifier",
+			event:    eventAsInterfaceWithoutGitCommitId,
+			labels: map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             eventAsInterfaceWithoutGitCommitId["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithoutGitCommitId["id"].(string),
+				"keptn.sh/commitid":            "",
+				"keptn.sh/jes-action":          "some-unique-identifier",
+				"keptn.sh/jes-task-index":      "1",
+			},
+		},
+		{
+			name:     "Test labels with more than one job",
+			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-38",
+			actionID: "1337",
+			event:    eventAsInterfaceWithGitCommitId,
+			labels: map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/jes-action":          "1337",
+				"keptn.sh/jes-task-index":      "38",
+			},
+		},
+		{
+			name:     "Test non k8s compatible action name",
+			actionID: "7",
+			jobName:  "job-executor-service-job-0015a927-2d6d-43e1-afdf-e22a-1",
+			event:    eventAsInterfaceWithGitCommitId,
+			labels: map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/jes-action":          "7",
+				"keptn.sh/jes-task-index":      "1",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err = k8s.CreateK8sJob(
+				test.jobName,
+				&config.Action{
+					Name: actionName,
+				},
+				test.actionID,
+				config.Task{
+					Name:  test.jobName,
+					Image: "alpine",
+					Cmd:   []string{"ls"},
+				},
+				&eventData,
+				JobSettings{
+					JobNamespace: namespace,
+					DefaultResourceRequirements: &corev1.ResourceRequirements{
+						Limits:   make(corev1.ResourceList),
+						Requests: make(corev1.ResourceList),
+					},
+					DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+					DefaultSecurityContext:    new(corev1.SecurityContext),
+				},
+				test.event,
+				namespace,
+			)
+			require.NoError(t, err)
+
+			job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), test.jobName, metav1.GetOptions{})
+			require.NoError(t, err)
+
+			assert.Equal(t, test.labels, job.Labels)
+		})
 	}
 }
