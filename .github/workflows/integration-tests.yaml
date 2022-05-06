@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-      max-parallel: 4
       matrix:
         keptn-version: [ "0.11.4", "0.12.6", "0.13.4", "0.14.1" ]
     env:
@@ -54,7 +53,11 @@ jobs:
 
       # Prepare K3d + Keptn environment
       - name: Install and start K3s
-        run: curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" sh -
+        run: |
+          curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.21.12+k3s1" INSTALL_K3S_EXEC="--no-deploy traefik" K3S_KUBECONFIG_MODE="644" sh -
+          echo "Sleep awhile to let things settle"
+          sleep 30
+          echo "Sleep done!"
 
       - name: Install Keptn
         id: install_keptn
