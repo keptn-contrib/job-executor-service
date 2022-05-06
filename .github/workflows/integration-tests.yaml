@@ -86,6 +86,13 @@ jobs:
             --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --wait
 
+      # If we failed any previous step we might have a problem and not reporting anything for the version
+      - name: Create pipeline failure report
+        if: failure()
+        run: |
+          echo "Failed to run integration tests!"
+          echo '{"Test": "TestGitHub Pipeline", "Action": "fail"}' >> $TEST_REPORT_FILENAME
+
       - name: Prepare test environment
         run: |
           echo "KEPTN_ENDPOINT=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)/\1/')" >> $GITHUB_ENV
@@ -95,13 +102,6 @@ jobs:
       - name: Run Integration tests
         run: |
           gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/... 
-
-      # If we failed any previous step we might have a problem and not reporting anything for the version
-      - name: Create pipeline failure report
-        if: failure()
-        run: |
-          echo "Failed to run integration tests!"
-          echo '{"Test": "TestGitHub Pipeline", "Action": "skip"}' >> $TEST_REPORT_FILENAME
 
       # Upload the report files, so we can use them in later jobs
       - name: Upload test report as an artifact
