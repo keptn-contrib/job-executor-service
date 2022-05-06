@@ -53,7 +53,20 @@ jobs:
 
       # Prepare K3d + Keptn environment
       - name: Install and start K3s
-        run: curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE="644" sh -
+        run: |
+          curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.21.12+k3s1" INSTALL_K3S_EXEC="--no-deploy traefik" K3S_KUBECONFIG_MODE="644" sh -
+
+      - name: Wait for K3s to become ready
+        timeout-minutes: 1
+        run: |
+          set -x
+          k3sReady=$(kubectl get node $(hostname) -ogo-template --template="{{ range .status.conditions }} {{- if eq .type \"Ready\" }}{{ .status }} {{- end }} {{- end }}" || echo "")
+          while [ "$k3sReady" != "True" ]; do
+          echo "K3s is not ready yet, sleep awhile to let things settle"
+          sleep 5
+          k3sReady=$(kubectl get node $(hostname) -ogo-template --template="{{ range .status.conditions }} {{- if eq .type \"Ready\" }}{{ .status }} {{- end }} {{- end }}" || echo "")
+          done;
+          echo "K3s ready!!!"
 
       - name: Install Keptn
         id: install_keptn
@@ -62,6 +75,7 @@ jobs:
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
+          KEPTN_INSTALL_PARAMETERS: -v --endpoint-service-type=LoadBalancer
 
       - name: Test connection to keptn
         run: |
@@ -81,6 +95,13 @@ jobs:
             --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --wait
 
+      # If we failed any previous step we might have a problem and not reporting anything for the version
+      - name: Create pipeline failure report
+        if: failure()
+        run: |
+          echo "Failed to run integration tests!"
+          echo '{"Test": "TestGitHub Pipeline", "Action": "fail"}' >> $TEST_REPORT_FILENAME
+
       - name: Prepare test environment
         run: |
           echo "KEPTN_ENDPOINT=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)/\1/')" >> $GITHUB_ENV
@@ -91,13 +112,6 @@ jobs:
         run: |
           gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/... 
 
-      # If we failed any previous step we might have a problem and not reporting anything for the version
-      - name: Create pipeline failure report
-        if: failure()
-        run: |
-          echo "Failed to run integration tests!"
-          echo '{"Test": "TestGitHub Pipeline", "Action": "skip"}' >> $TEST_REPORT_FILENAME
-
       # Upload the report files, so we can use them in later jobs
       - name: Upload test report as an artifact
         if: always()
@@ -105,6 +119,43 @@ jobs:
         with:
           name: test-report
           path: test-report-*.json
+
+      - name: keptn generate support-archive
+        if: always()
+        env:
+          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}
+        timeout-minutes: 5
+        run: |
+          mkdir support-archive/
+          echo "y" | keptn generate support-archive -n keptn
+          mv support-archive/keptn*.zip support-archive/${SUPPORT_ARCHIVE_FILENAME}.zip
+
+      # Upload the keptn support archive files, so we can use them for debugging
+      - name: Upload keptn support archive
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: keptn-support-archive-${{matrix.keptn-version}}
+          path: support-archive/*.zip
+
+      - name: Dump k8s debug info 
+        if: always()
+        run: |
+          mkdir k8s_debug
+          kubectl describe deployments -n keptn > k8s_debug/k8s_describe_deployments.txt
+          kubectl describe nodes > k8s_debug/k8s_describe_nodes.txt
+          kubectl get deployments -n keptn -o json > k8s_debug/k8s_get_keptn_deployments.json
+          kubectl logs -n keptn  -l app.kubernetes.io/instance=keptn --all-containers > k8s_debug/k8s_all_keptn_logs.txt
+          kubectl get pv,pvc -n keptn > k8s_debug/k8s_keptn_pv_pvc.txt
+          kubectl cluster-info dump > k8s_debug/k8s_cluster_info_dump.txt
+
+      # Upload the k8s debug archive, so we can use it for debugging
+      - name: Upload k8s debug archive
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: k8s-debug-archive-${{matrix.keptn-version}}
+          path: k8s_debug/
 
   publish_final_test_report:
     name: Finalize tests reports
