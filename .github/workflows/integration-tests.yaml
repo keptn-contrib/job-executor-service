@@ -55,9 +55,18 @@ jobs:
       - name: Install and start K3s
         run: |
           curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.21.12+k3s1" INSTALL_K3S_EXEC="--no-deploy traefik" K3S_KUBECONFIG_MODE="644" sh -
-          echo "Sleep awhile to let things settle"
-          sleep 30
-          echo "Sleep done!"
+
+      - name: Wait for K3s to become ready
+        timeout-minutes: 1
+        run: |
+          set -x
+          k3sReady=$(kubectl get node $(hostname) -ogo-template --template="{{ range .status.conditions }} {{- if eq .type \"Ready\" }}{{ .status }} {{- end }} {{- end }}" || echo "")
+          while [ "$k3sReady" != "True" ]; do
+          echo "K3s is not ready yet, sleep awhile to let things settle"
+          sleep 5
+          k3sReady=$(kubectl get node $(hostname) -ogo-template --template="{{ range .status.conditions }} {{- if eq .type \"Ready\" }}{{ .status }} {{- end }} {{- end }}" || echo "")
+          done;
+          echo "K3s ready!!!"
 
       - name: Install Keptn
         id: install_keptn
