@@ -575,6 +575,8 @@ using `ttlSecondsAfterFinished` property in the job spec.
 
 Jobs created by the executor service will still be available for a time after (successful or failed) completion.
 The default value of the time-to-live (TTL) for completed jobs is `21600` seconds (6 hours).
+A minimum time of 60 seconds will be enforced by the job executor service to ensure that the status of the finished jobs 
+can be collected. 
 
 In order to set a different TTL for jobs add the `ttlSecondsAfterFinished` property in the task definition, for example:
 
