@@ -964,15 +964,15 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 		Service: "carts",
 	}
 
-	var eventAsInterfaceWithoutGitCommitId map[string]interface{}
-	err := json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterfaceWithoutGitCommitId)
+	var eventAsInterfaceWithoutGitCommitID map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterfaceWithoutGitCommitID)
 	require.NoError(t, err)
 
-	var eventAsInterfaceWithGitCommitId map[string]interface{}
+	var eventAsInterfaceWithGitCommitID map[string]interface{}
 	data, err := ioutil.ReadFile("../../test/events/test.triggered.with-gitcommitid.json")
 	require.NoError(t, err)
 
-	err = json.Unmarshal(data, &eventAsInterfaceWithGitCommitId)
+	err = json.Unmarshal(data, &eventAsInterfaceWithGitCommitID)
 	require.NoError(t, err)
 
 	namespace := testNamespace
@@ -989,12 +989,12 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			name:     "Test normal Event with gitcommitid",
 			actionID: "0",
 			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-1",
-			event:    eventAsInterfaceWithGitCommitId,
+			event:    eventAsInterfaceWithGitCommitID,
 			labels: map[string]string{
 				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "0",
 				"keptn.sh/jes-task-index":      "0",
 			},
@@ -1003,11 +1003,11 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			name:     "Test normal Event without gitcommitid",
 			jobName:  "job-executor-service-job-6c15c921-4d6e-49ea-a3d3-f2f1-1",
 			actionID: "some-unique-identifier",
-			event:    eventAsInterfaceWithoutGitCommitId,
+			event:    eventAsInterfaceWithoutGitCommitID,
 			labels: map[string]string{
 				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithoutGitCommitId["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithoutGitCommitId["id"].(string),
+				"keptn.sh/context":             eventAsInterfaceWithoutGitCommitID["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithoutGitCommitID["id"].(string),
 				"keptn.sh/commitid":            "",
 				"keptn.sh/jes-action":          "some-unique-identifier",
 				"keptn.sh/jes-task-index":      "0",
@@ -1017,12 +1017,12 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			name:     "Test labels with more than one job",
 			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-38",
 			actionID: "1337",
-			event:    eventAsInterfaceWithGitCommitId,
+			event:    eventAsInterfaceWithGitCommitID,
 			labels: map[string]string{
 				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "1337",
 				"keptn.sh/jes-task-index":      "37",
 			},
@@ -1031,12 +1031,12 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			name:     "Test non k8s compatible action name",
 			actionID: "7",
 			jobName:  "job-executor-service-job-0015a927-2d6d-43e1-afdf-e22a-1",
-			event:    eventAsInterfaceWithGitCommitId,
+			event:    eventAsInterfaceWithGitCommitID,
 			labels: map[string]string{
 				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitId["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
+				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
+				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
+				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "7",
 				"keptn.sh/jes-task-index":      "0",
 			},

@@ -501,15 +501,15 @@ func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventDa
 		return nil, fmt.Errorf("jsonEventData does not contain the field shkeptncontext")
 	}
 
-	eventId, ok := eventAsMap["id"].(string)
+	eventID, ok := eventAsMap["id"].(string)
 	if !ok {
 		return nil, fmt.Errorf("jsonEventData does not contain the field id")
 	}
 
-	gitCommitId, ok := eventAsMap["gitcommitid"].(string)
+	gitCommitID, ok := eventAsMap["gitcommitid"].(string)
 	if !ok {
 		// For legacy events that have no git commit id we just set it to an empty string
-		gitCommitId = ""
+		gitCommitID = ""
 	}
 
 	splitJobName := strings.Split(jobName, "-")
@@ -524,8 +524,8 @@ func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventDa
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "job-executor-service",
 		"keptn.sh/context":             keptnContext,
-		"keptn.sh/ceid":                eventId,
-		"keptn.sh/commitid":            gitCommitId,
+		"keptn.sh/ceid":                eventID,
+		"keptn.sh/commitid":            gitCommitID,
 		"keptn.sh/jes-action":          actionID,
 		"keptn.sh/jes-task-index":      strconv.Itoa(jobIndex),
 	}, nil
