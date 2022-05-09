@@ -46,6 +46,7 @@ jobConfig:
     name: "default-job-account"              # The name of the service account to use for job execution
     annotations: { }                         # Annotations to add to the service account
   allowedImageList: ""                       # A list of images that are allowed for the jobs (e.g.: docker.io/*,ghcr.io/my-other-user/my-other-image:*,ghcr.io/my-user/my-image:1.2.3)
+  labels: { }                                # Configure additional labels that should be attached to all jobs
   # --------------------------------------------------------------------------------------------------- #
   # WARNING: allowing privileged containers or runAsNonRoot is dangerous, only change the default       #
   #          security configuration if you need, the securityContext can be overwritten by each job     #

@@ -57,6 +57,8 @@ type envConfig struct {
 	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
 	// A flag if privileged job workloads should be allowed by the job-executor-context
 	AllowPrivilegedJobs bool `envconfig:"ALLOW_PRIVILEGED_JOBS"`
+	// A JSON string that contains labels for the job workloads
+	JobLabels string `envconfig:"JOB_LABELS"`
 	// TaskDeadlineSeconds set to an integer > 0 represents the max duration of a task run,
 	// a value of 0 allows tasks run for as long as needed (no deadline)
 	TaskDeadlineSeconds int64 `envconfig:"TASK_DEADLINE_SECONDS"`
@@ -81,6 +83,9 @@ var /* const */ DefaultJobSecurityContext *v1.SecurityContext
 
 // DefaultPodSecurityContext contains the default pod security context for jobs
 var /* const */ DefaultPodSecurityContext *v1.PodSecurityContext
+
+// JobLabels is a map which contains labels for the kubernetes job
+var /* const */ JobLabels map[string]string
 
 // TaskDeadlineSecondsPtr represents the max duration of a task run, no limit if nil
 var TaskDeadlineSecondsPtr *int64
@@ -119,6 +124,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
+			JobLabels:                   JobLabels,
 			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
 		},
 		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
@@ -171,6 +177,13 @@ func main() {
 	err = utils.VerifySecurityContext(DefaultPodSecurityContext, DefaultJobSecurityContext, env.AllowPrivilegedJobs)
 	if err != nil {
 		log.Fatalf("Failed to verify security context: %s", err.Error())
+	}
+
+	if env.JobLabels != "" {
+		JobLabels, err = utils.ConvertJSONMapToLabels(env.JobLabels)
+		if err != nil {
+			log.Fatalf("Failed to parse job labels: %s", err.Error())
+		}
 	}
 
 	if env.TaskDeadlineSeconds > 0 {

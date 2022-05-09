@@ -29,6 +29,7 @@ The following table lists the configurable parameters of the job-executor-servic
 | `jobConfig.serviceAccount.name`           | The name of the default service account used for job workloads                                                  | `default-job-account`                           | 
 | `jobConfig.serviceAccount.annotations`    | Additional annotations for the default service account used for job workloads                                   | `{}`                                            |
 | `jobConfig.taskDeadlineSeconds`           | Maximum duration for a kubernetes job run in seconds (0 means no limit, set it to an integer > 0 to enforce it) | `0`                                             |
+| `jobConfig.labels`                        | Additional labels that are added to all kubernetes jobs | `{}` |
 | `remoteControlPlane.autoDetect.enabled`   | Enables auto detection of a Keptn installation                                                                  | `false`                                         |
 | `remoteControlPlane.autoDetect.namespace` | Namespace which should be used by the auto-detection                                                            | `""`                                            |
 | `remoteControlPlane.api.protocol`         | Used protocol (http, https                                                                                      | `"https"`                                       |

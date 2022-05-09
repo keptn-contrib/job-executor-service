@@ -177,7 +177,6 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, json
 
 	// The action ID is generated in such a way that it is unique to the current context of the event
 	actionID := fmt.Sprintf("%d", actionIndex)
-	fmt.Println(actionID)
 
 	for index, task := range action.Tasks {
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)

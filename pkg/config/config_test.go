@@ -379,7 +379,7 @@ func TestSimpleMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, action := config.IsEventMatch("sh.keptn.event.test.triggered", data)
+	found, action, _ := config.IsEventMatch("sh.keptn.event.test.triggered", data)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[0].Name, "sh.keptn.event.test.triggered")
 }
@@ -394,7 +394,7 @@ func TestSimpleNoMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, _ := config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found, _, _ := config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, false)
 }
 
@@ -411,7 +411,7 @@ func TestComplexMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, action := config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found, action, _ := config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[0].Name, "sh.keptn.event.action.triggered")
 
@@ -423,23 +423,23 @@ func TestComplexMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data = jsonEventData.(map[string]interface{})["data"]
-	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found, action, _ = config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[1].Name, "sh.keptn.event.action.triggered")
 
 	// sh.keptn.event.action.started - action: _
 
-	found, action = config.IsEventMatch("sh.keptn.event.action.started", nil)
+	found, action, _ = config.IsEventMatch("sh.keptn.event.action.started", nil)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[2].Name, "sh.keptn.event.action.started")
 
 	// sh.keptn.event.*.triggered - action: _
 
-	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", nil)
+	found, action, _ = config.IsEventMatch("sh.keptn.event.action.triggered", nil)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
 
-	found, action = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
+	found, action, _ = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
 	assert.Equal(t, found, true)
 	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
 }

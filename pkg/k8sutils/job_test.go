@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	k8stesting "k8s.io/client-go/testing"
 	"strings"
 	"testing"
@@ -943,11 +945,14 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 		"create", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 			job := action.(k8stesting.CreateAction).GetObject().(*v1.Job)
 
-			for name, value := range job.ObjectMeta.Labels {
-				assert.Regexpf(t, "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$", value,
-					"Label %s does not match k8s label specification", name,
-				)
+			errors := validation.ValidateLabels(job.ObjectMeta.Labels, &field.Path{})
+			errorMessage := ""
+
+			if errors != nil && len(errors) > 0 {
+				errorMessage = errors.ToAggregate().Error()
 			}
+
+			assert.Lenf(t, errors, 0, errorMessage)
 
 			return false, nil, nil
 		},
@@ -991,7 +996,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
 				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "0",
-				"keptn.sh/jes-task-index":      "1",
+				"keptn.sh/jes-task-index":      "0",
 			},
 		},
 		{
@@ -1005,7 +1010,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"keptn.sh/ceid":                eventAsInterfaceWithoutGitCommitId["id"].(string),
 				"keptn.sh/commitid":            "",
 				"keptn.sh/jes-action":          "some-unique-identifier",
-				"keptn.sh/jes-task-index":      "1",
+				"keptn.sh/jes-task-index":      "0",
 			},
 		},
 		{
@@ -1019,7 +1024,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
 				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "1337",
-				"keptn.sh/jes-task-index":      "38",
+				"keptn.sh/jes-task-index":      "37",
 			},
 		},
 		{
@@ -1033,7 +1038,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitId["id"].(string),
 				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitId["gitcommitid"].(string),
 				"keptn.sh/jes-action":          "7",
-				"keptn.sh/jes-task-index":      "1",
+				"keptn.sh/jes-task-index":      "0",
 			},
 		},
 	}
@@ -1071,4 +1076,68 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			assert.Equal(t, test.labels, job.Labels)
 		})
 	}
+}
+
+func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	userDefinedLabels := map[string]string{
+		"TestLabel1":               "SomeKey_0",
+		"some.dns.name/identifier": "value",
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var event map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &event)
+	require.NoError(t, err)
+
+	err = k8s.CreateK8sJob(
+		"job-1-2-3-1",
+		&config.Action{
+			Name: "Test Action",
+		},
+		"0",
+		config.Task{
+			Name:  "Test Job",
+			Image: "alpine",
+			Cmd:   []string{"ls"},
+		},
+		&eventData,
+		JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+			JobLabels:                 userDefinedLabels,
+		},
+		event,
+		testNamespace,
+	)
+	require.NoError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), "job-1-2-3-1", metav1.GetOptions{})
+	require.NoError(t, err)
+
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "job-executor-service",
+		"keptn.sh/context":             event["shkeptncontext"].(string),
+		"keptn.sh/ceid":                event["id"].(string),
+		"keptn.sh/commitid":            "",
+		"keptn.sh/jes-action":          "0",
+		"keptn.sh/jes-task-index":      "0",
+	}
+	for key, value := range userDefinedLabels {
+		expectedLabels[key] = value
+	}
+
+	assert.Equal(t, expectedLabels, job.Labels)
 }

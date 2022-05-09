@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -59,6 +60,7 @@ type JobSettings struct {
 	DefaultPodSecurityContext   *v1.PodSecurityContext
 	AllowPrivilegedJobs         bool
 	TaskDeadlineSeconds         *int64
+	JobLabels                   map[string]string
 }
 
 // K8sImpl is used to interact with kubernetes jobs
@@ -166,16 +168,25 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
-	jobLabels, err := generateJobLabelsFromEventData(jobName, actionID, jsonEventData)
+	generatedJobLabels, err := generateJobLabelsFromEventData(jobName, actionID, jsonEventData)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to generate job labels: %w", err)
+	}
+
+	// merge the user defined and the generated job labels together into one map
+	mergedJobLabels := make(map[string]string)
+	for key, value := range jobSettings.JobLabels {
+		mergedJobLabels[key] = value
+	}
+	for key, value := range generatedJobLabels {
+		mergedJobLabels[key] = value
 	}
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
 			Namespace: namespace,
-			Labels:    jobLabels,
+			Labels:    mergedJobLabels,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
@@ -502,7 +513,13 @@ func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventDa
 	}
 
 	splitJobName := strings.Split(jobName, "-")
-	jobIndex := splitJobName[len(splitJobName)-1]
+	jobIndex, err := strconv.Atoi(splitJobName[len(splitJobName)-1])
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse task index")
+	}
+
+	// Job index in the name starts at 1
+	jobIndex = jobIndex - 1
 
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "job-executor-service",
@@ -510,6 +527,6 @@ func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventDa
 		"keptn.sh/ceid":                eventId,
 		"keptn.sh/commitid":            gitCommitId,
 		"keptn.sh/jes-action":          actionID,
-		"keptn.sh/jes-task-index":      jobIndex,
+		"keptn.sh/jes-task-index":      strconv.Itoa(jobIndex),
 	}, nil
 }
