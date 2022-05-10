@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -75,35 +74,4 @@ func TestGetConfigHappyPath(t *testing.T) {
 	config, err := sut.GetJobConfig()
 	assert.NoError(t, err)
 	assert.NotNil(t, config)
-}
-
-func TestLowTTLSecondsValues(t *testing.T) {
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	mockKeptnResourceService := fake.NewMockKeptnResourceService(mockCtrl)
-	yamlConfig := `
-                    apiVersion: v2
-                    actions:
-                      - name: "Run whatever you like with JES"
-                        events:
-                        tasks:
-                          - name: "task1"
-                            workingDir: "/bin"
-                            ttlSecondsAfterFinished: 10
-                            image: "somefancyimage"
-                            cmd:
-                                - echo "Hello World!"
-                    `
-	mockKeptnResourceService.EXPECT().GetKeptnResource("job/config.yaml").Return(
-		[]byte(yamlConfig),
-		nil,
-	)
-
-	sut := JobConfigReader{Keptn: mockKeptnResourceService}
-
-	config, err := sut.GetJobConfig()
-	require.NoError(t, err)
-	require.NotNil(t, config)
-	assert.Equal(t, minTTLSecondsAfterFinished, *config.Actions[0].Tasks[0].TTLSecondsAfterFinished)
 }

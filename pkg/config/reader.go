@@ -7,8 +7,6 @@ import (
 
 const jobConfigResourceName = "job/config.yaml"
 
-const minTTLSecondsAfterFinished = int32(60)
-
 //go:generate mockgen -destination=fake/reader_mock.go -package=fake . KeptnResourceService
 
 // KeptnResourceService defines the contract used by JobConfigReader to retrieve a resource from keptn (using project,
@@ -37,23 +35,5 @@ func (jcr *JobConfigReader) GetJobConfig() (*Config, error) {
 		log.Printf("The config was: %s", string(resource))
 		return nil, fmt.Errorf("error parsing job configuration: %w", err)
 	}
-
-	// Validate / Correct the Job cleanup TTL to 60s to avoid a job cleanup before the
-	// job-executor-service can collect the logs of a completed job
-	for _, action := range configuration.Actions {
-		for taskIndex := range action.Tasks {
-			task := &action.Tasks[taskIndex]
-
-			if task.TTLSecondsAfterFinished != nil && *task.TTLSecondsAfterFinished < minTTLSecondsAfterFinished {
-				log.Printf("Warning: Correcting TTLSecondsAfterFinished in action '%s' for task '%s' to %d!",
-					action.Name, task.Name, minTTLSecondsAfterFinished,
-				)
-
-				var minJobTTLSeconds = minTTLSecondsAfterFinished
-				task.TTLSecondsAfterFinished = &minJobTTLSeconds
-			}
-		}
-	}
-
 	return configuration, nil
 }
