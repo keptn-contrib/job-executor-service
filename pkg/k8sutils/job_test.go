@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	k8stesting "k8s.io/client-go/testing"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -342,7 +343,7 @@ func TestSetWorkingDir(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, "0", config.Task{
+		}, config.Task{
 			Name:       jobName,
 			Image:      "alpine",
 			Cmd:        []string{"ls"},
@@ -400,7 +401,7 @@ func TestSetCustomNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, "0", config.Task{
+		}, config.Task{
 			Name:  jobName,
 			Image: "alpine",
 			Cmd:   []string{"ls"},
@@ -445,7 +446,7 @@ func TestSetEmptyNamespace(t *testing.T) {
 	err := k8s.CreateK8sJob(
 		jobName, &config.Action{
 			Name: jobName,
-		}, "0", config.Task{
+		}, config.Task{
 			Name:  jobName,
 			Image: "alpine",
 			Cmd:   []string{"ls"},
@@ -530,7 +531,7 @@ func TestImagePullPolicy(t *testing.T) {
 				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, "0", task, &eventData, JobSettings{
+					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -607,7 +608,7 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, "0", task, &eventData, JobSettings{
+					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -976,82 +977,51 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 	require.NoError(t, err)
 
 	namespace := testNamespace
-	actionName := "job-action"
 
 	tests := []struct {
-		name     string
-		actionID string
-		jobName  string
-		event    interface{}
-		labels   map[string]string
+		name               string
+		actionName         string
+		taskName           string
+		expectedActionName string
+		expectedTaskName   string
+		event              map[string]interface{}
 	}{
 		{
-			name:     "Test normal Event with gitcommitid",
-			actionID: "0",
-			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-1",
-			event:    eventAsInterfaceWithGitCommitID,
-			labels: map[string]string{
-				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
-				"keptn.sh/jes-action":          "0",
-				"keptn.sh/jes-task-index":      "0",
-			},
+			name:               "Test normal Event with gitcommitid",
+			actionName:         "some_action",
+			taskName:           "task",
+			event:              eventAsInterfaceWithGitCommitID,
+			expectedActionName: "some_action",
+			expectedTaskName:   "task",
 		},
 		{
-			name:     "Test normal Event without gitcommitid",
-			jobName:  "job-executor-service-job-6c15c921-4d6e-49ea-a3d3-f2f1-1",
-			actionID: "some-unique-identifier",
-			event:    eventAsInterfaceWithoutGitCommitID,
-			labels: map[string]string{
-				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithoutGitCommitID["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithoutGitCommitID["id"].(string),
-				"keptn.sh/commitid":            "",
-				"keptn.sh/jes-action":          "some-unique-identifier",
-				"keptn.sh/jes-task-index":      "0",
-			},
+			name:               "Test normal Event without gitcommitid",
+			actionName:         "some_action",
+			taskName:           "task",
+			event:              eventAsInterfaceWithoutGitCommitID,
+			expectedActionName: "some_action",
+			expectedTaskName:   "task",
 		},
 		{
-			name:     "Test labels with more than one job",
-			jobName:  "job-executor-service-job-6c15b927-4d6e-49ea-a3d3-e2e1-38",
-			actionID: "1337",
-			event:    eventAsInterfaceWithGitCommitID,
-			labels: map[string]string{
-				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
-				"keptn.sh/jes-action":          "1337",
-				"keptn.sh/jes-task-index":      "37",
-			},
-		},
-		{
-			name:     "Test non k8s compatible action name",
-			actionID: "7",
-			jobName:  "job-executor-service-job-0015a927-2d6d-43e1-afdf-e22a-1",
-			event:    eventAsInterfaceWithGitCommitID,
-			labels: map[string]string{
-				"app.kubernetes.io/managed-by": "job-executor-service",
-				"keptn.sh/context":             eventAsInterfaceWithGitCommitID["shkeptncontext"].(string),
-				"keptn.sh/ceid":                eventAsInterfaceWithGitCommitID["id"].(string),
-				"keptn.sh/commitid":            eventAsInterfaceWithGitCommitID["gitcommitid"].(string),
-				"keptn.sh/jes-action":          "7",
-				"keptn.sh/jes-task-index":      "0",
-			},
+			name:               "Test non k8s compatible action name",
+			actionName:         "Some fancy action name ...",
+			taskName:           "--NameThat's not Compatible with k8s []{}///// a....",
+			event:              eventAsInterfaceWithGitCommitID,
+			expectedActionName: "Some_fancy_action_name",
+			expectedTaskName:   "NameThat_s_not_Compatible_with_k8s_a",
 		},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
+			jobName := "some-job-name-" + strconv.Itoa(i)
 			err = k8s.CreateK8sJob(
-				test.jobName,
+				jobName,
 				&config.Action{
-					Name: actionName,
+					Name: test.actionName,
 				},
-				test.actionID,
 				config.Task{
-					Name:  test.jobName,
+					Name:  test.taskName,
 					Image: "alpine",
 					Cmd:   []string{"ls"},
 				},
@@ -1070,10 +1040,23 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), test.jobName, metav1.GetOptions{})
+			job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
 			require.NoError(t, err)
 
-			assert.Equal(t, test.labels, job.Labels)
+			expectedLabels := map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             test.event["shkeptncontext"].(string),
+				"keptn.sh/ceid":                test.event["id"].(string),
+				"keptn.sh/commitid":            "",
+				"keptn.sh/jes-action":          test.expectedActionName,
+				"keptn.sh/jes-task":            test.expectedTaskName,
+			}
+
+			if test.event["gitcommitid"] != nil {
+				expectedLabels["keptn.sh/commitid"] = test.event["gitcommitid"].(string)
+			}
+
+			assert.Equal(t, expectedLabels, job.Labels)
 		})
 	}
 }
@@ -1102,7 +1085,6 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 		&config.Action{
 			Name: "Test Action",
 		},
-		"0",
 		config.Task{
 			Name:  "Test Job",
 			Image: "alpine",
@@ -1132,8 +1114,8 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 		"keptn.sh/context":             event["shkeptncontext"].(string),
 		"keptn.sh/ceid":                event["id"].(string),
 		"keptn.sh/commitid":            "",
-		"keptn.sh/jes-action":          "0",
-		"keptn.sh/jes-task-index":      "0",
+		"keptn.sh/jes-action":          "Test_Action",
+		"keptn.sh/jes-task":            "Test_Job",
 	}
 	for key, value := range userDefinedLabels {
 		expectedLabels[key] = value

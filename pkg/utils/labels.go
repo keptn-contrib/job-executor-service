@@ -1,27 +1,31 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-// ConvertJSONMapToLabels converts a json object to the label map and validates the contents
-func ConvertJSONMapToLabels(JSON string) (map[string]string, error) {
-	var labels map[string]string
+// ReadAndValidateJobLabels reads the user defined labels from a yaml file and validates
+func ReadAndValidateJobLabels(jobLabelsYamlPath string) (map[string]string, error) {
 
-	err := json.Unmarshal([]byte(JSON), &labels)
+	jobLabelsYaml, err := ioutil.ReadFile(jobLabelsYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse JSON: %w", err)
+		return nil, fmt.Errorf("unable to read %s: %w", jobLabelsYamlPath, err)
 	}
 
-	errorList := validation.ValidateLabels(labels, &field.Path{})
+	var jobLabels map[string]string
+	err = yaml.Unmarshal(jobLabelsYaml, &jobLabels)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse yaml content: %w", err)
+	}
 
+	errorList := validation.ValidateLabels(jobLabels, &field.Path{})
 	if errorList != nil && len(errorList) > 0 {
-		validationError := errorList.ToAggregate().Error()
-		return nil, fmt.Errorf("specified json is not valid: %s", validationError)
+		return nil, fmt.Errorf("validation faild: %w", errorList.ToAggregate())
 	}
 
-	return labels, nil
+	return jobLabels, nil
 }

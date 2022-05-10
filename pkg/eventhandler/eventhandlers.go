@@ -50,7 +50,7 @@ type ErrorLogSender interface {
 type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(
-		jobName string, action *config.Action, actionID string, task config.Task, eventData keptn.EventProperties,
+		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
 		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
 	) error
 	AwaitK8sJobDone(
@@ -117,7 +117,7 @@ func (eh *EventHandler) HandleEvent() error {
 
 	// TODO: This function should probably return a list of actions, see Issue:
 	//       https://github.com/keptn-contrib/job-executor-service/issues/167
-	match, action, actionIndex := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
+	match, action := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
 	if !match {
 		log.Printf(
 			"No match found for event %s of type %s. Skipping...", eh.Keptn.CloudEvent.Context.GetID(),
@@ -131,12 +131,12 @@ func (eh *EventHandler) HandleEvent() error {
 		eh.Keptn.CloudEvent.Type(), action.Name,
 	)
 
-	eh.startK8sJob(action, actionIndex, eventAsInterface)
+	eh.startK8sJob(action, eventAsInterface)
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -175,9 +175,6 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, json
 		}
 	}
 
-	// The action ID is generated in such a way that it is unique to the current context of the event
-	actionID := fmt.Sprintf("%d", actionIndex)
-
 	for index, task := range action.Tasks {
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
@@ -191,8 +188,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, json
 		}
 
 		err := eh.K8s.CreateK8sJob(
-			jobName, action, actionID, task, eh.Keptn.Event, eh.JobSettings,
-			jsonEventData, namespace,
+			jobName, action, task, eh.Keptn.Event, eh.JobSettings, jsonEventData, namespace,
 		)
 
 		if err != nil {

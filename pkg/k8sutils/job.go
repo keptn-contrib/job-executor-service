@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -88,7 +88,7 @@ func (k8s *K8sImpl) ConnectToCluster() error {
 // CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
 // returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
 func (k8s *K8sImpl) CreateK8sJob(
-	jobName string, action *config.Action, actionID string, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
+	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
 
@@ -168,7 +168,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
-	generatedJobLabels, err := generateJobLabelsFromEventData(jobName, actionID, jsonEventData)
+	generatedJobLabels, err := generateK8sJobLabels(action, task, jsonEventData)
 	if err != nil {
 		return fmt.Errorf("unable to generate job labels: %w", err)
 	}
@@ -490,7 +490,7 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 	return generatedEnv, nil
 }
 
-func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventData interface{}) (map[string]string, error) {
+func generateK8sJobLabels(action *config.Action, task config.Task, jsonEventData interface{}) (map[string]string, error) {
 	eventAsMap, ok := jsonEventData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unable to process jsonEventData")
@@ -512,21 +512,30 @@ func generateJobLabelsFromEventData(jobName string, actionID string, jsonEventDa
 		gitCommitID = ""
 	}
 
-	splitJobName := strings.Split(jobName, "-")
-	jobIndex, err := strconv.Atoi(splitJobName[len(splitJobName)-1])
-	if err != nil {
-		return nil, fmt.Errorf("unable to parse task index")
-	}
+	// This function is used to sanitize the labels for the action and the task name to
+	// avoid creating a set of labels that is not allowed by kubernetes
+	sanitizeLabel := func(label string) string {
 
-	// Job index in the name starts at 1
-	jobIndex = jobIndex - 1
+		// Replace all occurrences of not allowed characters with _
+		label = regexp.MustCompile("[^-a-z\\dA-Z_.]+").ReplaceAllString(label, "_")
+
+		// Limit the length of the label to the max amount
+		if len(label) > 63 {
+			label = label[:63]
+		}
+
+		// Cut away all illegal starting / stopping characters
+		label = strings.Trim(label, "-_.")
+
+		return label
+	}
 
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "job-executor-service",
 		"keptn.sh/context":             keptnContext,
 		"keptn.sh/ceid":                eventID,
 		"keptn.sh/commitid":            gitCommitID,
-		"keptn.sh/jes-action":          actionID,
-		"keptn.sh/jes-task-index":      strconv.Itoa(jobIndex),
+		"keptn.sh/jes-action":          sanitizeLabel(action.Name),
+		"keptn.sh/jes-task":            sanitizeLabel(task.Name),
 	}, nil
 }

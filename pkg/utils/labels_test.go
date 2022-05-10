@@ -6,41 +6,19 @@ import (
 	"testing"
 )
 
-func TestConvertJSONMapToLabels(t *testing.T) {
-	validLabels := `{"label1": "content1", "label2": "content2"}`
-	excpectedLabels := map[string]string{
-		"label1": "content1",
-		"label2": "content2",
-	}
-
-	out, err := ConvertJSONMapToLabels(validLabels)
-	require.NoError(t, err)
-	assert.Equal(t, excpectedLabels, out)
+func TestReadAndValidateJobLabels_WithInvalidLabels(t *testing.T) {
+	labels, err := ReadAndValidateJobLabels("./../test/data/invalid-user-defined-labels.yaml")
+	assert.Error(t, err)
+	assert.Nil(t, labels)
 }
 
-func TestConvertJSONMapToLabelsWithInvalidLabels(t *testing.T) {
-	tests := []struct {
-		name string
-		json string
-	}{
-		{
-			name: "Test_InvalidLabel",
-			json: `{"0 INVALID\\\\LABEL [] KEY {-'#+'": "value"}`,
-		},
-		{
-			name: "Test_InvalidKey",
-			json: `{"key": "0 INVALID\\\\LABEL [] VALUE {-'#+'"}`,
-		},
-		{
-			name: "Test_InvalidJson",
-			json: `{"key": {"invalid": "json"}}`,
-		},
+func TestReadAndValidateJobLabels_WithValidLabels(t *testing.T) {
+	expectedLabels := map[string]string{
+		"Label":           "Value",
+		"Some_OtherLabel": "Value2",
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			out, err := ConvertJSONMapToLabels(test.json)
-			require.Error(t, err)
-			require.Nil(t, out)
-		})
-	}
+
+	labels, err := ReadAndValidateJobLabels("../../test/data/user-defined-labels.yaml")
+	require.NoError(t, err)
+	assert.Equal(t, expectedLabels, labels)
 }

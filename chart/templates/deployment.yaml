@@ -49,7 +49,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: "/config"
-              name: job-security-settings
+              name: job-executor-settings
               readOnly: true
           env:
           - name: KEPTN_API_TOKEN
@@ -189,9 +189,16 @@ spec:
                   fieldPath: metadata.labels['app.kubernetes.io/name']
             {{- end }}
       volumes:
-        - name: job-security-settings
-          configMap:
-            name: job-security-context
+        - name: job-executor-settings
+          projected:
+            sources:
+              - configMap:
+                  name: job-security-context
+              - configMap:
+                  name: job-service-config
+                  items:
+                    - key: additional_job_labels
+                      path: job-labels.yaml
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

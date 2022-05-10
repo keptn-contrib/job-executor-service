@@ -57,8 +57,6 @@ type envConfig struct {
 	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
 	// A flag if privileged job workloads should be allowed by the job-executor-context
 	AllowPrivilegedJobs bool `envconfig:"ALLOW_PRIVILEGED_JOBS"`
-	// A JSON string that contains labels for the job workloads
-	JobLabels string `envconfig:"JOB_LABELS"`
 	// TaskDeadlineSeconds set to an integer > 0 represents the max duration of a task run,
 	// a value of 0 allows tasks run for as long as needed (no deadline)
 	TaskDeadlineSeconds int64 `envconfig:"TASK_DEADLINE_SECONDS"`
@@ -72,6 +70,8 @@ const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
 
 // podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
 const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
+
+const jobLabelFilePath = "/config/job-labels.yaml"
 
 // DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
 // startup from env (treat as const)
@@ -179,11 +179,9 @@ func main() {
 		log.Fatalf("Failed to verify security context: %s", err.Error())
 	}
 
-	if env.JobLabels != "" {
-		JobLabels, err = utils.ConvertJSONMapToLabels(env.JobLabels)
-		if err != nil {
-			log.Fatalf("Failed to parse job labels: %s", err.Error())
-		}
+	JobLabels, err = utils.ReadAndValidateJobLabels(jobLabelFilePath)
+	if err != nil {
+		log.Fatalf("Failed to read job labels: %s", err.Error())
 	}
 
 	if env.TaskDeadlineSeconds > 0 {
