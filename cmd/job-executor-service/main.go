@@ -71,6 +71,7 @@ const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
 // podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
 const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
 
+// jobLabelFilePath describes the path of the job labels yaml file
 const jobLabelFilePath = "/config/job-labels.yaml"
 
 // DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
@@ -84,7 +85,7 @@ var /* const */ DefaultJobSecurityContext *v1.SecurityContext
 // DefaultPodSecurityContext contains the default pod security context for jobs
 var /* const */ DefaultPodSecurityContext *v1.PodSecurityContext
 
-// JobLabels is a map which contains labels for the kubernetes job
+// JobLabels contains all user defined labels that should added to each job
 var /* const */ JobLabels map[string]string
 
 // TaskDeadlineSecondsPtr represents the max duration of a task run, no limit if nil

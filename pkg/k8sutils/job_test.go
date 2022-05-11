@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	k8stesting "k8s.io/client-go/testing"
 	"strconv"
 	"strings"
 	"testing"
@@ -940,24 +936,6 @@ func createK8sSecretObj(name string, namespace string, data map[string][]byte) *
 func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}
-
-	// Prepend reactor that we are able to assert metadata labels
-	k8sClientSet.PrependReactor(
-		"create", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-			job := action.(k8stesting.CreateAction).GetObject().(*v1.Job)
-
-			errors := validation.ValidateLabels(job.ObjectMeta.Labels, &field.Path{})
-			errorMessage := ""
-
-			if errors != nil && len(errors) > 0 {
-				errorMessage = errors.ToAggregate().Error()
-			}
-
-			assert.Lenf(t, errors, 0, errorMessage)
-
-			return false, nil, nil
-		},
-	)
 
 	eventData := keptnv2.EventData{
 		Project: "sockshop",
