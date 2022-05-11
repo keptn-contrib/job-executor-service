@@ -44,8 +44,8 @@ const testEvent = `
       }
 }`
 
-const jobName1 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f-454b-1"
-const jobName2 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f-454b-2"
+const jobName1 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f--000-001"
+const jobName2 = "job-executor-service-job-f2b878d3-03c0-4e8f-bc3f--000-002"
 
 var apiVersion = "v2"
 
@@ -395,7 +395,7 @@ func TestEventMatching(t *testing.T) {
 
 				totalNoOfExpectedTasks := 0
 				for _, invocation := range test.expected.jobsInvocations {
-					for _, _ = range invocation.taskNames {
+					for range invocation.taskNames {
 						mockK8s.EXPECT().CreateK8sJob(
 							gomock.Any(),
 							gomock.Eq(k8sutils.JobDetails{
