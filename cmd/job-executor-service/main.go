@@ -57,6 +57,9 @@ type envConfig struct {
 	AllowedImageList string `envconfig:"ALLOWED_IMAGE_LIST"  default:""`
 	// A flag if privileged job workloads should be allowed by the job-executor-context
 	AllowPrivilegedJobs bool `envconfig:"ALLOW_PRIVILEGED_JOBS"`
+	// TaskDeadlineSeconds set to an integer > 0 represents the max duration of a task run,
+	// a value of 0 allows tasks run for as long as needed (no deadline)
+	TaskDeadlineSeconds int64 `envconfig:"TASK_DEADLINE_SECONDS"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -78,6 +81,9 @@ var /* const */ DefaultJobSecurityContext *v1.SecurityContext
 
 // DefaultPodSecurityContext contains the default pod security context for jobs
 var /* const */ DefaultPodSecurityContext *v1.PodSecurityContext
+
+// TaskDeadlineSecondsPtr represents the max duration of a task run, no limit if nil
+var TaskDeadlineSecondsPtr *int64
 
 /**
  * This method gets called when a new event is received from the Keptn Event Distributor
@@ -113,6 +119,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
+			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
 		},
 		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
 		ErrorSender: keptn_interface.NewErrorLogSender(ServiceName, uniformHandler, myKeptn),
@@ -164,6 +171,10 @@ func main() {
 	err = utils.VerifySecurityContext(DefaultPodSecurityContext, DefaultJobSecurityContext, env.AllowPrivilegedJobs)
 	if err != nil {
 		log.Fatalf("Failed to verify security context: %s", err.Error())
+	}
+
+	if env.TaskDeadlineSeconds > 0 {
+		TaskDeadlineSecondsPtr = &env.TaskDeadlineSeconds
 	}
 
 	os.Exit(_main(os.Args[1:], env))

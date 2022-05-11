@@ -34,6 +34,8 @@ const envValueFromString = "string"
 const minTTLSecondsAfterFinished = int32(60)
 const defaultTTLSecondsAfterFinished = int32(21600)
 
+const reasonJobDeadlineExceeded = "DeadlineExceeded"
+
 // ErrPrivilegedContainerNotAllowed indicates an error that occurs if a security context does contain privileged=true
 // but the policy of the job-executor-service doesn't allow such job workloads to be created
 var /*const*/ ErrPrivilegedContainerNotAllowed = errors.New("privileged containers are not allowed")
@@ -318,7 +320,7 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 					"job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
 				)
 			case batchv1.JobFailed:
-				if condition.Reason == "DeadlineExceeded" {
+				if condition.Reason == reasonJobDeadlineExceeded {
 					return fmt.Errorf("job %s failed: %w", jobName, ErrTaskDeadlineExceeded)
 				}
 

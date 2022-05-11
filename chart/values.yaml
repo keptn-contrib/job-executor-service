@@ -69,6 +69,7 @@ jobConfig:
       drop: [ "all" ]
     seccompProfile:
       type: RuntimeDefault
+  taskDeadlineSeconds: 0                     # Set taskDeadlineSeconds to an integer > 0 to limit how long task can run
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 

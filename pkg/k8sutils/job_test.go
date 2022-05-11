@@ -693,7 +693,7 @@ func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
 var Deadline30Sec = int64(30)
 var ExpectedDeadline30Sec = int64(30)
 
-func TestTaskDeadlineSeconds(t *testing.T) {
+func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}
 
@@ -847,7 +847,7 @@ func TestAwaitK8sJobExceededDeadline(t *testing.T) {
 				{
 					Type:    v1.JobFailed,
 					Status:  corev1.ConditionTrue,
-					Reason:  "DeadlineExceeded",
+					Reason:  reasonJobDeadlineExceeded,
 					Message: "Job exceeded deadline",
 				},
 			},
