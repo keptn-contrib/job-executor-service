@@ -152,7 +152,7 @@ func TestErrorGettingJobConfig(t *testing.T) {
 
 	errorGettingJobConfig := errors.New("error getting resource")
 	mockJobConfigReader.EXPECT().GetJobConfig().Return(
-		nil,
+		nil, "",
 		errorGettingJobConfig,
 	).Times(1)
 
@@ -234,7 +234,7 @@ func TestErrorConnectingToK8s(t *testing.T) {
 								Silent: test.silent,
 							},
 						},
-					},
+					}, "",
 					nil,
 				).Times(1)
 
@@ -376,7 +376,7 @@ func TestEventMatching(t *testing.T) {
 
 				mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
 				mockJobConfigReader.EXPECT().GetJobConfig().Return(
-					&config,
+					&config, "<config-hash-value>",
 					nil,
 				).Times(1)
 
@@ -395,15 +395,16 @@ func TestEventMatching(t *testing.T) {
 
 				totalNoOfExpectedTasks := 0
 				for _, invocation := range test.expected.jobsInvocations {
-					for _, taskName := range invocation.taskNames {
+					for _, _ = range invocation.taskNames {
 						mockK8s.EXPECT().CreateK8sJob(
 							gomock.Any(),
-							&nameMatcher{
-								name: invocation.actionName,
-							},
-							&nameMatcher{
-								taskName,
-							},
+							gomock.Eq(k8sutils.JobDetails{
+								Action:        &config.Actions[0],
+								Task:          &config.Actions[0].Tasks[0],
+								ActionIndex:   0,
+								TaskIndex:     0,
+								JobConfigHash: "<config-hash-value>",
+							}),
 							gomock.Eq(myKeptn.Event),
 							gomock.Eq(k8sutils.JobSettings{}),
 							gomock.Any(),
@@ -485,11 +486,23 @@ func TestStartK8s(t *testing.T) {
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName1), gomock.Eq(k8sutils.JobDetails{
+			Action:        &action,
+			Task:          &action.Tasks[0],
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		}), gomock.Any(), gomock.Any(),
 		gomock.Any(), jobNamespace1,
 	).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName2), gomock.Eq(k8sutils.JobDetails{
+			Action:        &action,
+			Task:          &action.Tasks[1],
+			ActionIndex:   0,
+			TaskIndex:     1,
+			JobConfigHash: "",
+		}), gomock.Any(), gomock.Any(),
 		gomock.Any(), jobNamespace2,
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, pollInterval, jobNamespace1).Times(1)
@@ -497,7 +510,7 @@ func TestStartK8s(t *testing.T) {
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
-	eh.startK8sJob(&action, eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{
@@ -539,18 +552,16 @@ func TestStartK8sJobSilent(t *testing.T) {
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), defaultMaxPollDuration, pollInterval, "").Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
-	eh.startK8sJob(&action, eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes([]string{})
 	assert.NoError(t, err)
@@ -584,8 +595,7 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
@@ -595,7 +605,7 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{
@@ -657,8 +667,7 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
-		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-		gomock.Any(), gomock.Any(),
+		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
 	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
@@ -668,7 +677,7 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{

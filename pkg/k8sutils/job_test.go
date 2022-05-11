@@ -77,7 +77,7 @@ func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.EqualError(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
 }
 
@@ -127,7 +127,7 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	testTriggeredEventJSON := `
@@ -196,7 +196,7 @@ func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.Contains(t, err.Error(), "unknown key undeploymentstrategy")
 }
 
@@ -230,7 +230,7 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 	k8sSecret := createK8sSecretObj(secretName, testNamespace, secretData)
 	k8s.clientset.CoreV1().Secrets(testNamespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	// env from secrets can in in any order, sort them
@@ -276,7 +276,7 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 	k8s := K8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
 	}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.EqualError(
 		t, err,
 		"could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found",
@@ -309,7 +309,7 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	assert.Equal(t, len(jobEnv), 4)
@@ -337,14 +337,22 @@ func TestSetWorkingDir(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:       jobName,
-			Image:      "alpine",
-			Cmd:        []string{"ls"},
-			WorkingDir: workingDir,
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:       jobName,
+				Image:      "alpine",
+				Cmd:        []string{"ls"},
+				WorkingDir: workingDir,
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: testNamespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -395,13 +403,21 @@ func TestSetCustomNamespace(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:  jobName,
-			Image: "alpine",
-			Cmd:   []string{"ls"},
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:  jobName,
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: namespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -440,13 +456,21 @@ func TestSetEmptyNamespace(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:  jobName,
-			Image: "alpine",
-			Cmd:   []string{"ls"},
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:  jobName,
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: namespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -527,7 +551,16 @@ func TestImagePullPolicy(t *testing.T) {
 				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName,
+					JobDetails{
+						Action: &config.Action{
+							Name: jobName,
+						},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -604,7 +637,16 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName,
+					JobDetails{
+						Action: &config.Action{
+							Name: jobName,
+						},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -995,13 +1037,18 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			jobName := "some-job-name-" + strconv.Itoa(i)
 			err = k8s.CreateK8sJob(
 				jobName,
-				&config.Action{
-					Name: test.actionName,
-				},
-				config.Task{
-					Name:  test.taskName,
-					Image: "alpine",
-					Cmd:   []string{"ls"},
+				JobDetails{
+					Action: &config.Action{
+						Name: test.actionName,
+					},
+					Task: &config.Task{
+						Name:  test.taskName,
+						Image: "alpine",
+						Cmd:   []string{"ls"},
+					},
+					ActionIndex:   0,
+					TaskIndex:     0,
+					JobConfigHash: "",
 				},
 				&eventData,
 				JobSettings{
@@ -1028,6 +1075,9 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"keptn.sh/commitid":            "",
 				"keptn.sh/jes-action":          test.expectedActionName,
 				"keptn.sh/jes-task":            test.expectedTaskName,
+				"keptn.sh/job-confighash":      "",
+				"keptn.sh/jes-action-index":    "0",
+				"keptn.sh/jes-task-index":      "0",
 			}
 
 			if test.event["gitcommitid"] != nil {
@@ -1060,13 +1110,18 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 
 	err = k8s.CreateK8sJob(
 		"job-1-2-3-1",
-		&config.Action{
-			Name: "Test Action",
-		},
-		config.Task{
-			Name:  "Test Job",
-			Image: "alpine",
-			Cmd:   []string{"ls"},
+		JobDetails{
+			Action: &config.Action{
+				Name: "Test Action",
+			},
+			Task: &config.Task{
+				Name:  "Test Job",
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
 		},
 		&eventData,
 		JobSettings{
@@ -1094,6 +1149,9 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 		"keptn.sh/commitid":            "",
 		"keptn.sh/jes-action":          "Test_Action",
 		"keptn.sh/jes-task":            "Test_Job",
+		"keptn.sh/job-confighash":      "",
+		"keptn.sh/jes-action-index":    "0",
+		"keptn.sh/jes-task-index":      "0",
 	}
 	for key, value := range userDefinedLabels {
 		expectedLabels[key] = value

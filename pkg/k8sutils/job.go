@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"strconv"
 	"time"
 
 	"keptn-contrib/job-executor-service/pkg/utils"
@@ -49,6 +50,16 @@ var /*const*/ ErrMaxPollTimeExceeded = errors.New("max poll count reached for jo
 // K8s has terminated the job and the related pods.
 var /*const*/ ErrTaskDeadlineExceeded = errors.New("job deadline exceeded")
 
+// JobDetails is used in the K8s interface to pass details of a specific job to the CreateK8sJob function
+// This details contain the action, task to be executed and other information that may be needed by the runtime environment
+type JobDetails struct {
+	Action        *config.Action
+	Task          *config.Task
+	ActionIndex   int
+	TaskIndex     int
+	JobConfigHash string
+}
+
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
 	JobNamespace                string
@@ -85,12 +96,14 @@ func (k8s *K8sImpl) ConnectToCluster() error {
 	return nil
 }
 
-// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
-// returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
+// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the job details
+// specified in jobDetails.
 func (k8s *K8sImpl) CreateK8sJob(
-	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
+	jobName string, jobDetails JobDetails, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
+	task := jobDetails.Task
+	action := jobDetails.Action
 
 	var backOffLimit int32 = 0
 
@@ -168,7 +181,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
-	generatedJobLabels, err := generateK8sJobLabels(action, task, jsonEventData)
+	generatedJobLabels, err := generateK8sJobLabels(jobDetails, jsonEventData)
 	if err != nil {
 		return fmt.Errorf("unable to generate job labels: %w", err)
 	}
@@ -351,7 +364,7 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 }
 
 func (k8s *K8sImpl) prepareJobEnv(
-	task config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
+	task *config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
 ) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
@@ -490,7 +503,9 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 	return generatedEnv, nil
 }
 
-func generateK8sJobLabels(action *config.Action, task config.Task, jsonEventData interface{}) (map[string]string, error) {
+// generateK8sJobLabels generates the required labels for the k8s job from the given job details and event,
+// such that the job can be identified later on.
+func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}) (map[string]string, error) {
 	eventAsMap, ok := jsonEventData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unable to process jsonEventData")
@@ -535,7 +550,10 @@ func generateK8sJobLabels(action *config.Action, task config.Task, jsonEventData
 		"keptn.sh/context":             keptnContext,
 		"keptn.sh/ceid":                eventID,
 		"keptn.sh/commitid":            gitCommitID,
-		"keptn.sh/jes-action":          sanitizeLabel(action.Name),
-		"keptn.sh/jes-task":            sanitizeLabel(task.Name),
+		"keptn.sh/jes-action":          sanitizeLabel(jobDetails.Action.Name),
+		"keptn.sh/jes-task":            sanitizeLabel(jobDetails.Task.Name),
+		"keptn.sh/job-confighash":      jobDetails.JobConfigHash,
+		"keptn.sh/jes-action-index":    strconv.Itoa(jobDetails.ActionIndex),
+		"keptn.sh/jes-task-index":      strconv.Itoa(jobDetails.TaskIndex),
 	}, nil
 }

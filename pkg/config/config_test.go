@@ -379,9 +379,14 @@ func TestSimpleMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, action := config.IsEventMatch("sh.keptn.event.test.triggered", data)
+	found := config.IsEventMatch("sh.keptn.event.test.triggered", data)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[0].Name, "sh.keptn.event.test.triggered")
+
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.test.triggered", data) {
+			assert.Equal(t, action.Events[0].Name, "sh.keptn.event.test.triggered")
+		}
+	}
 }
 
 func TestSimpleNoMatch(t *testing.T) {
@@ -394,7 +399,7 @@ func TestSimpleNoMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, _ := config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found := config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, false)
 }
 
@@ -411,9 +416,13 @@ func TestComplexMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data := jsonEventData.(map[string]interface{})["data"]
-	found, action := config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found := config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[0].Name, "sh.keptn.event.action.triggered")
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.action.triggered", data) {
+			assert.Equal(t, action.Events[0].Name, "sh.keptn.event.action.triggered")
+		}
+	}
 
 	// sh.keptn.event.action.triggered - action: goodbye
 
@@ -423,25 +432,41 @@ func TestComplexMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	data = jsonEventData.(map[string]interface{})["data"]
-	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", data)
+	found = config.IsEventMatch("sh.keptn.event.action.triggered", data)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[1].Name, "sh.keptn.event.action.triggered")
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.action.triggered", data) {
+			assert.Equal(t, action.Events[1].Name, "sh.keptn.event.action.triggered")
+		}
+	}
 
 	// sh.keptn.event.action.started - action: _
 
-	found, action = config.IsEventMatch("sh.keptn.event.action.started", nil)
+	found = config.IsEventMatch("sh.keptn.event.action.started", nil)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[2].Name, "sh.keptn.event.action.started")
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.action.started", data) {
+			assert.Equal(t, action.Events[2].Name, "sh.keptn.event.action.started")
+		}
+	}
 
 	// sh.keptn.event.*.triggered - action: _
 
-	found, action = config.IsEventMatch("sh.keptn.event.action.triggered", nil)
+	found = config.IsEventMatch("sh.keptn.event.action.triggered", nil)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.*.triggered", data) {
+			assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+		}
+	}
 
-	found, action = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
+	found = config.IsEventMatch("sh.keptn.event.test.triggered", nil)
 	assert.Equal(t, found, true)
-	assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+	for _, action := range config.Actions {
+		if action.IsEventMatch("sh.keptn.event.*.triggered", data) {
+			assert.Equal(t, action.Events[3].Name, "sh.keptn.event.*.triggered")
+		}
+	}
 }
 
 func TestTaskPullPolicy(t *testing.T) {
