@@ -38,6 +38,14 @@ const defaultTTLSecondsAfterFinished = int32(21600)
 // but the policy of the job-executor-service doesn't allow such job workloads to be created
 var /*const*/ ErrPrivilegedContainerNotAllowed = errors.New("privileged containers are not allowed")
 
+// ErrMaxPollTimeExceeded indicates that the job has been polled for max poll time without completing.
+// K8sImpl will stop polling abd return the error but the job will continue running on K8s.
+var /*const*/ ErrMaxPollTimeExceeded = errors.New("max poll count reached for job")
+
+// ErrTaskDeadlineExceeded indicates that the job has exceeded the deadline set for task runs.
+// K8s has terminated the job and the related pods.
+var /*const*/ ErrTaskDeadlineExceeded = errors.New("job deadline exceeded")
+
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
 	JobNamespace                string
@@ -48,6 +56,7 @@ type JobSettings struct {
 	DefaultSecurityContext      *v1.SecurityContext
 	DefaultPodSecurityContext   *v1.PodSecurityContext
 	AllowPrivilegedJobs         bool
+	TaskDeadlineSeconds         *int64
 }
 
 // K8sImpl is used to interact with kubernetes jobs
@@ -257,6 +266,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 			},
 			BackoffLimit:            &backOffLimit,
 			TTLSecondsAfterFinished: &TTLSecondsAfterFinished,
+			ActiveDeadlineSeconds:   jobSettings.TaskDeadlineSeconds,
 		},
 	}
 
@@ -286,7 +296,10 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 		now := time.Now()
 
 		if now.After(pollingStart.Add(maxPollDuration)) {
-			return fmt.Errorf("max poll count reached for job %s. Timing out after %s", jobName, now.Sub(pollingStart))
+			return fmt.Errorf(
+				"polling for job %s timing out after %s: %w", jobName, now.Sub(pollingStart),
+				ErrMaxPollTimeExceeded,
+			)
 		}
 
 		job, err := jobs.Get(context.TODO(), jobName, metav1.GetOptions{})
@@ -305,6 +318,10 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 					"job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
 				)
 			case batchv1.JobFailed:
+				if condition.Reason == "DeadlineExceeded" {
+					return fmt.Errorf("job %s failed: %w", jobName, ErrTaskDeadlineExceeded)
+				}
+
 				return fmt.Errorf(
 					"job %s failed. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
 				)
