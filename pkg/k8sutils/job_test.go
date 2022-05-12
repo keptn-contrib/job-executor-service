@@ -568,7 +568,7 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 		{
 			name:                            "0 seconds ttl specified in input - job eligible for deletion immediately",
 			ttlSecondsAfterFinished:         &ImmediatedlyDeletableTTLAfterFinished,
-			expectedTTLSecondsAfterFinished: ImmediatedlyDeletableTTLAfterFinished,
+			expectedTTLSecondsAfterFinished: minTTLSecondsAfterFinished,
 		},
 	}
 	for i, test := range tests {

@@ -31,6 +31,9 @@ const envValueFromEvent = "event"
 const envValueFromSecret = "secret"
 const envValueFromString = "string"
 
+const minTTLSecondsAfterFinished = int32(60)
+const defaultTTLSecondsAfterFinished = int32(21600)
+
 // ErrPrivilegedContainerNotAllowed indicates an error that occurs if a security context does contain privileged=true
 // but the policy of the job-executor-service doesn't allow such job workloads to be created
 var /*const*/ ErrPrivilegedContainerNotAllowed = errors.New("privileged containers are not allowed")
@@ -117,11 +120,20 @@ func (k8s *K8sImpl) CreateK8sJob(
 		return fmt.Errorf("could not prepare env for job %v: %v", jobName, err.Error())
 	}
 
-	var TTLSecondsAfterFinished int32
-	if task.TTLSecondsAfterFinished == nil {
-		TTLSecondsAfterFinished = 21600
-	} else {
-		TTLSecondsAfterFinished = *task.TTLSecondsAfterFinished
+	// Set the default value of the ttlSecondsAfterFinished to ensure that the jobs are cleanup after some
+	// time, if the TTL is too low it will be set to minTTLSecondsAfterFinished and a warning will be printed
+	TTLSecondsAfterFinished := defaultTTLSecondsAfterFinished
+	if task.TTLSecondsAfterFinished != nil {
+
+		if *task.TTLSecondsAfterFinished < minTTLSecondsAfterFinished {
+			TTLSecondsAfterFinished = minTTLSecondsAfterFinished
+			log.Printf("Warning: Correcting TTLSecondsAfterFinished in action '%s' for task '%s' to %d!",
+				action.Name, task.Name, minTTLSecondsAfterFinished,
+			)
+		} else {
+			TTLSecondsAfterFinished = *task.TTLSecondsAfterFinished
+		}
+
 	}
 
 	// Build the final security context for the pod

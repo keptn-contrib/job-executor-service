@@ -73,8 +73,6 @@ func TestJobCleanupWithSmallTTL(t *testing.T) {
 }
 
 func TestJobCleanupWith0TTLMultipleJobs(t *testing.T) {
-	t.Skip("Skipping TestJobCleanupWith0TTLMultipleJobs since TTL=0 is not currently supported/working")
-
 	if !isE2ETestingAllowed() {
 		t.Skip("Skipping TestJobCleanupWith0TTLMultipleJobs, not allowed by environment")
 	}
