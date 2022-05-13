@@ -747,6 +747,9 @@ func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}
 
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 	tests := []struct {
 		name                          string
 		taskDeadlineSeconds           *int64
@@ -793,7 +796,14 @@ func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 					TaskDeadlineSeconds:       test.taskDeadlineSeconds,
 				}
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: fmt.Sprintf("test-action-%d", i)}, task, &eventData, jobSettings, "",
+					jobName,
+					JobDetails{
+						Action:        &config.Action{Name: fmt.Sprintf("test-action-%d", i)},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, jobSettings, eventAsInterface,
 					namespace,
 				)
 
