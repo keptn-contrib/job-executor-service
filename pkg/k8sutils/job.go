@@ -548,11 +548,11 @@ func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}) (map
 	return map[string]string{
 		"app.kubernetes.io/managed-by": "job-executor-service",
 		"keptn.sh/context":             keptnContext,
-		"keptn.sh/ceid":                eventID,
+		"keptn.sh/event-id":            eventID,
 		"keptn.sh/commitid":            gitCommitID,
 		"keptn.sh/jes-action":          sanitizeLabel(jobDetails.Action.Name),
 		"keptn.sh/jes-task":            sanitizeLabel(jobDetails.Task.Name),
-		"keptn.sh/job-confighash":      jobDetails.JobConfigHash,
+		"keptn.sh/jes-job-confighash":  jobDetails.JobConfigHash,
 		"keptn.sh/jes-action-index":    strconv.Itoa(jobDetails.ActionIndex),
 		"keptn.sh/jes-task-index":      strconv.Itoa(jobDetails.TaskIndex),
 	}, nil

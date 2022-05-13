@@ -1071,11 +1071,11 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 			expectedLabels := map[string]string{
 				"app.kubernetes.io/managed-by": "job-executor-service",
 				"keptn.sh/context":             test.event["shkeptncontext"].(string),
-				"keptn.sh/ceid":                test.event["id"].(string),
+				"keptn.sh/event-id":            test.event["id"].(string),
 				"keptn.sh/commitid":            "",
 				"keptn.sh/jes-action":          test.expectedActionName,
 				"keptn.sh/jes-task":            test.expectedTaskName,
-				"keptn.sh/job-confighash":      "",
+				"keptn.sh/jes-job-confighash":  "",
 				"keptn.sh/jes-action-index":    "0",
 				"keptn.sh/jes-task-index":      "0",
 			}
@@ -1145,11 +1145,11 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 	expectedLabels := map[string]string{
 		"app.kubernetes.io/managed-by": "job-executor-service",
 		"keptn.sh/context":             event["shkeptncontext"].(string),
-		"keptn.sh/ceid":                event["id"].(string),
+		"keptn.sh/event-id":            event["id"].(string),
 		"keptn.sh/commitid":            "",
 		"keptn.sh/jes-action":          "Test_Action",
 		"keptn.sh/jes-task":            "Test_Job",
-		"keptn.sh/job-confighash":      "",
+		"keptn.sh/jes-job-confighash":  "",
 		"keptn.sh/jes-action-index":    "0",
 		"keptn.sh/jes-task-index":      "0",
 	}
