@@ -1,0 +1,13 @@
+{
+  "data": {
+    "project": "e2e-project",
+    "service": "e2e-service",
+    "stage": "e2e",
+    "labels": {
+      "sleep": "30"
+    }
+  },
+  "source": "e2e-test",
+  "specversion": "1.0",
+  "type": "sh.keptn.event.e2e.jes.triggered"
+}

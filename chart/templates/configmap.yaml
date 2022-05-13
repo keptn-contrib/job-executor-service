@@ -14,3 +14,4 @@ data:
   init_container_configuration_endpoint: {{ include "job-executor-service.remote-control-plane.configuration-endpoint" . }}
   default_job_service_account: "{{ include "job-executor-service.jobConfig.serviceAccountName" . }}"
   allow_privileged_jobs: "{{ .Values.jobConfig.allowPrivilegedJobs | default "false" }}"
+  task_deadline_seconds: {{ .Values.jobConfig.taskDeadlineSeconds | default 0 | quote}}

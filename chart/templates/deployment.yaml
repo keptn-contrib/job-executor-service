@@ -108,6 +108,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: allow_privileged_jobs
+          - name: TASK_DEADLINE_SECONDS
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: task_deadline_seconds
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor

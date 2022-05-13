@@ -690,6 +690,76 @@ func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
 	)
 }
 
+var Deadline30Sec = int64(30)
+var ExpectedDeadline30Sec = int64(30)
+
+func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	tests := []struct {
+		name                          string
+		taskDeadlineSeconds           *int64
+		expectedActiveDeadlineSeconds *int64
+	}{
+		{
+			name:                          "No deadline specified, no limit set in job",
+			taskDeadlineSeconds:           nil,
+			expectedActiveDeadlineSeconds: nil,
+		},
+		{
+			name:                          "30sec deadline",
+			taskDeadlineSeconds:           &Deadline30Sec,
+			expectedActiveDeadlineSeconds: &ExpectedDeadline30Sec,
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(
+			test.name, func(t *testing.T) {
+				jobName := fmt.Sprintf("tds-job-%d", i)
+				task := config.Task{
+					Name:  fmt.Sprintf("TdsTask-%d", i),
+					Image: "someImage:someversion",
+					Cmd:   []string{"someCmd"},
+				}
+
+				eventData := keptnv2.EventData{
+					Project: "keptnproject",
+					Stage:   "dev",
+					Service: "keptnservice",
+				}
+
+				namespace := "test-namespace"
+
+				jobSettings := JobSettings{
+					JobNamespace: namespace,
+					DefaultResourceRequirements: &corev1.ResourceRequirements{
+						Limits:   make(corev1.ResourceList),
+						Requests: make(corev1.ResourceList),
+					},
+					DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+					DefaultSecurityContext:    new(corev1.SecurityContext),
+					TaskDeadlineSeconds:       test.taskDeadlineSeconds,
+				}
+				err := k8s.CreateK8sJob(
+					jobName, &config.Action{Name: fmt.Sprintf("test-action-%d", i)}, task, &eventData, jobSettings, "",
+					namespace,
+				)
+
+				require.NoError(t, err, "Error creating test job")
+
+				job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(
+					context.Background(), jobName, metav1.GetOptions{},
+				)
+
+				require.NoError(t, err, "Error retrieving created test job")
+				assert.Equal(t, test.expectedActiveDeadlineSeconds, job.Spec.ActiveDeadlineSeconds)
+			},
+		)
+	}
+}
+
 func TestAwaitK8sJobDoneErrorJobSuspended(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}
@@ -741,10 +811,8 @@ func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{},
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
 	namespace := "never-ending-jobs-land"
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
@@ -757,9 +825,48 @@ func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
 
 	assert.ErrorContains(
 		t, err, fmt.Sprintf(
-			"max poll count reached for job %s. Timing out after", jobName,
+			"polling for job %s timing out after", jobName,
 		),
 	)
+
+	assert.ErrorIs(t, err, ErrMaxPollTimeExceeded)
+}
+
+func TestAwaitK8sJobExceededDeadline(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "deadline-exceeding-job"
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{
+				{
+					Type:    v1.JobFailed,
+					Status:  corev1.ConditionTrue,
+					Reason:  reasonJobDeadlineExceeded,
+					Message: "Job exceeded deadline",
+				},
+			},
+		},
+	}
+	namespace := "tight-job-runtimes-only"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, 50*time.Millisecond, namespace)
+
+	require.Error(t, err)
+
+	assert.ErrorContains(
+		t, err, fmt.Sprintf("job %s failed:", jobName),
+	)
+
+	assert.ErrorIs(t, err, ErrTaskDeadlineExceeded)
 }
 
 func TestAwaitK8sJobDoneSuccessAfterPolling(t *testing.T) {
