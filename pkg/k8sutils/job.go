@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"log"
 	"reflect"
 	"regexp"
@@ -361,6 +363,36 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 
 		time.Sleep(pollInterval)
 	}
+}
+
+// GetFailedEventsForJob will check for events with reason starting with Failed on the specified job
+func (k8s *K8sImpl) GetFailedEventsForJob(jobName string, namespace string) (string, error) {
+	var eventMessages strings.Builder
+
+	// Construct a valid field selector
+	kindSelector, _ := labels.NewRequirement("involvedObject.kind", selection.Equals, []string{"Job"})
+	nameSelector, _ := labels.NewRequirement("involvedObject.name", selection.Equals, []string{jobName})
+	selector := labels.NewSelector()
+	selector = selector.Add(*kindSelector, *nameSelector)
+
+	// Search for the job in the events list
+	events, err := k8s.clientset.CoreV1().Events(namespace).List(context.TODO(), metav1.ListOptions{
+		FieldSelector: selector.String(),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	// Search for events with reason starting with "Failed"
+	for _, event := range events.Items {
+		if strings.HasPrefix(event.Reason, "Failed") { // Failed, FailedCreate, ....
+			// append the reason and message to eventMessages
+			eventMessages.WriteString(fmt.Sprintf("%s: %s\n", event.Reason, event.Message))
+		}
+	}
+
+	return eventMessages.String(), nil
 }
 
 func (k8s *K8sImpl) prepareJobEnv(

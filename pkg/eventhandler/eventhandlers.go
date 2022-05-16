@@ -56,6 +56,7 @@ type K8s interface {
 	AwaitK8sJobDone(
 		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
 	) error
+	GetFailedEventsForJob(jobName string, namespace string) (string, error)
 	GetLogsOfPod(jobName string, namespace string) (string, error)
 }
 
@@ -225,6 +226,16 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 
 		if jobErr != nil {
 			log.Printf("Error while creating job: %s\n", jobErr.Error())
+
+			erroredEventMessages, eventErr := eh.K8s.GetFailedEventsForJob(jobName, namespace)
+
+			if eventErr != nil {
+				log.Printf("Error while retrieving events: %s\n", eventErr.Error())
+			} else if erroredEventMessages != "" {
+				// Found some failed events for this job - appending them to logs
+				logs = logs + "\n" + erroredEventMessages
+			}
+
 			if !action.Silent {
 				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, jobErr, logs)
 			}
