@@ -1,8 +1,8 @@
 package config
 
 import (
-	"crypto/sha1"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"log"
 )
 
@@ -31,7 +31,7 @@ func (jcr *JobConfigReader) GetJobConfig() (*Config, string, error) {
 		return nil, "", fmt.Errorf("error retrieving job config: %w", err)
 	}
 
-	hasher := sha1.New()
+	hasher := sha3.New224()
 	hasher.Write(resource)
 	resourceHashBytes := hasher.Sum(nil)
 	resourceHash := fmt.Sprintf("%x", resourceHashBytes)
