@@ -194,6 +194,21 @@ func (mr *MockK8sMockRecorder) CreateK8sJob(arg0, arg1, arg2, arg3, arg4, arg5 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// GetFailedEventsForJob mocks base method.
+func (m *MockK8s) GetFailedEventsForJob(arg0, arg1 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFailedEventsForJob", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFailedEventsForJob indicates an expected call of GetFailedEventsForJob.
+func (mr *MockK8sMockRecorder) GetFailedEventsForJob(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFailedEventsForJob", reflect.TypeOf((*MockK8s)(nil).GetFailedEventsForJob), arg0, arg1)
+}
+
 // GetLogsOfPod mocks base method.
 func (m *MockK8s) GetLogsOfPod(arg0, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
