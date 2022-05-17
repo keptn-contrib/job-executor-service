@@ -740,6 +740,88 @@ func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
 	)
 }
 
+func TestAwaitK8sJobDoneNotStarted(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "job-not-started"
+
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{}, // this job won't have a condition set
+		},
+	}
+	namespace := "job-pain-and-misery-ns"
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+
+	require.Error(t, err)
+
+	assert.ErrorContains(
+		t, err, "max poll count reached for job",
+	)
+}
+
+func TestGetFailedEventsForJob(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jobName := "happy-path-job"
+	namespace := "happy-path-ns"
+	failedEventMessage1 := "Failed to create pod"
+	failedEventMessage2 := "Failed to pull image"
+	successfulEventMessage1 := "Successfully pulled image"
+
+	// job config
+	job := v1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: jobName,
+		},
+		Spec: v1.JobSpec{},
+		Status: v1.JobStatus{
+			Conditions: []v1.JobCondition{}, // this job won't have a condition set
+		},
+	}
+
+	// two failed and one successful event
+	events := []corev1.Event{
+		{ObjectMeta: metav1.ObjectMeta{Name: "event-1"}, TypeMeta: metav1.TypeMeta{Kind: "job"}, InvolvedObject: corev1.ObjectReference{Name: jobName, Kind: "job", Namespace: namespace}, Source: corev1.EventSource{}, Reason: "FailedCreate", Message: failedEventMessage1},
+		{ObjectMeta: metav1.ObjectMeta{Name: "event-2"}, TypeMeta: metav1.TypeMeta{Kind: "job"}, InvolvedObject: corev1.ObjectReference{Name: jobName, Kind: "job", Namespace: namespace}, Reason: "Failed", Message: failedEventMessage2},
+		{ObjectMeta: metav1.ObjectMeta{Name: "event-3"}, TypeMeta: metav1.TypeMeta{Kind: "job"}, InvolvedObject: corev1.ObjectReference{Name: jobName, Kind: "job", Namespace: namespace}, Reason: "Pulled", Message: successfulEventMessage1},
+	}
+
+	// create job
+	k8sClientSet.BatchV1().Jobs(namespace).Create(
+		context.Background(), &job, metav1.CreateOptions{},
+	)
+
+	// create events
+	for _, event := range events {
+		_, err := k8sClientSet.CoreV1().Events(namespace).Create(
+			context.Background(), &event, metav1.CreateOptions{},
+		)
+
+		require.NoError(t, err)
+	}
+
+	// get failed events
+	eventMessages, err := k8s.GetFailedEventsForJob(jobName, namespace)
+
+	assert.NoError(t, err)
+
+	require.Contains(t, eventMessages, failedEventMessage1, "failedEventMessage1 must be part of eventMessages")
+	require.Contains(t, eventMessages, failedEventMessage2, "failedEventMessage2 must be part of eventMessages")
+	require.NotContains(t, eventMessages, successfulEventMessage1, "successfulEventMessage1 must *not* be part of eventMessages")
+
+}
+
 var Deadline30Sec = int64(30)
 var ExpectedDeadline30Sec = int64(30)
 
