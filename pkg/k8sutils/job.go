@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"regexp"
 	"strings"
+	"strconv"
 	"time"
 
 	"keptn-contrib/job-executor-service/pkg/utils"
@@ -48,6 +50,16 @@ var /*const*/ ErrMaxPollTimeExceeded = errors.New("max poll count reached for jo
 // K8s has terminated the job and the related pods.
 var /*const*/ ErrTaskDeadlineExceeded = errors.New("job deadline exceeded")
 
+// JobDetails is used in the K8s interface to pass details of a specific job to the CreateK8sJob function
+// This details contain the action, task to be executed and other information that may be needed by the runtime environment
+type JobDetails struct {
+	Action        *config.Action
+	Task          *config.Task
+	ActionIndex   int
+	TaskIndex     int
+	JobConfigHash string
+}
+
 // JobSettings contains environment variable settings for the job
 type JobSettings struct {
 	JobNamespace                string
@@ -59,6 +71,7 @@ type JobSettings struct {
 	DefaultPodSecurityContext   *v1.PodSecurityContext
 	AllowPrivilegedJobs         bool
 	TaskDeadlineSeconds         *int64
+	JobLabels                   map[string]string
 }
 
 // K8sImpl is used to interact with kubernetes jobs
@@ -83,12 +96,14 @@ func (k8s *K8sImpl) ConnectToCluster() error {
 	return nil
 }
 
-// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the task
-// returns ttlSecondsAfterFinished as stored in k8s or error in case of issues creating the job
+// CreateK8sJob creates a k8s job with the job-executor-service-initcontainer and the job image of the job details
+// specified in jobDetails.
 func (k8s *K8sImpl) CreateK8sJob(
-	jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties, jobSettings JobSettings,
+	jobName string, jobDetails JobDetails, eventData keptn.EventProperties, jobSettings JobSettings,
 	jsonEventData interface{}, namespace string,
 ) error {
+	task := jobDetails.Task
+	action := jobDetails.Action
 
 	var backOffLimit int32 = 0
 
@@ -166,15 +181,29 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
+	generatedJobLabels, err := generateK8sJobLabels(jobDetails, jsonEventData)
+	if err != nil {
+		return fmt.Errorf("unable to generate job labels: %w", err)
+	}
+
+	// merge the user defined and the generated job labels together into one map
+	mergedJobLabels := make(map[string]string)
+	for key, value := range jobSettings.JobLabels {
+		mergedJobLabels[key] = value
+	}
+	for key, value := range generatedJobLabels {
+		mergedJobLabels[key] = value
+	}
+
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
 			Namespace: namespace,
+			Labels:    mergedJobLabels,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
 				Spec: v1.PodSpec{
-
 					SecurityContext: jobSettings.DefaultPodSecurityContext,
 					InitContainers: []v1.Container{
 						{
@@ -335,7 +364,7 @@ func (k8s *K8sImpl) AwaitK8sJobDone(
 }
 
 func (k8s *K8sImpl) prepareJobEnv(
-	task config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
+	task *config.Task, eventData keptn.EventProperties, jsonEventData interface{}, namespace string,
 ) ([]v1.EnvVar, error) {
 
 	var jobEnv []v1.EnvVar
@@ -472,4 +501,59 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 	}
 
 	return generatedEnv, nil
+}
+
+// generateK8sJobLabels generates the required labels for the k8s job from the given job details and event,
+// such that the job can be identified later on.
+func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}) (map[string]string, error) {
+	eventAsMap, ok := jsonEventData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unable to process jsonEventData")
+	}
+
+	keptnContext, ok := eventAsMap["shkeptncontext"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jsonEventData does not contain the field shkeptncontext")
+	}
+
+	eventID, ok := eventAsMap["id"].(string)
+	if !ok {
+		return nil, fmt.Errorf("jsonEventData does not contain the field id")
+	}
+
+	gitCommitID, ok := eventAsMap["gitcommitid"].(string)
+	if !ok {
+		// For legacy events that have no git commit id we just set it to an empty string
+		gitCommitID = ""
+	}
+
+	// This function is used to sanitize the labels for the action and the task name to
+	// avoid creating a set of labels that is not allowed by kubernetes
+	sanitizeLabel := func(label string) string {
+
+		// Replace all occurrences of not allowed characters with _
+		label = regexp.MustCompile("[^-a-z\\dA-Z_.]+").ReplaceAllString(label, "_")
+
+		// Limit the length of the label to the max amount
+		if len(label) > 63 {
+			label = label[:63]
+		}
+
+		// Cut away all illegal starting / stopping characters
+		label = strings.Trim(label, "-_.")
+
+		return label
+	}
+
+	return map[string]string{
+		"app.kubernetes.io/managed-by": "job-executor-service",
+		"keptn.sh/context":             keptnContext,
+		"keptn.sh/event-id":            eventID,
+		"keptn.sh/commitid":            gitCommitID,
+		"keptn.sh/jes-action":          sanitizeLabel(jobDetails.Action.Name),
+		"keptn.sh/jes-task":            sanitizeLabel(jobDetails.Task.Name),
+		"keptn.sh/jes-job-confighash":  jobDetails.JobConfigHash,
+		"keptn.sh/jes-action-index":    strconv.Itoa(jobDetails.ActionIndex),
+		"keptn.sh/jes-task-index":      strconv.Itoa(jobDetails.TaskIndex),
+	}, nil
 }

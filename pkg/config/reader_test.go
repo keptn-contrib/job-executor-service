@@ -20,7 +20,7 @@ func TestConfigRetrievalFailed(t *testing.T) {
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig()
 	assert.ErrorIs(t, err, retrievalError)
 	assert.Nil(t, config)
 }
@@ -42,7 +42,7 @@ func TestMalformedConfig(t *testing.T) {
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig()
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
@@ -71,7 +71,7 @@ func TestGetConfigHappyPath(t *testing.T) {
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig()
 	assert.NoError(t, err)
 	assert.NotNil(t, config)
 }

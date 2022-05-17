@@ -114,12 +114,13 @@ func (m *MockJobConfigReader) EXPECT() *MockJobConfigReaderMockRecorder {
 }
 
 // GetJobConfig mocks base method.
-func (m *MockJobConfigReader) GetJobConfig() (*config.Config, error) {
+func (m *MockJobConfigReader) GetJobConfig() (*config.Config, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetJobConfig")
 	ret0, _ := ret[0].(*config.Config)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetJobConfig indicates an expected call of GetJobConfig.
@@ -180,31 +181,17 @@ func (mr *MockK8sMockRecorder) ConnectToCluster() *gomock.Call {
 }
 
 // CreateK8sJob mocks base method.
-func (m *MockK8s) CreateK8sJob(arg0 string, arg1 *config.Action, arg2 config.Task, arg3 keptn.EventProperties, arg4 k8sutils.JobSettings, arg5 interface{}, arg6 string) error {
+func (m *MockK8s) CreateK8sJob(arg0 string, arg1 k8sutils.JobDetails, arg2 keptn.EventProperties, arg3 k8sutils.JobSettings, arg4 interface{}, arg5 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateK8sJob", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "CreateK8sJob", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateK8sJob indicates an expected call of CreateK8sJob.
-func (mr *MockK8sMockRecorder) CreateK8sJob(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) CreateK8sJob(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
-}
-
-// ExistsServiceAccount mocks base method.
-func (m *MockK8s) ExistsServiceAccount(arg0, arg1 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExistsServiceAccount", arg0, arg1)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// ExistsServiceAccount indicates an expected call of ExistsServiceAccount.
-func (mr *MockK8sMockRecorder) ExistsServiceAccount(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExistsServiceAccount", reflect.TypeOf((*MockK8s)(nil).ExistsServiceAccount), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateK8sJob", reflect.TypeOf((*MockK8s)(nil).CreateK8sJob), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // GetLogsOfPod mocks base method.

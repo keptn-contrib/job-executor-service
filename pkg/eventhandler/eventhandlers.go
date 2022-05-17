@@ -38,7 +38,7 @@ type EventMapper interface {
 
 // JobConfigReader retrieves the job-executor-service configuration
 type JobConfigReader interface {
-	GetJobConfig() (*config.Config, error)
+	GetJobConfig() (*config.Config, string, error)
 }
 
 // ErrorLogSender is used to send error logs that will appear in Uniform UI
@@ -50,7 +50,7 @@ type ErrorLogSender interface {
 type K8s interface {
 	ConnectToCluster() error
 	CreateK8sJob(
-		jobName string, action *config.Action, task config.Task, eventData keptn.EventProperties,
+		jobName string, jobDetails k8sutils.JobDetails, eventData keptn.EventProperties,
 		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
 	) error
 	AwaitK8sJobDone(
@@ -96,7 +96,7 @@ func (eh *EventHandler) HandleEvent() error {
 	)
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
-	configuration, err := eh.JobConfigReader.GetJobConfig()
+	configuration, configHash, err := eh.JobConfigReader.GetJobConfig()
 
 	if err != nil {
 		errorLogErr := eh.ErrorSender.SendErrorLogEvent(
@@ -115,8 +115,9 @@ func (eh *EventHandler) HandleEvent() error {
 		return err
 	}
 
-	match, action := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
-	if !match {
+	// Check if we have an action that we can use, if it isn't the case we produce a log output
+	hasMatchingEvent := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
+	if !hasMatchingEvent {
 		log.Printf(
 			"No match found for event %s of type %s. Skipping...", eh.Keptn.CloudEvent.Context.GetID(),
 			eh.Keptn.CloudEvent.Type(),
@@ -124,17 +125,22 @@ func (eh *EventHandler) HandleEvent() error {
 		return nil
 	}
 
-	log.Printf(
-		"Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Keptn.CloudEvent.Context.GetID(),
-		eh.Keptn.CloudEvent.Type(), action.Name,
-	)
+	// For each action that matches the given event type we execute all containing tasks:
+	for actionIndex, action := range configuration.Actions {
+		if action.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface) {
+			log.Printf(
+				"Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Keptn.CloudEvent.Context.GetID(),
+				eh.Keptn.CloudEvent.Type(), action.Name,
+			)
 
-	eh.startK8sJob(action, eventAsInterface)
+			eh.startK8sJob(&action, actionIndex, configHash, eventAsInterface)
+		}
+	}
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interface{}) {
+func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, configHash string, jsonEventData interface{}) {
 
 	if !action.Silent {
 		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
@@ -177,7 +183,8 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
-		jobName := "job-executor-service-job-" + eh.Keptn.CloudEvent.ID()[:28] + "-" + strconv.Itoa(index+1)
+		// the naming scheme is also unique if multiple actions in one cloud event are executed
+		jobName := fmt.Sprintf("job-executor-service-job-%s-%03d-%03d", eh.Keptn.CloudEvent.ID()[:24], actionIndex, index+1)
 
 		namespace := eh.JobSettings.JobNamespace
 
@@ -185,9 +192,16 @@ func (eh *EventHandler) startK8sJob(action *config.Action, jsonEventData interfa
 			namespace = task.Namespace
 		}
 
-		err := eh.K8s.CreateK8sJob(
-			jobName, action, task, eh.Keptn.Event, eh.JobSettings,
-			jsonEventData, namespace,
+		jobDetails := k8sutils.JobDetails{
+			Action:        action,
+			Task:          &task,
+			ActionIndex:   actionIndex,
+			TaskIndex:     index,
+			JobConfigHash: configHash,
+		}
+
+		err = eh.K8s.CreateK8sJob(
+			jobName, jobDetails, eh.Keptn.Event, eh.JobSettings, jsonEventData, namespace,
 		)
 
 		if err != nil {

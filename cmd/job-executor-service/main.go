@@ -71,6 +71,9 @@ const jobSecurityContextFilePath = "/config/job-defaultSecurityContext.json"
 // podSecurityContextFilePath describes the path of the pod security config file that is defined in the deployment.yaml
 const podSecurityContextFilePath = "/config/job-podSecurityContext.json"
 
+// jobLabelFilePath describes the path of the job labels yaml file
+const jobLabelFilePath = "/config/job-labels.yaml"
+
 // DefaultResourceRequirements contains the default k8s resource requirements for the job and initcontainer, parsed on
 // startup from env (treat as const)
 var /* const */ DefaultResourceRequirements *v1.ResourceRequirements
@@ -81,6 +84,9 @@ var /* const */ DefaultJobSecurityContext *v1.SecurityContext
 
 // DefaultPodSecurityContext contains the default pod security context for jobs
 var /* const */ DefaultPodSecurityContext *v1.PodSecurityContext
+
+// JobLabels contains all user defined labels that should added to each job
+var /* const */ JobLabels map[string]string
 
 // TaskDeadlineSecondsPtr represents the max duration of a task run, no limit if nil
 var TaskDeadlineSecondsPtr *int64
@@ -119,6 +125,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
+			JobLabels:                   JobLabels,
 			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
 		},
 		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
@@ -171,6 +178,11 @@ func main() {
 	err = utils.VerifySecurityContext(DefaultPodSecurityContext, DefaultJobSecurityContext, env.AllowPrivilegedJobs)
 	if err != nil {
 		log.Fatalf("Failed to verify security context: %s", err.Error())
+	}
+
+	JobLabels, err = utils.ReadAndValidateJobLabels(jobLabelFilePath)
+	if err != nil {
+		log.Fatalf("Failed to read job labels: %s", err.Error())
 	}
 
 	if env.TaskDeadlineSeconds > 0 {

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"log"
 )
 
@@ -21,19 +22,25 @@ type JobConfigReader struct {
 }
 
 // GetJobConfig retrieves job/config.yaml resource from keptn and parses it into a Config struct.
+// Additionally, also the SHA1 hash of the retrieved configuration will be returned.
 // In case of error retrieving the resource or parsing the yaml it will return (nil,
 // error) with the original error correctly wrapped in the local one
-func (jcr *JobConfigReader) GetJobConfig() (*Config, error) {
+func (jcr *JobConfigReader) GetJobConfig() (*Config, string, error) {
 	resource, err := jcr.Keptn.GetKeptnResource(jobConfigResourceName)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving job config: %w", err)
+		return nil, "", fmt.Errorf("error retrieving job config: %w", err)
 	}
+
+	hasher := sha3.New224()
+	hasher.Write(resource)
+	resourceHashBytes := hasher.Sum(nil)
+	resourceHash := fmt.Sprintf("%x", resourceHashBytes)
 
 	configuration, err := NewConfig(resource)
 	if err != nil {
 		log.Printf("Could not parse config: %s", err)
 		log.Printf("The config was: %s", string(resource))
-		return nil, fmt.Errorf("error parsing job configuration: %w", err)
+		return nil, "", fmt.Errorf("error parsing job configuration: %w", err)
 	}
-	return configuration, nil
+	return configuration, resourceHash, nil
 }

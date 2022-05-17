@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -75,7 +77,7 @@ func TestPrepareJobEnv_WithNoValueFrom(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.EqualError(t, err, "could not add env with name DEPLOYMENT_STRATEGY, unknown valueFrom ")
 }
 
@@ -125,7 +127,7 @@ func TestPrepareJobEnvFromEvent(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	testTriggeredEventJSON := `
@@ -194,7 +196,7 @@ func TestPrepareJobEnvFromEvent_WithWrongJSONPath(t *testing.T) {
 	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
 
 	k8s := K8sImpl{}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.Contains(t, err.Error(), "unknown key undeploymentstrategy")
 }
 
@@ -228,7 +230,7 @@ func TestPrepareJobEnvFromSecret(t *testing.T) {
 	k8sSecret := createK8sSecretObj(secretName, testNamespace, secretData)
 	k8s.clientset.CoreV1().Secrets(testNamespace).Create(context.TODO(), k8sSecret, metav1.CreateOptions{})
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	// env from secrets can in in any order, sort them
@@ -274,7 +276,7 @@ func TestPrepareJobEnvFromSecret_SecretNotFound(t *testing.T) {
 	k8s := K8sImpl{
 		clientset: k8sfake.NewSimpleClientset(),
 	}
-	_, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	_, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	assert.EqualError(
 		t, err,
 		"could not add env with name locust-sockshop-dev-carts, valueFrom secret: secrets \"locust-sockshop-dev-carts\" not found",
@@ -307,7 +309,7 @@ func TestPrepareJobEnvFromString(t *testing.T) {
 		clientset: k8sfake.NewSimpleClientset(),
 	}
 
-	jobEnv, err := k8s.prepareJobEnv(task, &eventData, eventAsInterface, testNamespace)
+	jobEnv, err := k8s.prepareJobEnv(&task, &eventData, eventAsInterface, testNamespace)
 	require.NoError(t, err)
 
 	assert.Equal(t, len(jobEnv), 4)
@@ -335,14 +337,22 @@ func TestSetWorkingDir(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:       jobName,
-			Image:      "alpine",
-			Cmd:        []string{"ls"},
-			WorkingDir: workingDir,
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:       jobName,
+				Image:      "alpine",
+				Cmd:        []string{"ls"},
+				WorkingDir: workingDir,
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: testNamespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -350,7 +360,7 @@ func TestSetWorkingDir(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", testNamespace,
+		}, eventAsInterface, testNamespace,
 	)
 
 	require.NoError(t, err)
@@ -393,13 +403,21 @@ func TestSetCustomNamespace(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:  jobName,
-			Image: "alpine",
-			Cmd:   []string{"ls"},
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:  jobName,
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: namespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -407,7 +425,7 @@ func TestSetCustomNamespace(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", namespace,
+		}, eventAsInterface, namespace,
 	)
 
 	require.NoError(t, err)
@@ -438,13 +456,21 @@ func TestSetEmptyNamespace(t *testing.T) {
 	}
 
 	err := k8s.CreateK8sJob(
-		jobName, &config.Action{
-			Name: jobName,
-		}, config.Task{
-			Name:  jobName,
-			Image: "alpine",
-			Cmd:   []string{"ls"},
-		}, &eventData, JobSettings{
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:  jobName,
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
 			JobNamespace: namespace,
 			DefaultResourceRequirements: &corev1.ResourceRequirements{
 				Limits:   make(corev1.ResourceList),
@@ -452,7 +478,7 @@ func TestSetEmptyNamespace(t *testing.T) {
 			},
 			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 			DefaultSecurityContext:    new(corev1.SecurityContext),
-		}, "", namespace,
+		}, eventAsInterface, namespace,
 	)
 
 	require.NoError(t, err)
@@ -521,8 +547,20 @@ func TestImagePullPolicy(t *testing.T) {
 
 				namespace := "test-namespace"
 
+				var eventAsInterface interface{}
+				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName,
+					JobDetails{
+						Action: &config.Action{
+							Name: jobName,
+						},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -530,7 +568,7 @@ func TestImagePullPolicy(t *testing.T) {
 						},
 						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 						DefaultSecurityContext:    new(corev1.SecurityContext),
-					}, "", namespace,
+					}, eventAsInterface, namespace,
 				)
 				require.NoError(t, err)
 
@@ -595,8 +633,20 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 
 				namespace := "test-namespace"
 
+				var eventAsInterface interface{}
+				json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: jobName}, task, &eventData, JobSettings{
+					jobName,
+					JobDetails{
+						Action: &config.Action{
+							Name: jobName,
+						},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, JobSettings{
 						JobNamespace: namespace,
 						DefaultResourceRequirements: &corev1.ResourceRequirements{
 							Limits:   make(corev1.ResourceList),
@@ -604,7 +654,7 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 						},
 						DefaultPodSecurityContext: new(corev1.PodSecurityContext),
 						DefaultSecurityContext:    new(corev1.SecurityContext),
-					}, "", namespace,
+					}, eventAsInterface, namespace,
 				)
 				require.NoError(t, err)
 
@@ -697,6 +747,9 @@ func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}
 
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
 	tests := []struct {
 		name                          string
 		taskDeadlineSeconds           *int64
@@ -743,7 +796,14 @@ func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 					TaskDeadlineSeconds:       test.taskDeadlineSeconds,
 				}
 				err := k8s.CreateK8sJob(
-					jobName, &config.Action{Name: fmt.Sprintf("test-action-%d", i)}, task, &eventData, jobSettings, "",
+					jobName,
+					JobDetails{
+						Action:        &config.Action{Name: fmt.Sprintf("test-action-%d", i)},
+						Task:          &task,
+						ActionIndex:   0,
+						TaskIndex:     0,
+						JobConfigHash: "",
+					}, &eventData, jobSettings, eventAsInterface,
 					namespace,
 				)
 
@@ -923,4 +983,189 @@ func createK8sSecretObj(name string, namespace string, data map[string][]byte) *
 		Data: data,
 		Type: "Opaque",
 	}
+}
+
+func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var eventAsInterfaceWithoutGitCommitID map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterfaceWithoutGitCommitID)
+	require.NoError(t, err)
+
+	var eventAsInterfaceWithGitCommitID map[string]interface{}
+	data, err := ioutil.ReadFile("../../test/events/test.triggered.with-gitcommitid.json")
+	require.NoError(t, err)
+
+	err = json.Unmarshal(data, &eventAsInterfaceWithGitCommitID)
+	require.NoError(t, err)
+
+	namespace := testNamespace
+
+	tests := []struct {
+		name               string
+		actionName         string
+		taskName           string
+		expectedActionName string
+		expectedTaskName   string
+		event              map[string]interface{}
+	}{
+		{
+			name:               "Test normal Event with gitcommitid",
+			actionName:         "some_action",
+			taskName:           "task",
+			event:              eventAsInterfaceWithGitCommitID,
+			expectedActionName: "some_action",
+			expectedTaskName:   "task",
+		},
+		{
+			name:               "Test normal Event without gitcommitid",
+			actionName:         "some_action",
+			taskName:           "task",
+			event:              eventAsInterfaceWithoutGitCommitID,
+			expectedActionName: "some_action",
+			expectedTaskName:   "task",
+		},
+		{
+			name:               "Test non k8s compatible action name",
+			actionName:         "Some fancy action name ...",
+			taskName:           "--NameThat's not Compatible with k8s []{}///// a....",
+			event:              eventAsInterfaceWithGitCommitID,
+			expectedActionName: "Some_fancy_action_name",
+			expectedTaskName:   "NameThat_s_not_Compatible_with_k8s_a",
+		},
+	}
+	for i, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			jobName := "some-job-name-" + strconv.Itoa(i)
+			err = k8s.CreateK8sJob(
+				jobName,
+				JobDetails{
+					Action: &config.Action{
+						Name: test.actionName,
+					},
+					Task: &config.Task{
+						Name:  test.taskName,
+						Image: "alpine",
+						Cmd:   []string{"ls"},
+					},
+					ActionIndex:   0,
+					TaskIndex:     0,
+					JobConfigHash: "",
+				},
+				&eventData,
+				JobSettings{
+					JobNamespace: namespace,
+					DefaultResourceRequirements: &corev1.ResourceRequirements{
+						Limits:   make(corev1.ResourceList),
+						Requests: make(corev1.ResourceList),
+					},
+					DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+					DefaultSecurityContext:    new(corev1.SecurityContext),
+				},
+				test.event,
+				namespace,
+			)
+			require.NoError(t, err)
+
+			job, err := k8sClientSet.BatchV1().Jobs(namespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+			require.NoError(t, err)
+
+			expectedLabels := map[string]string{
+				"app.kubernetes.io/managed-by": "job-executor-service",
+				"keptn.sh/context":             test.event["shkeptncontext"].(string),
+				"keptn.sh/event-id":            test.event["id"].(string),
+				"keptn.sh/commitid":            "",
+				"keptn.sh/jes-action":          test.expectedActionName,
+				"keptn.sh/jes-task":            test.expectedTaskName,
+				"keptn.sh/jes-job-confighash":  "",
+				"keptn.sh/jes-action-index":    "0",
+				"keptn.sh/jes-task-index":      "0",
+			}
+
+			if test.event["gitcommitid"] != nil {
+				expectedLabels["keptn.sh/commitid"] = test.event["gitcommitid"].(string)
+			}
+
+			assert.Equal(t, expectedLabels, job.Labels)
+		})
+	}
+}
+
+func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	userDefinedLabels := map[string]string{
+		"TestLabel1":               "SomeKey_0",
+		"some.dns.name/identifier": "value",
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var event map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &event)
+	require.NoError(t, err)
+
+	err = k8s.CreateK8sJob(
+		"job-1-2-3-1",
+		JobDetails{
+			Action: &config.Action{
+				Name: "Test Action",
+			},
+			Task: &config.Task{
+				Name:  "Test Job",
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData,
+		JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+			JobLabels:                 userDefinedLabels,
+		},
+		event,
+		testNamespace,
+	)
+	require.NoError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), "job-1-2-3-1", metav1.GetOptions{})
+	require.NoError(t, err)
+
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/managed-by": "job-executor-service",
+		"keptn.sh/context":             event["shkeptncontext"].(string),
+		"keptn.sh/event-id":            event["id"].(string),
+		"keptn.sh/commitid":            "",
+		"keptn.sh/jes-action":          "Test_Action",
+		"keptn.sh/jes-task":            "Test_Job",
+		"keptn.sh/jes-job-confighash":  "",
+		"keptn.sh/jes-action-index":    "0",
+		"keptn.sh/jes-task-index":      "0",
+	}
+	for key, value := range userDefinedLabels {
+		expectedLabels[key] = value
+	}
+
+	assert.Equal(t, expectedLabels, job.Labels)
 }

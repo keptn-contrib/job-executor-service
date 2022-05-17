@@ -131,31 +131,41 @@ func NewConfig(yamlContent []byte) (*Config, error) {
 }
 
 // IsEventMatch indicated whether a given event matches the config
-func (c *Config) IsEventMatch(eventType string, jsonEventData interface{}) (bool, *Action) {
+func (c *Config) IsEventMatch(eventType string, jsonEventData interface{}) bool {
 
 	for _, action := range c.Actions {
-		for _, event := range action.Events {
-			// does the event type match with regex?
-			matched, _ := regexp.MatchString(event.Name, eventType)
-			if matched {
+		if action.IsEventMatch(eventType, jsonEventData) {
+			return true
+		}
+	}
+	return false
+}
 
-				// no JSONPath specified, just match event type
-				if event.JSONPath.Property == "" {
-					return true, &action
-				}
+// IsEventMatch indicated whether a given event matches the action
+func (a *Action) IsEventMatch(eventType string, jsonEventData interface{}) bool {
 
-				value, err := jsonpath.Get(event.JSONPath.Property, jsonEventData)
-				if err != nil {
-					continue
-				}
+	for _, event := range a.Events {
+		// does the event type match with regex?
+		matched, _ := regexp.MatchString(event.Name, eventType)
+		if matched {
 
-				if value == event.JSONPath.Match {
-					return true, &action
-				}
+			// no JSONPath specified, just match event type
+			if event.JSONPath.Property == "" {
+				return true
+			}
+
+			value, err := jsonpath.Get(event.JSONPath.Property, jsonEventData)
+			if err != nil {
+				continue
+			}
+
+			if value == event.JSONPath.Match {
+				return true
 			}
 		}
 	}
-	return false, nil
+
+	return false
 }
 
 // FindActionByName searches for a given Action by a provided name within the config
