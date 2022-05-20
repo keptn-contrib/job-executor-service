@@ -3,15 +3,15 @@ on:
   # always execute docker build when something is pushed to master or release-* branches
   push:
     branches:
-      - 'master'
-      - 'main'
-      - 'release-*'
+      - "master"
+      - "main"
+      - "release-*"
   # in addition, execute for pull requests to those branches
   pull_request:
     branches:
-      - 'master'
-      - 'main'
-      - 'release-*'
+      - "master"
+      - "main"
+      - "release-*"
   # Allow users to manual run the CI pipeline for a specific branch, this may
   # be needed for the integration tests as they need the generated artifacts / images
   workflow_dispatch: # run integration tests only when triggered manually
@@ -52,12 +52,12 @@ jobs:
         # see https://github.com/keptn/gh-action-extract-branch-name for details
         uses: keptn/gh-action-extract-branch-name@main
 
-      - name: 'Get Previous tag'
+      - name: "Get Previous tag"
         id: get_previous_tag
         uses: "WyriHaximus/github-action-get-previous-tag@v1.1"
         with:
           fallback: "0.0.1"
-      - name: 'Get next patch version'
+      - name: "Get next patch version"
         id: get_next_semver_tag
         uses: "WyriHaximus/github-action-next-semvers@v1.1"
         with:
@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -170,7 +170,6 @@ jobs:
             * ${{ fromJSON(steps.docker_build.outputs.BUILD_METADATA)['image.name'] }}
             * ${{ fromJSON(steps.docker_build_initcontainer.outputs.BUILD_METADATA)['image.name'] }}
 
-
   helm_chart_build:
     needs: [prepare_ci_run, docker_build]
     name: Build Helm Charts
@@ -206,13 +205,13 @@ jobs:
     env:
       VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3.0.0
-        with:
-          go-version: 1.17
-
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v3.1.0
+        with:
+          go-version-file: "go.mod"
 
       - name: Run make
         run: make build-lint
