@@ -2,7 +2,7 @@ name: Integration Tests
 on:
   schedule:
     # * is a special character in YAML, so you have to quote this string
-    - cron: '0 3 * * 1-5' # run integration tests at 3 AM, monday to friday (1-5)
+    - cron: "0 3 * * 1-5" # run integration tests at 3 AM, monday to friday (1-5)
 
   workflow_dispatch: # run integration tests only when triggered manually
 
@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: [ "0.12.7", "0.13.5", "0.14.2", "0.15.0" ] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.12.7", "0.13.5", "0.14.2", "0.15.0"] # https://github.com/keptn/keptn/releases
     env:
       GO_VERSION: 1.17
       GO111MODULE: "on"
@@ -27,18 +27,18 @@ jobs:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}.json
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v3.0.0
+      # Checkout code for the integrations tests in test/e2e
+      - name: Check out code.
+        uses: actions/checkout@v3.0.2
+
+      - name: Setup Go
+        uses: actions/setup-go@v3.1.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: "go.mod"
 
       - name: Install gotestsum
         shell: bash
         run: go install gotest.tools/gotestsum@latest
-
-      # Checkout code for the integrations tests in test/e2e
-      - name: Check out code.
-        uses: actions/checkout@v3
 
       # Download artifacts from last CI run
       - name: Download artifacts
@@ -89,7 +89,7 @@ jobs:
           KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
         run: |
           ls -lah ./dist/helm-charts/
-          
+
           KEPTN_API_HOST=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)\/api/\1/')
           helm upgrade --install --create-namespace -n $JES_NAMESPACE job-executor-service \
             ./dist/helm-charts/job-executor-service-*.tgz \
@@ -111,7 +111,7 @@ jobs:
 
       - name: Run Integration tests
         run: |
-          gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/... 
+          gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/...
 
       # Upload the report files, so we can use them in later jobs
       - name: Upload test report as an artifact
@@ -139,7 +139,7 @@ jobs:
           name: keptn-support-archive-${{matrix.keptn-version}}
           path: support-archive/*.zip
 
-      - name: Dump k8s debug info 
+      - name: Dump k8s debug info
         if: always()
         run: |
           mkdir k8s_debug
@@ -204,14 +204,14 @@ jobs:
                   } = process.env
 
             const markdownReportData = [];
-            
+
             let transposedTable = {};
-            
+
             const keptnVersionRegex = /test-report-\d+-(.*).json/;
-            
+
             const fileList = fs.readdirSync(TEST_REPORTS_PATH);
             let keptnVersionCount = 0;
-            
+
             fileList.forEach(fileName => {
               console.log(`Reading file: ${fileName}`);
               
@@ -223,9 +223,9 @@ jobs:
               keptnVersionCount++;
               
               testResults.forEach(testResult => {
-            
+
                 if (testResult.Test !== undefined && (testResult.Action === "pass" || testResult.Action === "fail" || testResult.Action ===  "skip")) {
- 
+
                   // Strip Test prefix from the name of the test
                   name = testResult.Test
 
@@ -234,7 +234,7 @@ jobs:
                   if (transposedTable[name] === undefined) {
                     transposedTable[name] = {"Test": name};
                   }
-            
+
                   switch(testResult.Action) {
                     case 'pass': transposedTable[name][keptnVersion] = ':heavy_check_mark:'; break;
                     case 'fail': transposedTable[name][keptnVersion] = ':x:';                break;
@@ -242,19 +242,19 @@ jobs:
                     default:     transposedTable[name][keptnVersion] = testResult.Action;
                   }
                 }
-            
+
               });
             });
-            
+
             transposedTable = Object.values(transposedTable)
 
             let columns = [{ align: "left" }];
             for(let i = 0; i < keptnVersionCount; i++){ 
               columns.push({ align: "center" });
             }
-    
+
             const markdownReport = tablemark(transposedTable, {caseHeaders: false, columns: columns});
-            
+
             fs.mkdirSync(FINAL_TEST_REPORTS_FOLDER);
             fs.writeFileSync(FINAL_TEST_REPORT_FILEPATH_MARKDOWN, markdownReport);
 
@@ -273,7 +273,7 @@ jobs:
           FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
         run: |
           REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
-          
+
           if [[ "$REPORT" == *":x:"* ]]; then
             echo "INTEGRATION TESTS FAILED!"
             echo "##[set-output name=INTEGRATION_TESTS_FAILED;]true"
@@ -286,13 +286,13 @@ jobs:
           FINAL_TEST_REPORT_FILEPATH_MARKDOWN: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
         run: |
           REPORT=$(cat "$FINAL_TEST_REPORT_FILEPATH_MARKDOWN")
-          
+
           if [[ $GITHUB_EVENT_NAME == 'schedule' ]]; then
             TRIGGERED_BY="Scheduled build"
           else
             TRIGGERED_BY="@$GITHUB_ACTOR"
           fi
-          
+
           INTEGRATION_FILE_LINK=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$BRANCH/.github/workflows/integration_tests.yaml
             
           # Create issue for the failed integration test:  
@@ -301,14 +301,14 @@ jobs:
           title: Integration tests failed
           labels: type:critical
           ---
-          
+
           * Link to run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
           * Triggered by: $TRIGGERED_BY
           * Branch: $BRANCH
           * Commit: $GITHUB_SHA
-        
+
           $REPORT
-        
+
           Note: This issue was auto-generated from [integration_tests.yaml]($INTEGRATION_FILE_LINK)
           EOT
 

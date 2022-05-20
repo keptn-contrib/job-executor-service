@@ -1,5 +1,5 @@
-name: 'Unit Tests'
-description: 'Run unit tests using go'
+name: "Unit Tests"
+description: "Run unit tests using go"
 inputs:
   GO_VERSION:
     default: "1.17"
@@ -8,11 +8,11 @@ env:
   GOPROXY: "https://proxy.golang.org"
 runs:
   using: "composite"
-  steps: 
-    - name: Install Go
-      uses: actions/setup-go@v3.0.0
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v3.1.0
       with:
-        go-version: ${{ inputs.GO_VERSION }}
+        go-version-file: "go.mod"
     - name: Install gotestsum
       shell: bash
       run: go install gotest.tools/gotestsum@latest
