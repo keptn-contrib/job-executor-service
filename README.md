@@ -50,107 +50,42 @@ For now, we advise to install Job-Executor-Service in a separate namespace, and 
 
 </details>
 
-## Installation
+## Quickstart
 
-The *job-executor-service* can be installed as a part of [Keptn's uniform](https://keptn.sh) using `helm`.
-It is recommended to install the *job-executor-service* on the remote execution-plane, which can be on the same cluster, or on a completely
-separate Kubernetes environment (see [Keptn docs: Multi-cluster setup](https://keptn.sh/docs/0.11.x/operate/multi_cluster/) for details).
+### Install job-executor-service
+Install `job-executor-service` on a kubernetes cluster where `Keptn` is already installed:
 
-During the installation process various parameters of the *job-executor-service* can be customized, for a complete list
-of these helm values have a look at the [documentation](chart/README.md).
-In order to install the *job-executor-service* on the remote execution plane, some values of the helm chart need to be configured:
-* `remoteControlPlane.topicSubscription` - list of Keptn CloudEvent types that this instance should listen to, e.g., `sh.keptn.event.remote-task.triggered`
-* `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane
-* `remoteControlPlane.api.hostname` - Keptn API Hostname (e.g., `1.2.3.4.nip.io`). If Keptn is installed on the same cluster the API is usually reachable under `api-gateway-nginx.keptn`.
-* `remoteControlPlane.api.token` - Keptn API Token (can be obtained from Bridge)
+```shell
+JES_VERSION="0.2.0"
+JES_NAMESPACE="keptn-jes"
+TASK_SUBSCRIPTION="sh.keptn.event.remote-task.triggered" # Add the relevant events here in a comma-separated list
 
-**Example**
+helm upgrade --install --create-namespace -n ${JES_NAMESPACE} \
+  job-executor-service "https://github.com/keptn-contrib/job-executor-service/releases/download/${JES_VERSION}/job-executor-service-${JES_VERSION}.tgz" \
+ --set remoteControlPlane.autoDetect.enabled="true",remoteControlPlane.topicSubscription="${TASK_SUBSCRIPTION}",remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
+```
+For more info about installation please refer to [INSTALL.MD](INSTALL.MD)
 
-```bash
-KEPTN_API_PROTOCOL=http # or https
-KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
- KEPTN_API_TOKEN=<INSERT-YOUR-KEPTN-API-TOKEN-HERE>
-
-TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
-
-helm upgrade --install --create-namespace -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
- --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
+### Create a simple "Hello World" job config
+Create a simple project and service using the example [shipyard](example/shipyard.yaml)
+```shell
+keptn create project jes-example -y -s example/shipyard.yaml
+keptn create service hello --project jes-example -y
 ```
 
-Please replace `<VERSION>` with the actual version you want to install from the compatibility matrix above or the
-[GitHub releases page](https://github.com/keptn-contrib/job-executor-service/releases).
-
-To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
-
-**Example (with auto-detection)**
-
-For easier installation of the *job-executor-service* a Keptn installation on the same kubernetes cluster can be discovered automatically. This only
-works if no `remoteControlPlane.api.token`, `remoteControlPlane.api.protocol` or `remoteControlPlane.api.hostname` is provided.
-If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.namespace` must be set to the desired Keptn instance.
-The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.
-
-```bash
-TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
-
-helm upgrade --install --create-namespace -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
- --set remoteControlPlane.autoDetect.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
+Add a [simple "Hello world!" job config](example/jobconfig.yaml) to `production` stage for service `hello` as `job/config.yaml` 
+```shell
+keptn add-resource --project jes-example --service hello --stage production --resource example/jobconfig.yaml --resourceUri job/config.yaml
 ```
 
-
-### Update API Token on Remote Execution-Plane
-
-To update your `KEPTN_API_TOKEN` on an existing installation, please execute the following command (make sure to use the same `<VERSION>` is currently installed):
-
-```bash
- KEPTN_API_TOKEN=<INSERT-YOUR-NEW-KEPTN-API-TOKEN-HERE>
-
-helm upgrade -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
-  --reuse-values \
- --set remoteControlPlane.api.token=${KEPTN_API_TOKEN}
+Trigger the `example-seq` sequence. 
+```shell
+keptn trigger sequence --sequence example-seq --project jes-example --service hello --stage production
 ```
 
-### Update Topic Subscriptions
+Have a look at the sequences for the project in Keptn bridge, it should look similar to this:
 
-To update your `TASK_SUBSCRIPTION` (as in the Cloud Event types that job-executor-service is listening to), please execute the following command (make sure to use the same `<VERSION>` is currently installed):
-
-```bash
-TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered,sh.keptn.event.some-other-task.triggered
-
-helm upgrade -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
-  --reuse-values \
- --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION}
-```
-
-## Upgrade
-
-To upgrade to a newer version of *job-executor-service*, run
-
-```bash
-helm upgrade -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
-  --reuse-values
-```
-
-To upgrade to a newer version of *job-executor-service* and automatically use the auto-detection to configure the Keptn API token, run
-
-```bash
-helm upgrade -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
-  --reuse-values \
-  --set remoteControlPlane.autoDetect.enabled=true,remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
-```
-
-## Uninstall
-
-To uninstall *job-executor-service*, run
-
-```bash
-helm uninstall -n <NAMESPACE> job-executor-service
-```
+![image](example/helloworld-sequence.png)
 
 ## Development
 
@@ -179,36 +114,6 @@ Creating a release is as simple as using the
 **Note**: Creating a pre-release will actually create a GitHub pre-release and tag the latest commit on the specified branch.
 When creating a release, only a draft release as well as a pull request are created. You still need to publish the draft
 release and merge the Pull Request.
-
-
-## Quickstart
-
-Just put a file into the Keptn config git repository of a service (in folder `<service>/job/config.yaml`) to specify
-
-* the containers which should be run as Kubernetes Jobs and
-* the events for which they should be triggered.
-
-```yaml
-apiVersion: v2
-actions:
-  - name: "Run something"
-    events:
-      - name: "sh.keptn.event.test.triggered"
-    tasks:
-      - name: "Greet the world"
-        image: "alpine"
-        cmd:
-          - echo
-        args:
-          - "Hello World"
-
-```
-
-The easiest way to add the `config.yaml` to the keptn git repository is to use the `keptn` cli:
-
-```shell
-keptn add-resource --project=myproject --service=myservice --stage=mystage --resource=config.yaml --resourceUri=job/config.yaml
-```
 
 
 ## How to validate a job configuration
