@@ -1,0 +1,17 @@
+apiVersion: v2
+actions:
+  - name: "Run tests using locust"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+    tasks:
+      - name: "Run locust"
+        files:
+          - locust/basic.py
+          - locust/locust.conf
+        image: "locustio/locust"
+        cmd: ["locust"]
+        args: ["--config", "/keptn/locust/locust.conf", "-f", "/keptn/locust/basic.py", "--host", "$(HOST)", "--only-summary"]
+        env:
+          - name: HOST
+            value: "$.data.deployment.deploymentURIsPublic[0]"
+            valueFrom: event

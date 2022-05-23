@@ -1,0 +1,22 @@
+
+apiVersion: v2
+actions:
+  - name: "My remote task"
+    events:
+      - name: "sh.keptn.event.my-task.triggered"
+    tasks:
+      - name: "Say hi to project:service:stage"
+        image: "alpine"
+        cmd:
+          - echo
+        args:
+          - "Hello $(KEPTN_PROJECT):$(KEPTN_SERVICE):$(KEPTN_STAGE)"
+
+      - name: "Say hi to in different languages"
+        image: "alpine"
+        files:
+          - "greetings.txt"
+        cmd:
+          - cat
+        args:
+          - "/keptn/greetings.txt"

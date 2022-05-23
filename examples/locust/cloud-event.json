@@ -1,0 +1,16 @@
+{
+  "data": {
+    "deployment": {
+      "deploymentURIsPublic": [
+        "https://keptn.sh"
+      ]
+    },
+    "project": "jes-locust",
+    "service": "helloservice",
+    "stage": "qa"
+  },
+  "source": "jes-examples-readme",
+  "specversion": "1.0",
+  "shkeptnspecversion": "0.2.3",
+  "type": "sh.keptn.event.qa.test.triggered"
+}
