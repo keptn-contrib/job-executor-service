@@ -7,7 +7,7 @@ This Keptn integration introduces a new approach of running customizable tasks w
 
 ## Motivation
 
-The job-executor-service aims to tackle several current pain points with the current approach of services/integrations
+The `job-executor-service` aims to tackle several current pain points with the current approach of services/integrations
 running in the Keptn ecosystem:
 
 | Problem                                                                                                                                                                                                                                                                                                                                        | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -34,7 +34,7 @@ Please note: Newer Keptn versions might be compatible, but compatibility has not
 
 **Warning**: We are aware that there might be a problem when trying to install Job-Executor-Service in the same namespace as Keptn 0.14.x. 
 For now, we advise to install Job-Executor-Service in a separate namespace, and set `remoteControlPlane.api.hostname`, `remoteControlPlane.api.token`, ... as detailed in the
-[Installation section](#installation) below.
+[Installation instructions](docs/INSTALL.md).
 
 
 <details>
@@ -64,18 +64,18 @@ helm upgrade --install --create-namespace -n ${JES_NAMESPACE} \
   job-executor-service "https://github.com/keptn-contrib/job-executor-service/releases/download/${JES_VERSION}/job-executor-service-${JES_VERSION}.tgz" \
  --set remoteControlPlane.autoDetect.enabled="true",remoteControlPlane.topicSubscription="${TASK_SUBSCRIPTION}",remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
 ```
-For more info about installation please refer to [INSTALL.MD](INSTALL.MD)
+For more info about installing or upgrading `job-executor-service` please refer to the [installation instructions](docs/INSTALL.md)
 
 ### Create a simple "Hello World" job config
-Create a simple project and service using the example [shipyard](example/shipyard.yaml)
+Create a simple project and service using the example [shipyard](docs/example/shipyard.yaml)
 ```shell
-keptn create project jes-example -y -s example/shipyard.yaml
+keptn create project jes-example -y -s docs/example/shipyard.yaml
 keptn create service hello --project jes-example -y
 ```
 
-Add a [simple "Hello world!" job config](example/jobconfig.yaml) to `production` stage for service `hello` as `job/config.yaml` 
+Add a [simple "Hello world!" job config](docs/example/jobconfig.yaml) to `production` stage for service `hello` as `job/config.yaml`
 ```shell
-keptn add-resource --project jes-example --service hello --stage production --resource example/jobconfig.yaml --resourceUri job/config.yaml
+keptn add-resource --project jes-example --service hello --stage production --resource docs/example/jobconfig.yaml --resourceUri job/config.yaml
 ```
 
 Trigger the `example-seq` sequence. 
@@ -83,9 +83,10 @@ Trigger the `example-seq` sequence.
 keptn trigger sequence --sequence example-seq --project jes-example --service hello --stage production
 ```
 
-Have a look at the sequences for the project in Keptn bridge, it should look similar to this:
+Have a look at the sequences for the project in Keptn bridge, it should look similar to the screenshot below:
+![image](docs/assets/example/helloworld-sequence.png)
 
-![image](example/helloworld-sequence.png)
+For a more comprehensive list of use-cases and features that this integration supports have a look at [FEATURES.md](docs/FEATURES.md).
 
 ## Development
 
@@ -132,11 +133,11 @@ The flag should match the job-executor-service [configuration](/chart/README.md)
 
 ## Features
 
-A more comprehensive list of use-cases and features that this integration supports is provided in [FEATURES.md](FEATURES.md).
+A more comprehensive list of use-cases and features that this integration supports is provided in [FEATURES.md](docs/FEATURES.md).
 
 ## Architecture
 
-A deep look into the architecture of job-executor-service is provided in [ARCHITECTURE.md](ARCHITECTURE.md).
+A deep look into the architecture of job-executor-service is provided in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Credits
 
