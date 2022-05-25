@@ -1,0 +1,12 @@
+apiVersion: v2
+actions:
+  - name: "Be polite and say hello!"
+    events:
+      - name: "sh.keptn.event.remote-task.triggered"
+    tasks:
+      - name: "Greet the world"
+        image: "alpine"
+        cmd:
+          - echo
+        args:
+          - "Hello World"

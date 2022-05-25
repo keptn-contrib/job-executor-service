@@ -27,7 +27,7 @@
 
 ### Getting started
 
-To get started with job-executor-service, please follow the [Quickstart](README.md#quickstart).
+To get started with job-executor-service, please follow the [Quickstart](../README.md#quickstart).
 
 
 ### Specifying the working directory
