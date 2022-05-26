@@ -10,7 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Go
-      uses: actions/setup-go@v3.1.0
+      uses: actions/setup-go@v3.2.0
       with:
         go-version-file: "go.mod"
     - name: Install gotestsum
