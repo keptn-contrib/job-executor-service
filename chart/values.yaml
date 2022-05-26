@@ -123,3 +123,8 @@ nodeSelector: { }                                # Node selector configuration
 tolerations: [ ]                                 # Tolerations for the pods
 
 affinity: { }                                    # Affinity rules
+
+networkPolicy:
+  enabled: false
+  k8sMasterCIDR: ""
+  k8sMasterPort: 0
