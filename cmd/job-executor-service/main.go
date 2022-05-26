@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"os"
 
 	api "github.com/keptn/go-utils/pkg/api/utils"
@@ -219,8 +218,19 @@ func _main(args []string, env envConfig) int {
 	log.Printf("Creating new http handler")
 
 	// configure http server to receive cloudevents
+	listeningAddr := fmt.Sprintf("localhost:%d", env.Port)
+	listener, err := net.Listen(
+		"tcp", listeningAddr,
+	)
+	if err != nil {
+		log.Fatalf("error listening on tcp %s: %v", listeningAddr, err)
+	}
+
 	p, err := cloudevents.NewHTTP(
-		cloudevents.WithPath(env.Path), cloudevents.WithPort(env.Port), cloudevents.WithGetHandlerFunc(HTTPGetHandler),
+		cloudevents.WithPath(env.Path),
+		cloudevents.WithListener(
+			listener,
+		),
 	)
 
 	if err != nil {
@@ -244,54 +254,6 @@ func _main(args []string, env envConfig) int {
 	log.Fatal(c.StartReceiver(ctx, processCloudEventFunc))
 
 	return 0
-}
-
-// HTTPGetHandler will handle all requests for '/health' and '/ready'
-func HTTPGetHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
-	case "/health":
-		healthEndpointHandler(w, r)
-	case "/ready":
-		healthEndpointHandler(w, r)
-	default:
-		endpointNotFoundHandler(w, r)
-	}
-}
-
-// HealthHandler runs a basic health check back
-func healthEndpointHandler(w http.ResponseWriter, r *http.Request) {
-	type StatusBody struct {
-		Status string `json:"status"`
-	}
-
-	status := StatusBody{Status: "OK"}
-
-	body, _ := json.Marshal(status)
-
-	w.Header().Set("content-type", "application/json")
-
-	_, err := w.Write(body)
-	if err != nil {
-		log.Println(err)
-	}
-}
-
-// endpointNotFoundHandler will return 404 for requests
-func endpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
-	type StatusBody struct {
-		Status string `json:"status"`
-	}
-
-	status := StatusBody{Status: "NOT FOUND"}
-
-	body, _ := json.Marshal(status)
-
-	w.Header().Set("content-type", "application/json")
-
-	_, err := w.Write(body)
-	if err != nil {
-		log.Println(err)
-	}
 }
 
 type imageFilterImpl struct {
