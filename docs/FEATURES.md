@@ -536,10 +536,14 @@ The policy will define the following rules:
 This setting should limit the possibility of interaction with the job-executor-service from malicious third parties and
 limit the potential to interfere with other workloads on the same kubernetes cluster.
 
-To install the network-policy specify
+To install the network-policy specify the following in a value file:
 ```yaml
 networkPolicy:
   enabled: true
+```
+or add this option in helm command line:
+```shell
+--set networkPolicy.enabled=true
 ```
 when installing job-executor-service.
 For a more detail explanation about the values that can be specified please have a look at the [Helm chart's README.md](../chart/README.md)
