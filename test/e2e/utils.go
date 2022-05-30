@@ -4,20 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
-	"github.com/keptn/go-utils/pkg/api/models"
-	keptnutils "github.com/keptn/kubernetes-utils/pkg"
-	"github.com/mitchellh/mapstructure"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/keptn/go-utils/pkg/api/models"
+	keptnutils "github.com/keptn/kubernetes-utils/pkg"
+	"github.com/mitchellh/mapstructure"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes"
 )
 
 // KeptnConnectionDetails contains the endpoint and the API token for Keptn
@@ -108,7 +111,9 @@ func parseKeptnEventData(ce *models.KeptnContextExtendedCE) (*eventData, error) 
 }
 
 // createK8sSecret creates a k8s secret from a json file and uploads it into the give namespace
-func createK8sSecret(ctx context.Context, clientset *kubernetes.Clientset, namespace string, jsonFilePath string) (func(ctx2 context.Context), error) {
+func createK8sSecret(
+	ctx context.Context, clientset *kubernetes.Clientset, namespace string, jsonFilePath string,
+) (func(ctx2 context.Context), error) {
 
 	// read the file from the given path
 	file, err := ioutil.ReadFile(jsonFilePath)
@@ -274,7 +279,10 @@ func (env testEnvironment) ShouldRun(semverConstraint string) error {
 
 // requireWaitForEvent checks if an event occurred in a specific time frame while polling the event bus of keptn, the eventValidator
 // should return true if the desired event was found
-func requireWaitForEvent(t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext, eventType string, eventValidator func(c *models.KeptnContextExtendedCE) bool) {
+func requireWaitForEvent(
+	t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext,
+	eventType string, eventValidator func(c *models.KeptnContextExtendedCE) bool,
+) {
 	checkForEventsToMatch := func() bool {
 		events, err := api.GetEvents(keptnContext.KeptnContext)
 		require.NoError(t, err)
@@ -296,4 +304,15 @@ func requireWaitForEvent(t *testing.T, api KeptnAPI, waitFor time.Duration, tick
 	// We require waiting for a keptn event, this is useful to exit out tests if no .started event occurred.
 	// It doesn't make sense in these cases to wait for a .finished or other .triggered events ...
 	require.Eventuallyf(t, checkForEventsToMatch, waitFor, tick, "did not receive keptn event: %s", eventType)
+}
+
+func getJESPodList(clientset *kubernetes.Clientset, namespace string) (*v1.PodList, error) {
+	selector := labels.NewSelector()
+	nameSelector, _ := labels.NewRequirement(
+		"app.kubernetes.io/name", selection.Equals, []string{"job-executor-service"},
+	)
+	selector = selector.Add(*nameSelector)
+	return clientset.CoreV1().Pods(namespace).List(
+		context.Background(), metav1.ListOptions{LabelSelector: selector.String()},
+	)
 }
