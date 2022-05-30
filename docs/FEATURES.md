@@ -522,6 +522,27 @@ helm upgrade --install --create-namespace -n <NAMESPACE> \
  --set jobConfig.allowedImageList=${ALLOWED_IMAGE_LIST},remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
 ```
 
+### Limit cluster network access to job-executor-service
+
+By default, job-executor-service puts no restrictions on incoming/outgoing network connections within the same kubernetes
+cluster but a network policy can be defined (opt-in) when installing the job-executor service.
+The policy will define the following rules:
+- No incoming connection to job-executor-service
+- Connection originating from the job-executor-service are only allowed to:
+  - keptn control-plane
+  - CoreDNS in k8s cluster
+  - k8s apiserver.
+
+This setting should limit the possibility of interaction with the job-executor-service from malicious third parties and
+limit the potential to interfere with other workloads on the same kubernetes cluster.
+
+To install the network-policy specify
+```yaml
+networkPolicy:
+  enabled: true
+```
+when installing job-executor-service.
+For a more detail explanation about the values that can be specified please have a look at the [Helm chart's README.md](../chart/README.md)
 
 ### Send start/finished event if the job config.yaml can't be found
 
