@@ -14,12 +14,6 @@ spec:
   # ingress:
   egress:
     - to:
-      #{{ if semverCompare ">= 1.21.0" .Capabilities.KubeVersion.Version }}
-      #- namespaceSelector:
-      #    matchLabels:
-      #      kubernetes.io/metadata.name: <keptn namespace, autodetected or otherwise>
-      #{{ end }}
-      - namespaceSelector: {}
       - podSelector:
           matchLabels:
             app.kubernetes.io/name: api-gateway-nginx
@@ -57,15 +51,16 @@ spec:
     {{ end }}
     {{ end }}
 
-    # Allow DNS traffic to any pod (could be restricted to coredns in kube-system if needed)
+    # Allow DNS traffic to kube-dns pod
     - to:
       {{ if semverCompare ">= 1.21.0" .Capabilities.KubeVersion.Version }}
       - namespaceSelector:
           matchLabels:
-            kubernetes.io/metadata.name: default
-      {{ else }}
-      - namespaceSelector: {}
+            kubernetes.io/metadata.name: kube-system
       {{ end }}
+      - podSelector:
+          matchLabels:
+            k8s-app: kube-dns
       ports:
       - protocol: UDP
         port: 53
