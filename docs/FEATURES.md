@@ -19,7 +19,6 @@
     - [Job image pull policy](#job-image-pull-policy)
     - [Job service account](#job-service-account)
     - [Restrict job images](#restrict-job-images)
-    - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
     - [Additional Event Data](#additional-event-data)
     - [Remote Control Plane](#remote-control-plane)
     - [Job clean-up](#job-clean-up)
@@ -520,17 +519,6 @@ ALLOWED_IMAGE_LIST="docker.io/my-user/*,custom.registry.io/*"
 helm upgrade --install --create-namespace -n <NAMESPACE> \
   job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
  --set jobConfig.allowedImageList=${ALLOWED_IMAGE_LIST},remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
-```
-
-
-### Send start/finished event if the job config.yaml can't be found
-
-By default, the job executor service does not send any started/finished events if can't find its `config.yaml` in the
-keptn repository. In the case it is desired that the job executor service sends a start/finished event with the
-respective error, just set the following environment variable on the pod to true:
-
-```yaml
-ALWAYS_SEND_FINISHED_EVENT = true
 ```
 
 ### Additional Event Data
