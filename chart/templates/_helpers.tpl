@@ -120,7 +120,9 @@ Helper functions of the auto detection feature of Keptn
         {{- else }}
             {{- fail "Please provide an api token" }}
         {{- end }}
+    {{- else if eq ((.Values.remoteControlPlane).api.authMode) "token" }}
+         {{- required "A valid API Token is required!" .Values.remoteControlPlane.api.token }}
     {{- else }}
-        {{- required "A valid API Token is required!" .Values.remoteControlPlane.api.token }}
+         {{- .Values.remoteControlPlane.api.token }}
     {{- end }}
 {{- end }}

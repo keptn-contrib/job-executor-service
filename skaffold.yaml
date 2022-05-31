@@ -39,6 +39,12 @@ deploy:
               protocol: ""
               hostname: ""
               token: ""
+              authMode: "token"
+              oauth:
+                clientId: ""
+                clientSecret: ""
+                clientDiscovery: ""
+                scopes: ""
           networkPolicy:
             enabled: true
             k8sMasterCIDR: ""

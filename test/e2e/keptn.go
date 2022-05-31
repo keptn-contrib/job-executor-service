@@ -6,6 +6,7 @@ import (
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	"net/http"
+	"net/url"
 )
 
 const authHeaderName = "x-token"
@@ -25,12 +26,20 @@ type KeptnAPI struct {
 func NewKeptnAPI(details KeptnConnectionDetails) KeptnAPI {
 	httpClient := http.Client{}
 
+	endpointUrl, _ := url.Parse(details.Endpoint)
+	// TODO: handle err
+
+	endpointScheme := protocolScheme
+	if endpointUrl.Scheme != "" {
+		endpointScheme = endpointUrl.Scheme
+	}
+
 	return KeptnAPI{
 		httpClient:      &httpClient,
-		APIHandler:      api.NewAuthenticatedAPIHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		ProjectHandler:  api.NewAuthenticatedProjectHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		ResourceHandler: api.NewAuthenticatedResourceHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		EventHandler:    api.NewAuthenticatedEventHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
+		APIHandler:      api.NewAuthenticatedAPIHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		ProjectHandler:  api.NewAuthenticatedProjectHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		ResourceHandler: api.NewAuthenticatedResourceHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		EventHandler:    api.NewAuthenticatedEventHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
 	}
 }
 
@@ -39,10 +48,12 @@ func (k KeptnAPI) CreateProject(projectName string, shipyardYAML []byte) error {
 
 	shipyardFileBase64 := base64.StdEncoding.EncodeToString(shipyardYAML)
 
+	fmt.Println("before create project")
 	_, err := k.APIHandler.CreateProject(models.CreateProject{
 		Name:     &projectName,
 		Shipyard: &shipyardFileBase64,
 	})
+	fmt.Println("after create project")
 
 	if err != nil {
 		return fmt.Errorf("unable to create project: %s", convertKeptnModelToErrorString(err))

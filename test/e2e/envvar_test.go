@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,8 +25,10 @@ func TestEnvironmentVariables(t *testing.T) {
 
 	require.NoError(t, err)
 
+	fmt.Println("before setup")
 	err = testEnv.SetupTestEnvironment()
 	require.NoError(t, err)
+	fmt.Println("after setup")
 
 	// Make sure project is delete after the tests are completed
 	defer testEnv.Cleanup()

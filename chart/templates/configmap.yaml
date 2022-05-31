@@ -18,3 +18,7 @@ data:
       {{- toYaml . | nindent 6 }}
     {{- end }}
   task_deadline_seconds: {{ .Values.jobConfig.taskDeadlineSeconds | default 0 | quote}}
+  oauth_discovery: {{ .Values.remoteControlPlane.api.oauth.clientDiscovery | quote }}
+  oauth_client_id: {{ .Values.remoteControlPlane.api.oauth.clientId | quote }}
+  oauth_scopes: {{ .Values.remoteControlPlane.api.oauth.scopes | quote }}
+  auth_mode: {{ .Values.remoteControlPlane.api.authMode | quote }}
