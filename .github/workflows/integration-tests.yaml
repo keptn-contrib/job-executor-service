@@ -126,7 +126,7 @@ jobs:
       - name: keptn generate support-archive
         if: always()
         env:
-          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}
+          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{ matrix.network-policy}}
         timeout-minutes: 5
         run: |
           mkdir support-archive/
@@ -151,13 +151,15 @@ jobs:
           kubectl logs -n keptn  -l app.kubernetes.io/instance=keptn --all-containers > k8s_debug/k8s_all_keptn_logs.txt
           kubectl get pv,pvc -n keptn > k8s_debug/k8s_keptn_pv_pvc.txt
           kubectl cluster-info dump > k8s_debug/k8s_cluster_info_dump.txt
+          kubectl get deployments -n ${JES_NAMESPACE} -o json > k8s_debug/k8s_jes_deployments.json
+          kubectl logs -n ${JES_NAMESPACE} -l app.kubernetes.io/name=job-executor-service --all-containers > k8s_debug/k8s_jes_logs.txt
 
       # Upload the k8s debug archive, so we can use it for debugging
       - name: Upload k8s debug archive
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: k8s-debug-archive-${{matrix.keptn-version}}
+          name: k8s-debug-archive-${{matrix.keptn-version}}-netpolicy-${{matrix.network-policy}}
           path: k8s_debug/
 
   publish_final_test_report:
