@@ -13,13 +13,20 @@ spec:
   # ingress rules element is commented to deny all ingress traffic to the pod
   # ingress:
   egress:
+    # Add egress to the keptn api gateway POD
     - to:
       - namespaceSelector: {}
         podSelector:
           matchLabels:
             app.kubernetes.io/name: api-gateway-nginx
             app.kubernetes.io/instance: keptn
-
+    # Add egress to the keptn API hostname that could have been defined
+    {{ if .Values.remoteControlPlane.api.hostname }}
+    {{ $keptnApiIp := getHostByName .Values.remoteControlPlane.api.hostname }}
+    - to:
+        - ipBlock:
+            cidr: {{ printf "%s/32" $keptnApiIp}}
+    {{ end }}
     # Add egress to apiserver endpoints
     {{ if .Values.networkPolicy.k8sMasterCIDR }}
 
