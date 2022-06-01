@@ -15,7 +15,7 @@ spec:
   egress:
     - to:
       - namespaceSelector: {}
-      - podSelector:
+        podSelector:
           matchLabels:
             app.kubernetes.io/name: api-gateway-nginx
             app.kubernetes.io/instance: keptn
@@ -54,16 +54,10 @@ spec:
 
     # Allow DNS traffic to kube-dns pod
     - to:
-      #{{ if semverCompare ">= 1.21.0" .Capabilities.KubeVersion.Version }}
-      #- namespaceSelector:
-      #    matchLabels:
-      #      kubernetes.io/metadata.name: kube-system
-      #{{ else }}
-      #- namespaceSelector: {}
-      #{{ end }}
-      #- podSelector:
-      #    matchLabels:
-      #      k8s-app: kube-dns
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
       ports:
       - protocol: UDP
         port: 53
