@@ -10,8 +10,8 @@ import (
 	"log"
 	"reflect"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 
 	"keptn-contrib/job-executor-service/pkg/utils"
@@ -228,6 +228,61 @@ func (k8s *K8sImpl) CreateK8sJob(
 												Name: "job-service-config",
 											},
 											Key: "init_container_configuration_endpoint",
+										},
+									},
+								},
+								{
+									Name: "AUTH_MODE",
+									ValueFrom: &v1.EnvVarSource{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-config",
+											},
+											Key: "auth_mode",
+										},
+									},
+								},
+								{
+									Name: "OAUTH_CLIENT_ID",
+									ValueFrom: &v1.EnvVarSource{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-config",
+											},
+											Key: "oauth_client_id",
+										},
+									},
+								},
+								{
+									Name: "OAUTH_CLIENT_SECRET",
+									ValueFrom: &v1.EnvVarSource{
+										SecretKeyRef: &v1.SecretKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-keptn-secrets",
+											},
+											Key: "oauth_client_secret",
+										},
+									},
+								},
+								{
+									Name: "OAUTH_SCOPES",
+									ValueFrom: &v1.EnvVarSource{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-config",
+											},
+											Key: "oauth_scopes",
+										},
+									},
+								},
+								{
+									Name: "OAUTH_DISCOVERY",
+									ValueFrom: &v1.EnvVarSource{
+										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+											LocalObjectReference: v1.LocalObjectReference{
+												Name: "job-service-config",
+											},
+											Key: "oauth_discovery",
 										},
 									},
 								},
