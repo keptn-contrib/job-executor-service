@@ -146,7 +146,7 @@ func createK8sSecret(
 // testEnvironment structure holds different structures and information that are commonly used by the E2E test environment
 type testEnvironment struct {
 	K8s       *kubernetes.Clientset
-	API       KeptnAPI
+	API       *KeptnAPI
 	EventData *eventData
 	Event     *models.KeptnContextExtendedCE
 	Namespace string
@@ -171,7 +171,10 @@ func newTestEnvironment(eventJSONFilePath string, shipyardPath string, jobConfig
 	}
 
 	// Create a new Keptn api for the use of the E2E test
-	keptnAPI := NewKeptnAPI(readKeptnConnectionDetailsFromEnv())
+	keptnAPI, err := NewKeptnAPI(readKeptnConnectionDetailsFromEnv())
+	if err != nil {
+		return nil, fmt.Errorf("unable to create the keptn API: %w", err)
+	}
 
 	// Read the event we want to trigger and extract the project, service and stage
 	keptnEvent, err := readKeptnContextExtendedCE(eventJSONFilePath)
@@ -280,7 +283,7 @@ func (env testEnvironment) ShouldRun(semverConstraint string) error {
 // requireWaitForEvent checks if an event occurred in a specific time frame while polling the event bus of keptn, the eventValidator
 // should return true if the desired event was found
 func requireWaitForEvent(
-	t *testing.T, api KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext,
+	t *testing.T, api *KeptnAPI, waitFor time.Duration, tick time.Duration, keptnContext *models.EventContext,
 	eventType string, eventValidator func(c *models.KeptnContextExtendedCE) bool,
 ) {
 	checkForEventsToMatch := func() bool {

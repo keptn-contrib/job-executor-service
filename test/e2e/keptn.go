@@ -23,24 +23,26 @@ type KeptnAPI struct {
 }
 
 // NewKeptnAPI creates a KeptnAPI structure from KeptnConnectionDetails
-func NewKeptnAPI(details KeptnConnectionDetails) KeptnAPI {
+func NewKeptnAPI(details KeptnConnectionDetails) (*KeptnAPI, error) {
 	httpClient := http.Client{}
 
-	endpointUrl, _ := url.Parse(details.Endpoint)
-	// TODO: handle err
+	endpointUrl, err := url.Parse(details.Endpoint)
+	if err != nil {
+		return nil, err
+	}
 
 	endpointScheme := protocolScheme
 	if endpointUrl.Scheme != "" {
 		endpointScheme = endpointUrl.Scheme
 	}
 
-	return KeptnAPI{
+	return &KeptnAPI{
 		httpClient:      &httpClient,
 		APIHandler:      api.NewAuthenticatedAPIHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
 		ProjectHandler:  api.NewAuthenticatedProjectHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
 		ResourceHandler: api.NewAuthenticatedResourceHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
 		EventHandler:    api.NewAuthenticatedEventHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
-	}
+	}, nil
 }
 
 // CreateProject creates a keptn project from the contents of a shipyard yaml file
@@ -48,12 +50,10 @@ func (k KeptnAPI) CreateProject(projectName string, shipyardYAML []byte) error {
 
 	shipyardFileBase64 := base64.StdEncoding.EncodeToString(shipyardYAML)
 
-	fmt.Println("before create project")
 	_, err := k.APIHandler.CreateProject(models.CreateProject{
 		Name:     &projectName,
 		Shipyard: &shipyardFileBase64,
 	})
-	fmt.Println("after create project")
 
 	if err != nil {
 		return fmt.Errorf("unable to create project: %s", convertKeptnModelToErrorString(err))
