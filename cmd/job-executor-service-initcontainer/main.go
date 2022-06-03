@@ -101,7 +101,7 @@ func main() {
 	}
 
 	// Create the API from the defined options and the URL
-	keptnApi, err := api.New(baseURL.String(), apiOptions...)
+	keptnAPI, err := api.New(baseURL.String(), apiOptions...)
 	if err != nil {
 		log.Fatalf("unable to create keptn API: %s", err)
 	}
@@ -114,7 +114,7 @@ func main() {
 		useLocalFileSystem = true
 	}
 
-	configService := keptn.NewConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, keptnApi.ResourcesV1())
+	configService := keptn.NewConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, keptnAPI.ResourcesV1())
 
 	err = file.MountFiles(env.Action, env.Task, fs, configService)
 	if err != nil {

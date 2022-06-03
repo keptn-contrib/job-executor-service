@@ -26,14 +26,14 @@ type KeptnAPI struct {
 func NewKeptnAPI(details KeptnConnectionDetails) (*KeptnAPI, error) {
 	httpClient := http.Client{}
 
-	endpointUrl, err := url.Parse(details.Endpoint)
+	endpointURL, err := url.Parse(details.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	endpointScheme := protocolScheme
-	if endpointUrl.Scheme != "" {
-		endpointScheme = endpointUrl.Scheme
+	if endpointURL.Scheme != "" {
+		endpointScheme = endpointURL.Scheme
 	}
 
 	return &KeptnAPI{
