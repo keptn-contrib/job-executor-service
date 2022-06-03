@@ -221,13 +221,13 @@ func (k8s *K8sImpl) CreateK8sJob(
 							},
 							Env: []v1.EnvVar{
 								{
-									Name: "CONFIGURATION_SERVICE",
+									Name: "KEPTN_API_URL",
 									ValueFrom: &v1.EnvVarSource{
 										ConfigMapKeyRef: &v1.ConfigMapKeySelector{
 											LocalObjectReference: v1.LocalObjectReference{
 												Name: "job-service-config",
 											},
-											Key: "init_container_configuration_endpoint",
+											Key: "keptn_api_endpoint",
 										},
 									},
 								},

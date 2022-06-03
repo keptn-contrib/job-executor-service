@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -22,7 +21,7 @@ type envConfig struct {
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
 	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
-	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" required:"true"`
+	KeptnAPIURL string `envconfig:"KEPTN_API_URL" required:"true"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN" required:"true"`
 	// The keptn project contained in the initial cloud event
@@ -57,12 +56,13 @@ func main() {
 
 	fs := afero.NewOsFs()
 
-	// TODO: When using the new api interface we only need the base url and not the configuration url
-	configurationServiceURL, _ := url.Parse(env.ConfigurationServiceURL)
-	baseURL := strings.TrimSuffix(configurationServiceURL.String(), "configuration-service")
+	baseURL, err := url.Parse(env.KeptnAPIURL)
+	if err != nil {
+		log.Fatalf("unable to parse the keptn api url: %s", err)
+	}
 
 	apiOptions := []func(*api.APISet){
-		api.WithScheme(configurationServiceURL.Scheme),
+		api.WithScheme(baseURL.Scheme),
 	}
 
 	// Chose the authentication method from the give environment; This can either be token or oauth
@@ -100,7 +100,8 @@ func main() {
 		log.Fatalf("unkown authentication mode: %s", env.AuthMode)
 	}
 
-	keptnApi, err := api.New(baseURL, apiOptions...)
+	// Create the API from the defined options and the URL
+	keptnApi, err := api.New(baseURL.String(), apiOptions...)
 	if err != nil {
 		log.Fatalf("unable to create keptn API: %s", err)
 	}

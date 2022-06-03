@@ -81,11 +81,6 @@ Create the name of the job service account to use
     {{- end }}
 {{- end }}
 
-{{- define "job-executor-service.remote-control-plane.configuration-endpoint" }}
-    {{- (printf "%s/configuration-service" (include "job-executor-service.remote-control-plane.endpoint" .)) }}
-{{- end }}
-
-
 {{/*
 Helper functions of the auto detection feature of Keptn
 */}}

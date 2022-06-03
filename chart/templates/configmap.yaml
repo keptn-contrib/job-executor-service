@@ -10,7 +10,6 @@ data:
   default_resource_requests_cpu: "50m"
   default_resource_requests_memory: "128Mi"
   keptn_api_endpoint: {{ include "job-executor-service.remote-control-plane.endpoint" . }}
-  init_container_configuration_endpoint: {{ include "job-executor-service.remote-control-plane.configuration-endpoint" . }}
   default_job_service_account: "{{ include "job-executor-service.jobConfig.serviceAccountName" . }}"
   allow_privileged_jobs: "{{ .Values.jobConfig.allowPrivilegedJobs | default "false" }}"
   additional_job_labels: |
