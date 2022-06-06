@@ -78,6 +78,26 @@ Add a [simple "Hello world!" job config](docs/example/jobconfig.yaml) to `produc
 keptn add-resource --project jes-example --service hello --stage production --resource docs/example/jobconfig.yaml --resourceUri job/config.yaml
 ```
 
+If you have no public/private key pair generate one with OpenSSH
+```shell
+ssh-keygen -f docs/example/test-job-config-signature-ed25519 -t ed25519
+```
+the command should have generated the files `test-job-config-signature-ed25519` and `test-job-config-signature-ed25519.pub`
+in the `docs/example` directory.
+
+We need to add the public key to the `allowed_signers` file and upload it to keptn
+```shell
+cat docs/example/test-job-config-signature-ed25519.pub >> docs/example/jobconfig.yaml.allowed_signers
+keptn add-resource --project jes-example --service hello --stage production --resource docs/example/jobconfig.yaml.allowed_signers --resourceUri job/config.yaml.allowed_signers
+```
+
+Using the private key we can generate the signature of the job config and upload it as `job/config.yaml.sum`
+```shell
+ssh-keygen -Y sign -f docs/example/test-job-config-signature-ed25519 -n file docs/example/jobconfig.yaml
+keptn add-resource --project jes-example --service hello --stage production --resource docs/example/jobconfig.yaml.sig --resourceUri job/config.yaml.sig
+```
+
+
 Trigger the `example-seq` sequence. 
 ```shell
 keptn trigger sequence --sequence example-seq --project jes-example --service hello --stage production

@@ -113,7 +113,6 @@ type SeccompProfile struct {
 
 // NewConfig creates a new configuration from the provided config file content
 func NewConfig(yamlContent []byte) (*Config, error) {
-
 	config := Config{}
 	err := yaml.UnmarshalStrict(yamlContent, &config)
 
