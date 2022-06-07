@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -33,6 +31,22 @@ func TestJobDeadline(t *testing.T) {
 
 	// Make sure project is delete after the tests are completed
 	defer testEnv.Cleanup()
+
+	// set a bogus deadline value to retrieve the value before any test is executed
+	initialTaskDeadline, err := setConfigMap(
+		testEnv.K8s, testEnv.Namespace, "job-service-config", "task_deadline_seconds",
+		"",
+	)
+
+	require.NoError(t, err)
+
+	defer func() {
+		setConfigMap(
+			testEnv.K8s, testEnv.Namespace, "job-service-config", "task_deadline_seconds",
+			initialTaskDeadline,
+		)
+		restartJESPod(testEnv.K8s, testEnv.Namespace)
+	}()
 
 	tests := []struct {
 		name               string
@@ -77,20 +91,12 @@ func TestJobDeadline(t *testing.T) {
 	for _, test := range tests {
 		t.Run(
 			test.name, func(t *testing.T) {
-				initialTaskDeadline, err := setConfigMap(
+				_, err := setConfigMap(
 					testEnv.K8s, testEnv.Namespace, "job-service-config", "task_deadline_seconds",
 					test.taskDeadline,
 				)
 
 				require.NoError(t, err)
-
-				defer func() {
-					setConfigMap(
-						testEnv.K8s, testEnv.Namespace, "job-service-config", "task_deadline_seconds",
-						initialTaskDeadline,
-					)
-					restartJESPod(testEnv.K8s, testEnv.Namespace)
-				}()
 
 				err = restartJESPod(testEnv.K8s, testEnv.Namespace)
 
@@ -139,14 +145,8 @@ func TestJobDeadline(t *testing.T) {
 }
 
 func restartJESPod(clientset *kubernetes.Clientset, namespace string) error {
-	selector := labels.NewSelector()
-	nameSelector, _ := labels.NewRequirement(
-		"app.kubernetes.io/name", selection.Equals, []string{"job-executor-service"},
-	)
-	selector = selector.Add(*nameSelector)
-	pods, err := clientset.CoreV1().Pods(namespace).List(
-		context.Background(), metav1.ListOptions{LabelSelector: selector.String()},
-	)
+
+	pods, err := getJESPodList(clientset, namespace)
 
 	if err != nil {
 		return fmt.Errorf("unable to list JES pods in namespace %s: %w", namespace, err)

@@ -39,6 +39,10 @@ deploy:
               protocol: ""
               hostname: ""
               token: ""
+          networkPolicy:
+            enabled: true
+            k8sMasterCIDR: ""
+            k8sMasterPort: 0
         overrides:
           distributor:
             image:
