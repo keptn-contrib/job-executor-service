@@ -39,7 +39,7 @@ remoteControlPlane:
     apiValidateTls: true                     # Defines if the control plane certificate should be validated
     hostname: "api-gateway-nginx.keptn"      # Hostname of the control plane cluster, Port
     authMode: "token"                        # Flag to choose the defined authentication method, valid values are token and oauth
-    token: ""                                # Keptn API Token (leave empty if OAuth should be used)
+    token: ""                                # Keptn API Token
     oauth:                                   #
       clientId: ""                           # The client OAuth ID
       clientSecret: ""                       # The client OAuth Secret
