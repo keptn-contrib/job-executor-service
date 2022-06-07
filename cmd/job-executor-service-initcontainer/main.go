@@ -17,6 +17,10 @@ import (
 	"github.com/spf13/afero"
 )
 
+// OAuthDiscoveryTimeout is the timeout that should be waited for a response form the oauth discovery endpoint.
+// It is the same value (10 seconds) as in the distributor to have the same behavior as the distributor.
+const OAuthDiscoveryTimeout = 10 * time.Second
+
 type envConfig struct {
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
@@ -77,9 +81,9 @@ func main() {
 
 	} else if env.AuthMode == "oauth" {
 
-		// To avoid stalling the Job for too long we wait at max 10 seconds to query the token endpoint
-		// from the given discovery url. This is the same timeout that is used in the distributor.
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		// To avoid stalling the Job for too long we wait at max OAuthDiscoveryTimeout to query the token endpoint
+		// from the given discovery url.
+		ctx, cancel := context.WithTimeout(context.Background(), OAuthDiscoveryTimeout)
 		defer cancel()
 
 		oauthDiscovery := oauthutils.NewOauthDiscovery(&http.Client{})
