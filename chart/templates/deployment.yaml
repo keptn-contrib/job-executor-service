@@ -154,11 +154,13 @@ spec:
                 configMapKeyRef:
                   name: job-service-config
                   key: keptn_api_endpoint
+            {{- if eq ((.Values.remoteControlPlane).api.authMode) "token" }}
             - name: KEPTN_API_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: job-service-keptn-secrets
                   key: token
+            {{- end }}
             - name: HTTP_SSL_VERIFY
               value: "{{ .Values.remoteControlPlane.api.apiValidateTls | default "true" }}"
             {{- if (((.Values.distributor).config).queueGroup).enabled | default true }}
@@ -166,6 +168,28 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['app.kubernetes.io/name']
+            {{- end }}
+            {{- if eq ((.Values.remoteControlPlane).api.authMode) "oauth" }}
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                    name: job-service-config
+                    key: oauth_client_id
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                    name: job-service-keptn-secrets
+                    key: oauth_client_secret
+            - name: OAUTH_DISCOVERY
+              valueFrom:
+                configMapKeyRef:
+                    name: job-service-config
+                    key: oauth_discovery
+            - name: OAUTH_SCOPES
+              valueFrom:
+                configMapKeyRef:
+                    name: job-service-config
+                    key: oauth_scopes
             {{- end }}
       volumes:
         - name: job-executor-settings

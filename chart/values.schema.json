@@ -23,12 +23,79 @@
         },
         "api": {
           "type": "object",
-          "required": [],
+          "required": [
+            "authMode"
+          ],
           "properties": {
             "apiValidateTls": {
               "type": "boolean"
+            },
+            "authMode": {
+              "type": "string",
+              "enum": [
+                "token",
+                "oauth"
+              ]
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "token": {
+                    "const": "token"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "authMode": {
+                    "const": "oauth"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "oauth": {
+                    "required": [
+                      "clientId",
+                      "clientSecret",
+                      "clientDiscovery",
+                      "scopes"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "clientId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "clientSecret": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "clientDiscovery": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "scope": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
         }
       },
       "if": {
@@ -36,6 +103,7 @@
           "autoDetect": {
             "properties": {
               "enabled": {
+                "type": "boolean",
                 "const": false
               }
             }

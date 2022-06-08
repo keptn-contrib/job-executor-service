@@ -6,6 +6,7 @@ import (
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	"net/http"
+	"net/url"
 )
 
 const authHeaderName = "x-token"
@@ -22,16 +23,26 @@ type KeptnAPI struct {
 }
 
 // NewKeptnAPI creates a KeptnAPI structure from KeptnConnectionDetails
-func NewKeptnAPI(details KeptnConnectionDetails) KeptnAPI {
+func NewKeptnAPI(details KeptnConnectionDetails) (*KeptnAPI, error) {
 	httpClient := http.Client{}
 
-	return KeptnAPI{
-		httpClient:      &httpClient,
-		APIHandler:      api.NewAuthenticatedAPIHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		ProjectHandler:  api.NewAuthenticatedProjectHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		ResourceHandler: api.NewAuthenticatedResourceHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
-		EventHandler:    api.NewAuthenticatedEventHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, protocolScheme),
+	endpointURL, err := url.Parse(details.Endpoint)
+	if err != nil {
+		return nil, err
 	}
+
+	endpointScheme := protocolScheme
+	if endpointURL.Scheme != "" {
+		endpointScheme = endpointURL.Scheme
+	}
+
+	return &KeptnAPI{
+		httpClient:      &httpClient,
+		APIHandler:      api.NewAuthenticatedAPIHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		ProjectHandler:  api.NewAuthenticatedProjectHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		ResourceHandler: api.NewAuthenticatedResourceHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+		EventHandler:    api.NewAuthenticatedEventHandler(details.Endpoint, details.APIToken, authHeaderName, &httpClient, endpointScheme),
+	}, nil
 }
 
 // CreateProject creates a keptn project from the contents of a shipyard yaml file
