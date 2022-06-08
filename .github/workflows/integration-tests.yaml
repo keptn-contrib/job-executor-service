@@ -143,13 +143,12 @@ jobs:
 
       - name: Dump k8s debug info
         if: always()
-        continue-on-error: true
         run: |
           mkdir k8s_debug
           kubectl describe nodes > k8s_debug/k8s_describe_nodes.txt
           kubectl cluster-info dump > k8s_debug/k8s_cluster_info_dump.txt
           kubectl get configmaps,deployments,pods,networkpolicy,serviceaccounts,role,rolebindings,events -n ${JES_NAMESPACE} -o json > k8s_debug/k8s_jes_objects.json
-          kubectl logs -n ${JES_NAMESPACE} -l app.kubernetes.io/name=job-executor-service  --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt
+          kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt
 
       # Upload the k8s debug archive, so we can use it for investigating
       - name: Upload k8s debug archive
