@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"keptn-contrib/job-executor-service/pkg/config/signing"
+	"keptn-contrib/job-executor-service/pkg/config/signing/ssh"
 )
 
 var jobConfigSignatureFile = flag.String(
@@ -43,7 +43,11 @@ func main() {
 		log.Fatalf("Error reading file %s: %v", *jobConfigAllowedSignersFile, err)
 	}
 
-	err = signing.VerifyJobConfig(jobconfigbytes, jobconfigsignaturebytes, jobconfigallowedsignersbytes)
+	sv := new(ssh.SignatureVerifier)
+	err = sv.VerifyJobConfigBytes(
+		jobconfigbytes, jobconfigsignaturebytes,
+		jobconfigallowedsignersbytes,
+	)
 
 	if err != nil {
 		log.Fatalf("Error validating: %v", err)

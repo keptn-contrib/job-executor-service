@@ -1,4 +1,4 @@
-package signing
+package ssh
 
 import (
 	"testing"

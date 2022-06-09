@@ -5,15 +5,11 @@ import (
 	"log"
 
 	"golang.org/x/crypto/sha3"
-
-	"keptn-contrib/job-executor-service/pkg/config/signing"
 )
 
 const jobConfigResourceName = "job/config.yaml"
-const jobConfigSignatureResourceName = "job/config.yaml.sig"
-const jobConfigAllowedSignersResourceName = "job/config.yaml.allowed_signers"
 
-//go:generate mockgen -destination=fake/reader_mock.go -package=fake . KeptnResourceService
+//go:generate mockgen -destination=fake/reader_mock.go -package=fake . KeptnResourceService,JobConfigVerifier
 
 // KeptnResourceService defines the contract used by JobConfigReader to retrieve a resource from keptn (using project,
 // service, stage from context)
@@ -21,9 +17,14 @@ type KeptnResourceService interface {
 	GetKeptnResource(resource string) ([]byte, error)
 }
 
+type JobConfigVerifier interface {
+	VerifyJobConfig(jobConfigBytes []byte) error
+}
+
 // JobConfigReader retrieves and parses job configuration from Keptn
 type JobConfigReader struct {
-	Keptn KeptnResourceService
+	Keptn    KeptnResourceService
+	Verifier JobConfigVerifier
 }
 
 // GetJobConfig retrieves job/config.yaml resource from keptn and parses it into a Config struct.
@@ -41,21 +42,7 @@ func (jcr *JobConfigReader) GetJobConfig() (*Config, string, error) {
 	resourceHashBytes := hasher.Sum(nil)
 	resourceHash := fmt.Sprintf("%x", resourceHashBytes)
 
-	jobConfigSignatureBytes, err := jcr.Keptn.GetKeptnResource(jobConfigSignatureResourceName)
-	if err != nil {
-		return nil, "", fmt.Errorf("error retrieving job config signature: %w", err)
-	}
-
-	// TODO this probably should not be stored together with the signature (
-	// if git repo is compromised an attacker can easily attach another key here)
-	// it should probably be stored within the k8s cluster (configMap probably)
-
-	jobConfigAllowedSignersBytes, err := jcr.Keptn.GetKeptnResource(jobConfigAllowedSignersResourceName)
-	if err != nil {
-		return nil, "", fmt.Errorf("error retrieving job config allowed signers: %w", err)
-	}
-
-	err = signing.VerifyJobConfig(jobConfigBytes, jobConfigSignatureBytes, jobConfigAllowedSignersBytes)
+	err = jcr.Verifier.VerifyJobConfig(jobConfigBytes)
 	if err != nil {
 		return nil, "", fmt.Errorf("error validating job config signature: %w", err)
 	}

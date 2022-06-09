@@ -12,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 
 	"keptn-contrib/job-executor-service/pkg/config"
+	"keptn-contrib/job-executor-service/pkg/config/signing/ssh"
 	"keptn-contrib/job-executor-service/pkg/utils"
 
 	"keptn-contrib/job-executor-service/pkg/eventhandler"
@@ -109,10 +110,12 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 	// create a uniform handler talking to the distributor
 	uniformHandler := api.NewUniformHandler("localhost:8081/controlPlane")
 	var eventHandler = &eventhandler.EventHandler{
-		Keptn:           myKeptn,
-		JobConfigReader: &config.JobConfigReader{Keptn: myKeptn},
-		ServiceName:     ServiceName,
-		Mapper:          new(eventhandler.KeptnCloudEventMapper),
+		Keptn: myKeptn,
+		JobConfigReader: &config.JobConfigReader{
+			Keptn: myKeptn, Verifier: &ssh.SignatureVerifier{ResourceService: myKeptn},
+		},
+		ServiceName: ServiceName,
+		Mapper:      new(eventhandler.KeptnCloudEventMapper),
 		ImageFilter: imageFilterImpl{
 			imageFilterList: allowList,
 		},

@@ -1,4 +1,4 @@
-package signing
+package ssh
 
 import (
 	"crypto/sha256"
@@ -13,10 +13,12 @@ import (
 )
 
 const (
-	magicHeader               = "SSHSIG"
-	signatureFileNamespace    = "file"
-	sshSignaturePemType       = "SSH SIGNATURE"
-	supportedSignatureVersion = 1
+	magicHeader                         = "SSHSIG"
+	signatureFileNamespace              = "file"
+	sshSignaturePemType                 = "SSH SIGNATURE"
+	supportedSignatureVersion           = 1
+	jobConfigSignatureResourceName      = "job/config.yaml.sig"
+	jobConfigAllowedSignersResourceName = "job/config.yaml.allowed_signers"
 )
 
 var ErrorDecodePem = errors.New("unable to decode pem file")
@@ -49,6 +51,16 @@ type MessageWrapper struct {
 	Reserved      string
 	HashAlgorithm string
 	Hash          string
+}
+
+// KeptnResourceService defines the contract used by JobConfigReader to retrieve a resource from keptn (using project,
+// service, stage from context)
+type KeptnResourceService interface {
+	GetKeptnResource(resource string) ([]byte, error)
+}
+
+type SignatureVerifier struct {
+	ResourceService KeptnResourceService
 }
 
 func decodeArmoredSignature(armoredSignature []byte) (*Signature, error) {
@@ -99,9 +111,12 @@ func decodeArmoredSignature(armoredSignature []byte) (*Signature, error) {
 	}, nil
 }
 
-func VerifyJobConfig(jobConfigData []byte, signatureRawData []byte, allowedSigners []byte) error {
-
-	signature, err := decodeArmoredSignature(signatureRawData)
+func (sv *SignatureVerifier) VerifyJobConfigBytes(
+	jobConfigData []byte,
+	signatureData []byte,
+	allowedSignersData []byte,
+) error {
+	signature, err := decodeArmoredSignature(signatureData)
 
 	if err != nil {
 		return fmt.Errorf("error decoding job config signature: %w", err)
@@ -131,7 +146,7 @@ func VerifyJobConfig(jobConfigData []byte, signatureRawData []byte, allowedSigne
 	var keyOptions []string
 
 	for {
-		publicKey, keyComment, keyOptions, allowedSigners, err = ssh.ParseAuthorizedKey(allowedSigners)
+		publicKey, keyComment, keyOptions, allowedSignersData, err = ssh.ParseAuthorizedKey(allowedSignersData)
 		if err != nil {
 			// by looking at the impl we get an error only when we don't find any more SSH keys
 			return fmt.Errorf("error looking for pk that validates signature: %w", err)
@@ -152,4 +167,25 @@ func VerifyJobConfig(jobConfigData []byte, signatureRawData []byte, allowedSigne
 		}
 		log.Print("Job config signature verification failed")
 	}
+}
+
+func (sv *SignatureVerifier) VerifyJobConfig(
+	jobConfigData []byte,
+) error {
+
+	jobConfigSignatureBytes, err := sv.ResourceService.GetKeptnResource(jobConfigSignatureResourceName)
+	if err != nil {
+		return fmt.Errorf("error retrieving job config signature: %w", err)
+	}
+
+	// TODO this probably should not be stored together with the signature (
+	// if git repo is compromised an attacker can easily attach another key here)
+	// it should probably be stored within the k8s cluster (configMap probably)
+
+	jobConfigAllowedSignersBytes, err := sv.ResourceService.GetKeptnResource(jobConfigAllowedSignersResourceName)
+	if err != nil {
+		return fmt.Errorf("error retrieving job config allowed signers: %w", err)
+	}
+
+	return sv.VerifyJobConfigBytes(jobConfigData, jobConfigSignatureBytes, jobConfigAllowedSignersBytes)
 }
