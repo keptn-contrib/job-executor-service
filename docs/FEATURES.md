@@ -19,6 +19,7 @@
     - [Job image pull policy](#job-image-pull-policy)
     - [Job service account](#job-service-account)
     - [Restrict job images](#restrict-job-images)
+    - [Limit cluster network access to job-executor-service](#limit-cluster-network-access-to-job-executor-service)
     - [Additional Event Data](#additional-event-data)
     - [Remote Control Plane](#remote-control-plane)
     - [Job clean-up](#job-clean-up)
@@ -524,28 +525,49 @@ helm upgrade --install --create-namespace -n <NAMESPACE> \
 ### Limit cluster network access to job-executor-service
 
 By default, job-executor-service puts no restrictions on incoming/outgoing network connections within the same kubernetes
-cluster but a network policy can be defined (opt-in) when installing the job-executor service.
-The policy will define the following rules:
-- No incoming connection to job-executor-service
-- Connection originating from the job-executor-service are only allowed to:
-  - keptn control-plane
-  - CoreDNS in k8s cluster
-  - k8s apiserver.
+cluster but network policies can be defined (opt-in) for both ingress and egress traffic when installing the job-executor 
+service.
+The policies will define the following rules:
+- Ingress policy
+  - No incoming connection to job-executor-service
+- Egress policy allows traffic to:
+  - Keptn control-plane (also remote if the keptn remote control plane hostname is specified)
+  - CoreDNS in kubernetes cluster
+  - Kubernetes apiserver.
+  - OAuth provider (if the authentication mode is set to `oauth`)
 
 This setting should limit the possibility of interaction with the job-executor-service from malicious third parties and
 limit the potential to interfere with other workloads on the same kubernetes cluster.
 
-To install the network-policy specify the following in a value file:
+**Note:** The external IPs used in the egress policy are retrieved by performing DNS lookups of the hostnames specified
+for OAuth and remote Keptn endpoint when installing/upgrading job-executor-service. If such IPs can change over time the
+job-executor-service may stop working so it's advised not to enable the egress network policy in such cases.
+
+#### Enabling the network-policies when installing/upgrading job-executor-service
+##### Ingress policy
+Include the following block in a helm value/override file 
 ```yaml
 networkPolicy:
-  enabled: true
+  ingress:
+    enabled: true
 ```
-or add this option in helm command line:
+or the equivalent on helm command line:
 ```shell
---set networkPolicy.enabled=true
+--set networkPolicy.ingress.enabled=true
 ```
-when installing job-executor-service.
-For a more detail explanation about the values that can be specified please have a look at the [Helm chart's README.md](../chart/README.md)
+##### Egress policy
+Include the following block in a helm value/override file
+```yaml
+networkPolicy:
+  egress:
+    enabled: true
+```
+or the equivalent on helm command line:
+```shell
+--set networkPolicy.egress.enabled=true
+```
+
+For a more detailed explanation about the values that can be specified please have a look at the [Helm chart's README.md](../chart/README.md)
 
 ### Send start/finished event if the job config.yaml can't be found
 

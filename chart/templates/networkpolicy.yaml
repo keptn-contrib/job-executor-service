@@ -1,36 +1,46 @@
-{{ if .Values.networkPolicy.enabled }}
+{{ if .Values.networkPolicy.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: jes-network-policy
+  name: jes-ingress-network-policy
 spec:
   podSelector:
     matchLabels:
       {{- include "job-executor-service.selectorLabels" . | nindent 6 }}
   policyTypes:
     - Ingress
+{{ end }}
+---
+{{ if .Values.networkPolicy.egress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jes-egress-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "job-executor-service.selectorLabels" . | nindent 6 }}
+  policyTypes:
     - Egress
-  # ingress rules element is commented to deny all ingress traffic to the pod
-  # ingress:
   egress:
     # Add egress to the keptn api gateway POD
     - to:
-      - namespaceSelector: {}
-        podSelector:
-          matchLabels:
-            app.kubernetes.io/name: api-gateway-nginx
-            app.kubernetes.io/instance: keptn
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway-nginx
+              app.kubernetes.io/instance: keptn
 
     # Add egress to apiserver endpoints
     {{ if .Values.networkPolicy.k8sMasterCIDR }}
 
     # We have a value set for the master CIDR
     - to:
-      - ipBlock:
-          cidr: {{ .Values.networkPolicy.k8sMasterCIDR }}
-      {{ if .Values.networkPolicy.k8sMasterPort }}
+        - ipBlock:
+            cidr: {{ .Values.networkPolicy.egress.k8sMasterCIDR }}
+      {{ if .Values.networkPolicy.egress.k8sMasterPort }}
       ports:
-        - port: {{ .Values.networkPolicy.k8sMasterPort }}
+        - port: {{ .Values.networkPolicy.egress.k8sMasterPort }}
       {{ end }}
 
     {{else}}
@@ -43,8 +53,8 @@ spec:
     {{ if eq "https" $port.name }}
     {{ range $_, $address := $subset.addresses }}
     - to:
-      - ipBlock:
-          cidr: {{ printf "%s/32" $address.ip }}
+        - ipBlock:
+            cidr: {{ printf "%s/32" $address.ip }}
       ports:
         - port: {{ $port.port }}
     {{ end }}
@@ -53,13 +63,28 @@ spec:
     {{ end }}
     {{ end }}
 
+    {{ if eq .Values.remoteControlPlane.api.authMode "oauth" }}
+    # Allow traffic to OAuth endpoint
+    {{ $oauthHost := getHostByName (urlParse .Values.remoteControlPlane.api.oauth.clientDiscovery).host }}
+    - to:
+        - ipBlock:
+            cidr: {{ printf "%s/32" ($oauthHost) }}
+    {{ end }}
+
+    # Allow traffic to External Keptn control plane
+    {{ if .Values.remoteControlPlane.api.hostname }}
+    - to:
+        - ipBlock:
+            cidr: {{ printf "%s/32" (getHostByName .Values.remoteControlPlane.api.hostname) }}
+    {{ end }}
+
     # Allow DNS traffic to kube-dns pod
     - to:
-      - namespaceSelector: {}
-        podSelector:
-          matchLabels:
-            k8s-app: kube-dns
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
       ports:
-      - protocol: UDP
-        port: 53
+        - protocol: UDP
+          port: 53
 {{ end }}
