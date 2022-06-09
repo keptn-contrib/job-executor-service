@@ -46,9 +46,12 @@ deploy:
                 clientDiscovery: ""
                 scopes: ""
           networkPolicy:
-            enabled: true
-            k8sMasterCIDR: ""
-            k8sMasterPort: 0
+            ingress:
+              enabled: true
+            egress:
+              enabled: false
+              k8sMasterCIDR: ""
+              k8sMasterPort: 0
         overrides:
           distributor:
             image:

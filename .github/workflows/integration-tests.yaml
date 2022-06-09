@@ -95,7 +95,7 @@ jobs:
           helm upgrade --install --create-namespace -n $JES_NAMESPACE job-executor-service \
             ./dist/helm-charts/job-executor-service-*.tgz \
             --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
-            --set networkPolicy.enabled=${{matrix.network-policy}} \
+            --set networkPolicy.ingress.enabled=${{matrix.network-policy}} \
             --wait
 
       # If we failed any previous step we might have a problem and not reporting anything for the version
