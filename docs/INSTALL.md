@@ -37,6 +37,26 @@ Please replace `<VERSION>` with the actual version you want to install from the 
 
 To verify that everything works you can visit Bridge, select a project, go to Uniform, and verify that `job-executor-service`  is registered as "remote execution plane" with the correct version and event type.
 
+**Example installation with auto-detection:**
+
+For easier installation of the *job-executor-service* a Keptn installation on the same kubernetes cluster can be discovered automatically. This only
+works if no `remoteControlPlane.api.token`, `remoteControlPlane.api.protocol` or `remoteControlPlane.api.hostname` is provided and `remoteControlPlane.api.authMode` is set to `token`.
+If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.namespace` must be set to the desired Keptn instance.
+The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.
+
+```bash
+TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
+
+helm upgrade --install --create-namespace -n <NAMESPACE> \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  --set remoteControlPlane.autoDetect.enabled=true \
+  --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION} \
+  --set remoteControlPlane.api.token="" \
+  --set remoteControlPlane.api.hostname="" \
+  --set remoteControlPlane.api.protocol=""
+```
+
+
 **Example installation with OAuth:**
 
 If the oauth authentication mode should be used instead of the token, the following properties must be specified in addition to the setting `remoteControlPlane.api.authMode` to `oauth`:
@@ -71,24 +91,6 @@ helm upgrade --install --create-namespace -n <NAMESPACE> job-executor-service \
     --set remoteControlPlane.api.oauth.scopes=${KEPTN_OAUTH_SCOPES}
 ```
 
-**Example installation with auto-detection:**
-
-For easier installation of the *job-executor-service* a Keptn installation on the same kubernetes cluster can be discovered automatically. This only
-works if no `remoteControlPlane.api.token`, `remoteControlPlane.api.protocol` or `remoteControlPlane.api.hostname` is provided.
-If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.namespace` must be set to the desired Keptn instance.
-The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.
-
-```bash
-TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
-
-helm upgrade --install --create-namespace -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
-  --set remoteControlPlane.autoDetect.enabled=true \
-  --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION} \
-  --set remoteControlPlane.api.token="" \
-  --set remoteControlPlane.api.hostname="" \
-  --set remoteControlPlane.api.protocol=""
-```
 
 
 ### Update API Token on Remote Execution-Plane
