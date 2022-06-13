@@ -100,6 +100,8 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: task_deadline_seconds
+          - name: FULL_DEPLOYMENT_NAME
+            value: {{ include "job-executor-service.fullname" . }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor

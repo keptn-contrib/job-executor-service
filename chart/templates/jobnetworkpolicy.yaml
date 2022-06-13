@@ -1,0 +1,44 @@
+{{ if .Values.jobConfig.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jes-job-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/managed-by: {{ include "job-executor-service.fullname" . }}
+  policyTypes:
+    - Ingress
+    - Egress
+  # ingress rules element is commented to deny all ingress traffic to the pod
+  # ingress:
+  egress:
+    # Add egress to the keptn api gateway POD
+    {{- if .Values.jobConfig.networkPolicy.allowAccessToKeptn }}
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api-gateway-nginx
+              app.kubernetes.io/instance: keptn
+    {{- end }}
+
+    # Allow only access to public IPs (internet)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 192.168.0.0/16
+              - 172.16.0.0/12
+
+    # Allow DNS traffic to kube-dns pod
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+{{ end }}

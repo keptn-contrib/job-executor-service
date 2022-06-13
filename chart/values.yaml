@@ -77,6 +77,9 @@ jobConfig:
     seccompProfile:
       type: RuntimeDefault
   taskDeadlineSeconds: 0                     # Set taskDeadlineSeconds to an integer > 0 to limit how long task can run
+  networkPolicy:
+    enabled: false                           # Sets a restrictive network policy for all jobs
+    allowAccessToKeptn: false                # Allows the job pods to contact the keptn api server
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 
