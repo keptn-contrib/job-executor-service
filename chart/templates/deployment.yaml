@@ -117,8 +117,6 @@ spec:
               memory: "32Mi"
               cpu: "100m"
           env:
-            - name: PUBSUB_URL
-              value: 'nats://keptn-nats'
             - name: PUBSUB_TOPIC
               value: "{{ .Values.remoteControlPlane.topicSubscription }}"
             - name: PUBSUB_RECIPIENT
