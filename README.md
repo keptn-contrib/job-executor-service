@@ -34,7 +34,7 @@ running in the Keptn ecosystem:
 
 Please note: Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
 
-**Note**: Versions compatible with Keptn 0.14.x and newer are not backward compatible due to a change in NATS cluster name
+**Note**: If you are installing JES in the same namespace as Keptn, versions compatible with Keptn 0.14.x and newer will not be backward compatible due to a change in NATS cluster name
 (see https://github.com/keptn/keptn/releases/tag/0.14.1 for more info about the breaking change).
 
 **Warning**: We are aware that there might be a problem when trying to install Job-Executor-Service in the same namespace as Keptn 0.14.x. 
