@@ -1,0 +1,35 @@
+apiVersion: v2
+actions:
+  - name: "Check Egress traffic (external)"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Check connection to keptn.sh"
+        image: "alpine/curl"
+        cmd:
+          - curl
+        args:
+          - "https://keptn.sh"
+
+  - name: "Check Egress traffic (keptn api server)"
+    events:
+      - name: "sh.keptn.event.test.triggered"
+    tasks:
+      - name: "Check connection to api-gateway-nginx.keptn"
+        image: "alpine/curl"
+        cmd:
+          - curl
+        args:
+          - "http://api-gateway-nginx.keptn"
+
+  - name: "Check Egress traffic (kuberntes)"
+    events:
+      - name: "sh.keptn.event.release.triggered"
+    tasks:
+      - name: "Check connection to kubernetes.default"
+        image: "alpine/curl"
+        cmd:
+          - curl
+        args:
+          - "--insecure"
+          - "https://kubernetes.default/"

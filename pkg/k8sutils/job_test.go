@@ -1253,3 +1253,60 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 
 	assert.Equal(t, expectedLabels, job.Labels)
 }
+
+func TestK8sImpl_CreateK8sJobPodLabels(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	jesDeploymentName := "job-executor-service_version-dev.99.1.0"
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var event map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &event)
+	require.NoError(t, err)
+
+	err = k8s.CreateK8sJob(
+		"some-empty-job",
+		JobDetails{
+			Action: &config.Action{
+				Name: "Test Action",
+			},
+			Task: &config.Task{
+				Name:  "Test Job",
+				Image: "alpine",
+				Cmd:   []string{"echo"},
+				Args:  []string{"hello world"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData,
+		JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+			JesDeploymentName:         jesDeploymentName,
+		},
+		event,
+		testNamespace,
+	)
+	require.NoError(t, err)
+
+	list, err := k8s.clientset.CoreV1().Pods(testNamespace).List(context.Background(), metav1.ListOptions{})
+	require.NoError(t, err)
+
+	for _, pod := range list.Items {
+		label := pod.Labels["app.kubernetes.io/managed-by"]
+		assert.Equal(t, label, jesDeploymentName)
+	}
+}

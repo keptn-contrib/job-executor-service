@@ -1,0 +1,15 @@
+apiVersion: v2
+actions:
+  - name: "Start a temporary webserver"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Run nginx"
+        image: "nginxdemos/nginx-hello"
+        securityContext:
+          readOnlyRootFilesystem: false
+        cmd:
+          - nginx
+        args:
+          - "-g"
+          - "daemon off;"

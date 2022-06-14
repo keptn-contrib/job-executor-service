@@ -309,6 +309,7 @@ func requireWaitForEvent(
 	require.Eventuallyf(t, checkForEventsToMatch, waitFor, tick, "did not receive keptn event: %s", eventType)
 }
 
+// getJESPodList returns a list of pods that are part of the job-executor-service deployment
 func getJESPodList(clientset *kubernetes.Clientset, namespace string) (*v1.PodList, error) {
 	selector := labels.NewSelector()
 	nameSelector, _ := labels.NewRequirement(
@@ -318,4 +319,58 @@ func getJESPodList(clientset *kubernetes.Clientset, namespace string) (*v1.PodLi
 	return clientset.CoreV1().Pods(namespace).List(
 		context.Background(), metav1.ListOptions{LabelSelector: selector.String()},
 	)
+}
+
+// requireWaitForPodToFinish waits for a given pod to be completed with either a successful or an errored state,
+// if the time runs out, the test will be aborted
+func requireWaitForPodToFinish(
+	t *testing.T, clientset *kubernetes.Clientset, namespace string, pod v1.Pod, waitFor time.Duration, tick time.Duration,
+) (*v1.Pod, error) {
+
+	waitForPodFunc := func() bool {
+		currentPod, err := clientset.CoreV1().Pods(namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
+
+		if err != nil {
+			t.Logf("error checking on pod status: %v", err)
+			return false
+		}
+		t.Logf("retrieved pod status: %+v", currentPod.Status)
+
+		return err == nil && currentPod.Status.Phase != "" && currentPod.Status.Phase != v1.PodPending && currentPod.Status.Phase != v1.PodRunning
+	}
+
+	require.Eventually(t, waitForPodFunc, waitFor, tick,
+		"timed out while waiting for pod %s to finish within %s", pod.Name, waitFor,
+	)
+
+	return clientset.CoreV1().Pods(namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
+}
+
+// getJESRunningJobPods returns a list of running pods that are managed by the job-executor-service
+func getJESRunningJobPods(clientset *kubernetes.Clientset, namespace string) ([]v1.Pod, error) {
+	managedByRequirement, err := labels.NewRequirement("app.kubernetes.io/managed-by", selection.Equals, []string{"job-executor-service"})
+	if err != nil {
+		return nil, err
+	}
+
+	labelSelector := labels.NewSelector()
+	labelSelector = labelSelector.Add(*managedByRequirement)
+
+	phaseRunningRequirement, err := labels.NewRequirement("status.phase", selection.Equals, []string{"Running"})
+	if err != nil {
+		return nil, err
+	}
+
+	fieldSelector := labels.NewSelector()
+	fieldSelector = fieldSelector.Add(*phaseRunningRequirement)
+
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
+		LabelSelector: labelSelector.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return pods.Items, nil
 }
