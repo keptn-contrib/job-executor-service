@@ -14,23 +14,20 @@ spec:
   # ingress:
   egress:
     # Add egress to the keptn api gateway POD
-    {{- if .Values.jobConfig.networkPolicy.allowAccessToKeptn }}
     - to:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: api-gateway-nginx
-              app.kubernetes.io/instance: keptn
-    {{- end }}
+      - namespaceSelector: {}
+        podSelector:
+          matchLabels:
+            app.kubernetes.io/name: api-gateway-nginx
+            app.kubernetes.io/instance: keptn
+
 
     # Allow only access to public IPs (internet)
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except:
-              - 10.0.0.0/8
-              - 192.168.0.0/16
-              - 172.16.0.0/12
+              {{ .Values.jobConfig.networkPolicy.blockCIDRs }}
 
     # Allow DNS traffic to kube-dns pod
     - to:

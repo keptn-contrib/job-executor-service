@@ -570,17 +570,21 @@ or the equivalent on helm command line:
 #### Network policy for jobs
 In addition to the network policy for the job-executor-service, it is also possible to enable a network policy for the
 jobs that are stared by the job-executor-service. This network policy restricts the jobs in such way that no ingress 
-traffic is allowed and the access to cluster internal resources is restricted. 
-Optionally access to the Keptn api server can be granted by setting `jobConfig.networkPolicy.allowAccessToKeptn` to `true`.
-To use the network policy for jobs, the following changes have to be made to the helm values:
+traffic is allowed and the access to specified networks is restricted.
 ```yaml
 jobConfig:
   networkPolicy:
     enabled: true
+    blockCIDRs: [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16"
+    ]
 ```
 or add this option in helm command line:
 ```shell
---set jobConfig.networkPolicy.enabled=true
+--set jobConfig.networkPolicy.enabled=true \
+--set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}'
 ```
 when installing job-executor-service.
 
