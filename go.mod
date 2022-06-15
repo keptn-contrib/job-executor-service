@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/PaesslerAG/jsonpath v0.1.1
-	github.com/cloudevents/sdk-go/v2 v2.10.0
+	github.com/cloudevents/sdk-go/v2 v2.10.1
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
