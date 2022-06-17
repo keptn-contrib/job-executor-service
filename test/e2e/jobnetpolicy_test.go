@@ -141,7 +141,7 @@ func TestJobNetworkPolicy_NoEgress(t *testing.T) {
 
 	// In this integration tests we send 3 different events to JES:
 	var /*const*/ eventTypeEgressExternTriggered = "sh.keptn.event.e2e.egress-extern.triggered"
-	var /*const*/ eventTypeEgressApiServerTriggered = "sh.keptn.event.e2e.egress-apiserver.triggered"
+	var /*const*/ eventTypeEgressAPIServerTriggered = "sh.keptn.event.e2e.egress-apiserver.triggered"
 	var /*const*/ eventTypeEgressK8sTriggered = "sh.keptn.event.e2e.egress-k8s.triggered"
 
 	// Send the event to keptn
@@ -219,7 +219,7 @@ func TestJobNetworkPolicy_NoEgress(t *testing.T) {
 		}
 	}
 
-	testEnv.Event.Type = &eventTypeEgressApiServerTriggered
+	testEnv.Event.Type = &eventTypeEgressAPIServerTriggered
 	keptnContext, err = testEnv.API.SendEvent(testEnv.Event)
 	require.NoError(t, err)
 
