@@ -98,7 +98,7 @@ jobs:
             --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --set networkPolicy.ingress.enabled=${{matrix.network-policy}} \
             --set jobConfig.networkPolicy.enabled=${{matrix.job-network-policy}} \
-            --set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}' \
+            --set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8"\, "172.16.0.0/12"\, "192.168.0.0/16"}' \
             --wait
 
       # If we failed any previous step we might have a problem and not reporting anything for the version
