@@ -32,7 +32,7 @@ spec:
               app.kubernetes.io/instance: keptn
 
     # Add egress to apiserver endpoints
-    {{ if .Values.networkPolicy.k8sMasterCIDR }}
+    {{ if .Values.networkPolicy.egress.k8sMasterCIDR }}
 
     # We have a value set for the master CIDR
     - to:
