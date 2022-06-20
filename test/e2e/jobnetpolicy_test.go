@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 	"time"
@@ -84,6 +85,12 @@ func TestJobNetworkPolicy_NoIngress(t *testing.T) {
 							"-Lv",
 							"--fail-with-body",
 							fmt.Sprintf("http://%s:%d/", targetPod.Status.PodIP, 8080),
+						},
+						Resources: v1.ResourceRequirements{
+							Limits: v1.ResourceList{
+								v1.ResourceCPU:    resource.MustParse("100m"),
+								v1.ResourceMemory: resource.MustParse("32M"),
+							},
 						},
 					},
 				},

@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 	"time"
 
@@ -78,6 +79,12 @@ func TestJobExecutorServiceNoIngress(t *testing.T) {
 							Name: "testcontainer", Image: "curlimages/curl", Args: []string{
 								"curl", "-Lv", "--fail-with-body",
 								fmt.Sprintf("http://%s:%d/", podIP, 8080),
+							},
+							Resources: v1.ResourceRequirements{
+								Limits: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("100m"),
+									v1.ResourceMemory: resource.MustParse("32M"),
+								},
 							},
 						},
 					},
