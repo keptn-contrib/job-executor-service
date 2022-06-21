@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.1](https://github.com/keptn-contrib/job-executor-service/compare/0.2.0...0.2.1) (2022-06-21)
+
+
+### Features
+
+* Add job labels ([#240](https://github.com/keptn-contrib/job-executor-service/issues/240)) ([5c6911d](https://github.com/keptn-contrib/job-executor-service/commit/5c6911da7e189b8ffd662d9c8ea792a7f79c0b28))
+* Add output to go test in pipeline ([#237](https://github.com/keptn-contrib/job-executor-service/issues/237)) ([effe9fe](https://github.com/keptn-contrib/job-executor-service/commit/effe9fe275ea1160cd75fef901fae047cdb637f3))
+* Enforce minimum job TTL value ([#241](https://github.com/keptn-contrib/job-executor-service/issues/241)) ([4064ee9](https://github.com/keptn-contrib/job-executor-service/commit/4064ee99ce90b2582d07f08dee4696650257c84e))
+* Include logs of all containers in error message ([#214](https://github.com/keptn-contrib/job-executor-service/issues/214)) ([a58c2cb](https://github.com/keptn-contrib/job-executor-service/commit/a58c2cb1c0a8c27ee08598f610e0dbabe7c2815b))
+* limit job executor service network access ([6da2cac](https://github.com/keptn-contrib/job-executor-service/commit/6da2cac119758c1e843f26f896fa4b4c8762174a))
+* limit job run time ([2045058](https://github.com/keptn-contrib/job-executor-service/commit/20450583fbc65a65948347fc2eb5c43d1709c9af))
+* OAuth authentication mode ([#265](https://github.com/keptn-contrib/job-executor-service/issues/265)) ([1126cf5](https://github.com/keptn-contrib/job-executor-service/commit/1126cf5ff439625a3e3f5cc366cee13559eb9f9a))
+* Upgrade to Keptn 0.14 ([#275](https://github.com/keptn-contrib/job-executor-service/issues/275)) ([642e2a9](https://github.com/keptn-contrib/job-executor-service/commit/642e2a9c493eae43bae525353595352c3ff61607))
+
+
+### Bug Fixes
+
+* Add output of failed events to logs ([#249](https://github.com/keptn-contrib/job-executor-service/issues/249)) ([2ca699e](https://github.com/keptn-contrib/job-executor-service/commit/2ca699edd9ba18bd747ecd51f9b572c78b39da7a))
+* separate ingress and egress network policy ([#273](https://github.com/keptn-contrib/job-executor-service/issues/273)) ([4a6c013](https://github.com/keptn-contrib/job-executor-service/commit/4a6c013f2dfd4d7c41d0fe296aed034e2e000829))
+
+
+### Other
+
+* set helm chart version to 0.0.0-dev ([#248](https://github.com/keptn-contrib/job-executor-service/issues/248)) ([0a26c13](https://github.com/keptn-contrib/job-executor-service/commit/0a26c1393d2789c9f98301d1b7bac360a7f9baaf))
+* Update Keptn versions in integration tests ([#247](https://github.com/keptn-contrib/job-executor-service/issues/247)) ([3408bee](https://github.com/keptn-contrib/job-executor-service/commit/3408beeedc33fa439c056c620f5b32b166971787))
+
+
+### Docs
+
+* Add OAuth installation instructions ([#274](https://github.com/keptn-contrib/job-executor-service/issues/274)) ([092e2a7](https://github.com/keptn-contrib/job-executor-service/commit/092e2a788779bacc3c5d2d59f2c00725929b410c))
+* polish installation upgrade instructions ([d072f83](https://github.com/keptn-contrib/job-executor-service/commit/d072f832b88ddda095027c93f35eb518b0340de8))
+* remove `Always send finished event` documentation and configmap settings ([68818a9](https://github.com/keptn-contrib/job-executor-service/commit/68818a93cd2aa5e92d06822f171db007f44c96eb))
+* Update chart README to include latest changes in values.yaml ([#279](https://github.com/keptn-contrib/job-executor-service/issues/279)) ([6c4201d](https://github.com/keptn-contrib/job-executor-service/commit/6c4201d95acf08bcede5ef31b20dfc6fe057e6dc))
+
 ## [0.2.0](https://github.com/keptn-contrib/job-executor-service/compare/0.1.8...0.2.0) (2022-05-04)
 
 
