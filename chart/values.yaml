@@ -80,7 +80,7 @@ jobConfig:
   networkPolicy:
     enabled: false                           # Sets a restrictive network policy for all jobs
     blockCIDRs: [                            # A list of CIDR which should not be accessible to jobs
-      "10.0.0.0/8",
+      # "10.0.0.0/8",
       # "172.16.0.0/12",
       # "192.168.0.0/16"
     ]
