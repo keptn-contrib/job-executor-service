@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/keptn-contrib/job-executor-service/compare/0.2.1...0.2.2) (2022-06-21)
+
+
+### Features
+
+* Network policy for jobs ([#276](https://github.com/keptn-contrib/job-executor-service/issues/276)) ([51cb291](https://github.com/keptn-contrib/job-executor-service/commit/51cb2913d9718340202ca9c42ad5a56a87af724b))
+* Upgrade to Keptn 0.15.1 ([#282](https://github.com/keptn-contrib/job-executor-service/issues/282)) ([a558325](https://github.com/keptn-contrib/job-executor-service/commit/a55832504505102dbe62e5c1860368717d073fd2))
+
+
+### Bug Fixes
+
+* fix typo in network policy helm template ([#281](https://github.com/keptn-contrib/job-executor-service/issues/281)) ([bd0d6e4](https://github.com/keptn-contrib/job-executor-service/commit/bd0d6e4a62f9ecae4f17d33b070116134cc60ce0))
+
 ### [0.2.1](https://github.com/keptn-contrib/job-executor-service/compare/0.2.0...0.2.1) (2022-06-21)
 
 
