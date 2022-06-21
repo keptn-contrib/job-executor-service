@@ -74,6 +74,7 @@ type JobSettings struct {
 	AllowPrivilegedJobs         bool
 	TaskDeadlineSeconds         *int64
 	JobLabels                   map[string]string
+	JesDeploymentName           string
 }
 
 // K8sImpl is used to interact with kubernetes jobs
@@ -183,7 +184,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 		}
 	}
 
-	generatedJobLabels, err := generateK8sJobLabels(jobDetails, jsonEventData)
+	generatedJobLabels, err := generateK8sJobLabels(jobDetails, jsonEventData, jobSettings.JesDeploymentName)
 	if err != nil {
 		return fmt.Errorf("unable to generate job labels: %w", err)
 	}
@@ -205,6 +206,11 @@ func (k8s *K8sImpl) CreateK8sJob(
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": jobSettings.JesDeploymentName,
+					},
+				},
 				Spec: v1.PodSpec{
 					SecurityContext: jobSettings.DefaultPodSecurityContext,
 					InitContainers: []v1.Container{
@@ -592,7 +598,7 @@ func (k8s *K8sImpl) generateEnvFromSecret(env config.Env, namespace string) ([]v
 
 // generateK8sJobLabels generates the required labels for the k8s job from the given job details and event,
 // such that the job can be identified later on.
-func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}) (map[string]string, error) {
+func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}, jesDeploymentName string) (map[string]string, error) {
 	eventAsMap, ok := jsonEventData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unable to process jsonEventData")
@@ -633,7 +639,7 @@ func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}) (map
 	}
 
 	return map[string]string{
-		"app.kubernetes.io/managed-by": "job-executor-service",
+		"app.kubernetes.io/managed-by": jesDeploymentName,
 		"keptn.sh/context":             keptnContext,
 		"keptn.sh/event-id":            eventID,
 		"keptn.sh/commitid":            gitCommitID,

@@ -19,6 +19,7 @@ jobs:
       matrix:
         keptn-version: ["0.12.7", "0.13.5", "0.14.2", "0.15.0"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
+        job-network-policy: [true, false]
     env:
       GO_VERSION: 1.17
       GO111MODULE: "on"
@@ -26,7 +27,7 @@ jobs:
       JES_E2E_TEST: true
       JES_NAMESPACE: keptn-jes-e2e
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-      TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{matrix.network-policy}}.json
+      TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{matrix.network-policy}}-jobnetpolicy-${{matrix.job-network-policy}}.json
     steps:
       # Checkout code for the integrations tests in test/e2e
       - name: Check out code.
@@ -96,6 +97,8 @@ jobs:
             ./dist/helm-charts/job-executor-service-*.tgz \
             --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --set networkPolicy.ingress.enabled=${{matrix.network-policy}} \
+            --set jobConfig.networkPolicy.enabled=${{matrix.job-network-policy}} \
+            --set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8"\, "172.16.0.0/12"\, "192.168.0.0/16"}' \
             --wait
 
       # If we failed any previous step we might have a problem and not reporting anything for the version

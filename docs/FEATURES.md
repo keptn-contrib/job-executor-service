@@ -19,7 +19,7 @@
     - [Job image pull policy](#job-image-pull-policy)
     - [Job service account](#job-service-account)
     - [Restrict job images](#restrict-job-images)
-    - [Limit cluster network access to job-executor-service](#limit-cluster-network-access-to-job-executor-service)
+    - [Limit network access](#limit-network-access)
     - [Additional Event Data](#additional-event-data)
     - [Remote Control Plane](#remote-control-plane)
     - [Job clean-up](#job-clean-up)
@@ -522,7 +522,7 @@ helm upgrade --install --create-namespace -n <NAMESPACE> \
  --set jobConfig.allowedImageList=${ALLOWED_IMAGE_LIST},remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION},remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN}
 ```
 
-### Limit cluster network access to job-executor-service
+### Limit network access
 
 By default, job-executor-service puts no restrictions on incoming/outgoing network connections within the same kubernetes
 cluster but network policies can be defined (opt-in) for both ingress and egress traffic when installing the job-executor 
@@ -541,7 +541,7 @@ limit the potential to interfere with other workloads on the same kubernetes clu
 
 **Note:** The external IPs used in the egress policy are retrieved by performing DNS lookups of the hostnames specified
 for OAuth and remote Keptn endpoint when installing/upgrading job-executor-service. If such IPs can change over time the
-job-executor-service may stop working so it's advised not to enable the egress network policy in such cases.
+job-executor-service may stop working, so it's advised not to enable the egress network policy in such cases.
 
 #### Enabling the network-policies when installing/upgrading job-executor-service
 ##### Ingress policy
@@ -566,6 +566,27 @@ or the equivalent on helm command line:
 ```shell
 --set networkPolicy.egress.enabled=true
 ```
+
+#### Network policy for jobs
+In addition to the network policy for the job-executor-service, it is also possible to enable a network policy for the
+jobs that are stared by the job-executor-service. This network policy restricts the jobs in such way that no ingress 
+traffic is allowed and the access to specified networks is restricted.
+```yaml
+jobConfig:
+  networkPolicy:
+    enabled: true
+    blockCIDRs: [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16"
+    ]
+```
+or add this option in helm command line:
+```shell
+--set jobConfig.networkPolicy.enabled=true \
+--set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8"\, "172.16.0.0/12"\, "192.168.0.0/16"}'
+```
+when installing job-executor-service.
 
 For a more detailed explanation about the values that can be specified please have a look at the [Helm chart's README.md](../chart/README.md)
 

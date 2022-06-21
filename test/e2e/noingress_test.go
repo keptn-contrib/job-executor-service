@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 	"time"
 
@@ -79,6 +80,12 @@ func TestJobExecutorServiceNoIngress(t *testing.T) {
 								"curl", "-Lv", "--fail-with-body",
 								fmt.Sprintf("http://%s:%d/", podIP, 8080),
 							},
+							Resources: v1.ResourceRequirements{
+								Limits: v1.ResourceList{
+									v1.ResourceCPU:    resource.MustParse("100m"),
+									v1.ResourceMemory: resource.MustParse("32M"),
+								},
+							},
 						},
 					},
 					RestartPolicy: "Never",
@@ -89,23 +96,9 @@ func TestJobExecutorServiceNoIngress(t *testing.T) {
 		require.NoError(t, err, "unable to create knocker pod")
 		waitFor := 30 * time.Second
 		tick := 100 * time.Millisecond
-		require.Eventually(
-			t,
-			func() bool {
-				currentPod, err := v1PodsEndpoint.Get(context.Background(), pod.Name, metav1.GetOptions{})
-				if err != nil {
-					t.Logf("error checking on pod status: %v", err)
-					return false
-				}
-				t.Logf("retrieved pod status: %+v", currentPod.Status)
-				return err == nil && currentPod.Status.Phase != "" && currentPod.Status.Phase != v1.PodPending && currentPod.Status.Phase != v1.PodRunning
-			},
-			waitFor,
-			tick,
-			"timed out while waiting for the knocker pod to finish within %s", waitFor,
-		)
-		completedPod, err := v1PodsEndpoint.Get(context.Background(), pod.Name, metav1.GetOptions{})
+		completedPod, err := requireWaitForPodToFinish(t, testEnv.K8s, testEnv.Namespace, *pod, waitFor, tick)
 		require.NoError(t, err)
+
 		// exit code 7 from curl signals that the connection to the host has failed
 		assert.Equal(t, int32(7), completedPod.Status.ContainerStatuses[0].State.Terminated.ExitCode)
 	}

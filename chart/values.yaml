@@ -77,6 +77,13 @@ jobConfig:
     seccompProfile:
       type: RuntimeDefault
   taskDeadlineSeconds: 0                     # Set taskDeadlineSeconds to an integer > 0 to limit how long task can run
+  networkPolicy:
+    enabled: false                           # Sets a restrictive network policy for all jobs
+    blockCIDRs: [                            # A list of CIDR which should not be accessible to jobs
+      # "10.0.0.0/8",
+      # "172.16.0.0/12",
+      # "192.168.0.0/16"
+    ]
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 

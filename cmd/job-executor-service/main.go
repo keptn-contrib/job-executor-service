@@ -59,6 +59,9 @@ type envConfig struct {
 	// TaskDeadlineSeconds set to an integer > 0 represents the max duration of a task run,
 	// a value of 0 allows tasks run for as long as needed (no deadline)
 	TaskDeadlineSeconds int64 `envconfig:"TASK_DEADLINE_SECONDS"`
+	// FullDeploymentName is the name of the kubernetes deployment of the job executor service,
+	// it is used in managed-by labels for jobs and pods that are started by the service
+	FullDeploymentName string `envconfig:"FULL_DEPLOYMENT_NAME"`
 }
 
 // ServiceName specifies the current services name (e.g., used as source when sending CloudEvents)
@@ -126,6 +129,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
 			JobLabels:                   JobLabels,
 			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
+			JesDeploymentName:           env.FullDeploymentName,
 		},
 		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
 		ErrorSender: keptn_interface.NewErrorLogSender(ServiceName, uniformHandler, myKeptn),
