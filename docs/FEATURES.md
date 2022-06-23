@@ -543,6 +543,8 @@ limit the potential to interfere with other workloads on the same kubernetes clu
 for OAuth and remote Keptn endpoint when installing/upgrading job-executor-service. If such IPs can change over time the
 job-executor-service may stop working, so it's advised not to enable the egress network policy in such cases.
 
+For more details about the job-executor-service network policy please refer to [NETWORK-POLICIES.md](./NETWORK-POLICIES.md)
+
 #### Enabling the network-policies when installing/upgrading job-executor-service
 ##### Ingress policy
 Include the following block in a helm value/override file 
