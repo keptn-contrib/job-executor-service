@@ -129,7 +129,7 @@ jobs:
       - name: keptn generate support-archive
         if: always()
         env:
-          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{ matrix.network-policy }}
+          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
         timeout-minutes: 5
         run: |
           mkdir support-archive/
@@ -141,7 +141,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: keptn-support-archive-${{matrix.keptn-version}}-netpolicy-${{ matrix.network-policy }}
+          name: keptn-support-archive-${{matrix.keptn-version}}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
           path: support-archive/*.zip
 
       - name: Dump k8s debug info
@@ -158,7 +158,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: k8s-debug-archive-${{matrix.keptn-version}}-netpolicy-${{matrix.network-policy}}
+          name: k8s-debug-archive-${{matrix.keptn-version}}-netpolicy-${{matrix.network-policy}}-jobnetpolicy-${{matrix.job-network-policy}}
           path: k8s_debug/
 
   publish_final_test_report:
