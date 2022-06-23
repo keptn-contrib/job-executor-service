@@ -153,17 +153,17 @@ func (m *MockK8s) EXPECT() *MockK8sMockRecorder {
 }
 
 // AwaitK8sJobDone mocks base method.
-func (m *MockK8s) AwaitK8sJobDone(arg0 string, arg1, arg2 time.Duration, arg3 string) error {
+func (m *MockK8s) AwaitK8sJobDone(arg0 string, arg1 time.Duration, arg2 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AwaitK8sJobDone", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "AwaitK8sJobDone", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AwaitK8sJobDone indicates an expected call of AwaitK8sJobDone.
-func (mr *MockK8sMockRecorder) AwaitK8sJobDone(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockK8sMockRecorder) AwaitK8sJobDone(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitK8sJobDone", reflect.TypeOf((*MockK8s)(nil).AwaitK8sJobDone), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitK8sJobDone", reflect.TypeOf((*MockK8s)(nil).AwaitK8sJobDone), arg0, arg1, arg2)
 }
 
 // ConnectToCluster mocks base method.
