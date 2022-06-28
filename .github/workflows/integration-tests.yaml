@@ -73,7 +73,7 @@ jobs:
 
       - name: Install Keptn
         id: install_keptn
-        uses: keptn-sandbox/action-install-keptn@v1.0.0
+        uses: keptn-sandbox/action-install-keptn@feat/use-helm-for-install
         timeout-minutes: 5
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
@@ -126,32 +126,16 @@ jobs:
           name: test-report
           path: test-report-*.json
 
-      - name: keptn generate support-archive
-        if: always()
-        env:
-          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
-        timeout-minutes: 5
-        run: |
-          mkdir support-archive/
-          echo "y" | keptn generate support-archive -n keptn
-          mv support-archive/keptn*.zip support-archive/${SUPPORT_ARCHIVE_FILENAME}.zip
-
-      # Upload the keptn support archive files, so we can use them for debugging
-      - name: Upload keptn support archive
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: keptn-support-archive-${{matrix.keptn-version}}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
-          path: support-archive/*.zip
-
       - name: Dump k8s debug info
         if: always()
         run: |
           mkdir k8s_debug
           kubectl describe nodes > k8s_debug/k8s_describe_nodes.txt
           kubectl cluster-info dump > k8s_debug/k8s_cluster_info_dump.txt
+          kubectl get all -n keptn -o json > k8s_debug/k8s_keptn_objects.json
           kubectl get configmaps,deployments,pods,networkpolicy,serviceaccounts,role,rolebindings,events -n ${JES_NAMESPACE} -o json > k8s_debug/k8s_jes_objects.json
-          kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt
+          kubectl logs -n keptn -l app.kubernetes.io/instance=keptn --prefix=true --previous=false --all-containers > k8s_debug/k8s_keptn_logs.txt || true
+          kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt || true
 
       # Upload the k8s debug archive, so we can use it for investigating
       - name: Upload k8s debug archive
