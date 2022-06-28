@@ -78,24 +78,22 @@ jobs:
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
-          KEPTN_INSTALL_PARAMETERS: -v --endpoint-service-type=LoadBalancer
 
       - name: Test connection to keptn
         run: |
-          curl -X GET "${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }}/v1/metadata" -H  "accept: application/json" -H  "x-token: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}"
+          curl -X GET "${{ steps.install_keptn.outputs.KEPTN_API_URL }}/v1/metadata" -H  "accept: application/json" -H  "x-token: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}"
 
       # Install job executor from downloaded helm chart
       - name: Install Job-executor-service
         env:
           KEPTN_API_PROTOCOL: http
           KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
+          KEPTN_ENDPOINT: ${{ steps.install_keptn.outputs.KEPTN_HTTP_ENDPOINT }}
         run: |
           ls -lah ./dist/helm-charts/
-
-          KEPTN_API_HOST=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)\/api/\1/')
           helm upgrade --install --create-namespace -n $JES_NAMESPACE job-executor-service \
             ./dist/helm-charts/job-executor-service-*.tgz \
-            --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
+            --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_ENDPOINT},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --set networkPolicy.ingress.enabled=${{matrix.network-policy}} \
             --set jobConfig.networkPolicy.enabled=${{matrix.job-network-policy}} \
             --set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8"\, "172.16.0.0/12"\, "192.168.0.0/16"}' \
@@ -108,13 +106,10 @@ jobs:
           echo "Failed to run integration tests!"
           echo '{"Test": "TestGitHub Pipeline", "Action": "fail"}' >> $TEST_REPORT_FILENAME
 
-      - name: Prepare test environment
-        run: |
-          echo "KEPTN_ENDPOINT=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)/\1/')" >> $GITHUB_ENV
-          echo "KEPTN_API_TOKEN=${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}" >> $GITHUB_ENV
-          go mod download
-
       - name: Run Integration tests
+        env:
+          KEPTN_ENDPOINT: ${{ steps.install_keptn.outputs.KEPTN_API_URL }}
+          KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
         run: |
           gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/...
 
