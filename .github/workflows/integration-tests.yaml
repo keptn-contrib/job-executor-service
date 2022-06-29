@@ -73,29 +73,27 @@ jobs:
 
       - name: Install Keptn
         id: install_keptn
-        uses: keptn-sandbox/action-install-keptn@v1.0.0
+        uses: keptn-sandbox/action-install-keptn@v2.0.0
         timeout-minutes: 5
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           KUBECONFIG: ${{ env.KUBECONFIG }}
-          KEPTN_INSTALL_PARAMETERS: -v --endpoint-service-type=LoadBalancer
 
       - name: Test connection to keptn
         run: |
-          curl -X GET "${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }}/v1/metadata" -H  "accept: application/json" -H  "x-token: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}"
+          curl -X GET "${{ steps.install_keptn.outputs.KEPTN_API_URL }}/v1/metadata" -H  "accept: application/json" -H  "x-token: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}"
 
       # Install job executor from downloaded helm chart
       - name: Install Job-executor-service
         env:
           KEPTN_API_PROTOCOL: http
           KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
+          KEPTN_ENDPOINT: ${{ steps.install_keptn.outputs.KEPTN_HTTP_ENDPOINT }}
         run: |
           ls -lah ./dist/helm-charts/
-
-          KEPTN_API_HOST=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)\/api/\1/')
           helm upgrade --install --create-namespace -n $JES_NAMESPACE job-executor-service \
             ./dist/helm-charts/job-executor-service-*.tgz \
-            --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_API_HOST},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
+            --set remoteControlPlane.api.protocol=${KEPTN_API_PROTOCOL},remoteControlPlane.api.hostname=${KEPTN_ENDPOINT},remoteControlPlane.api.token=${KEPTN_API_TOKEN} \
             --set networkPolicy.ingress.enabled=${{matrix.network-policy}} \
             --set jobConfig.networkPolicy.enabled=${{matrix.job-network-policy}} \
             --set 'jobConfig.networkPolicy.blockCIDRs={"10.0.0.0/8"\, "172.16.0.0/12"\, "192.168.0.0/16"}' \
@@ -108,13 +106,10 @@ jobs:
           echo "Failed to run integration tests!"
           echo '{"Test": "TestGitHub Pipeline", "Action": "fail"}' >> $TEST_REPORT_FILENAME
 
-      - name: Prepare test environment
-        run: |
-          echo "KEPTN_ENDPOINT=$(echo  ${{ steps.install_keptn.outputs.KEPTN_ENDPOINT }} | sed 's/^http:\/\/\(.*\)/\1/')" >> $GITHUB_ENV
-          echo "KEPTN_API_TOKEN=${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}" >> $GITHUB_ENV
-          go mod download
-
       - name: Run Integration tests
+        env:
+          KEPTN_ENDPOINT: ${{ steps.install_keptn.outputs.KEPTN_API_URL }}
+          KEPTN_API_TOKEN: ${{ steps.install_keptn.outputs.KEPTN_API_TOKEN }}
         run: |
           gotestsum --format testname --jsonfile $TEST_REPORT_FILENAME ./test/e2e/...
 
@@ -126,32 +121,16 @@ jobs:
           name: test-report
           path: test-report-*.json
 
-      - name: keptn generate support-archive
-        if: always()
-        env:
-          SUPPORT_ARCHIVE_FILENAME: keptn-support-archive-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
-        timeout-minutes: 5
-        run: |
-          mkdir support-archive/
-          echo "y" | keptn generate support-archive -n keptn
-          mv support-archive/keptn*.zip support-archive/${SUPPORT_ARCHIVE_FILENAME}.zip
-
-      # Upload the keptn support archive files, so we can use them for debugging
-      - name: Upload keptn support archive
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: keptn-support-archive-${{matrix.keptn-version}}-netpolicy-${{ matrix.network-policy }}-jobnetpolicy-${{matrix.job-network-policy}}
-          path: support-archive/*.zip
-
       - name: Dump k8s debug info
         if: always()
         run: |
           mkdir k8s_debug
           kubectl describe nodes > k8s_debug/k8s_describe_nodes.txt
           kubectl cluster-info dump > k8s_debug/k8s_cluster_info_dump.txt
+          kubectl get all -n keptn -o json > k8s_debug/k8s_keptn_objects.json
           kubectl get configmaps,deployments,pods,networkpolicy,serviceaccounts,role,rolebindings,events -n ${JES_NAMESPACE} -o json > k8s_debug/k8s_jes_objects.json
-          kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt
+          kubectl logs -n keptn -l app.kubernetes.io/instance=keptn --prefix=true --previous=false --all-containers > k8s_debug/k8s_keptn_logs.txt || true
+          kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt || true
 
       # Upload the k8s debug archive, so we can use it for investigating
       - name: Upload k8s debug archive
