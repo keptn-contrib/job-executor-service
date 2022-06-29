@@ -13,7 +13,7 @@ require (
 	github.com/keptn/kubernetes-utils v0.14.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/afero v1.8.2
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb
 	gopkg.in/yaml.v2 v2.4.0
