@@ -53,9 +53,7 @@ type K8s interface {
 		jobName string, jobDetails k8sutils.JobDetails, eventData keptn.EventProperties,
 		jobSettings k8sutils.JobSettings, jsonEventData interface{}, namespace string,
 	) error
-	AwaitK8sJobDone(
-		jobName string, maxPollDuration time.Duration, pollIntervalInSeconds time.Duration, namespace string,
-	) error
+	AwaitK8sJobDone(jobName string, maxPollDuration time.Duration, namespace string) error
 	GetFailedEventsForJob(jobName string, namespace string) (string, error)
 	GetLogsOfPod(jobName string, namespace string) (string, error)
 }
@@ -217,7 +215,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 		if task.MaxPollDuration != nil {
 			maxPollDuration = time.Duration(*task.MaxPollDuration) * time.Second
 		}
-		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollDuration, pollInterval, namespace)
+		jobErr := eh.K8s.AwaitK8sJobDone(jobName, maxPollDuration, namespace)
 
 		logs, err := eh.K8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {

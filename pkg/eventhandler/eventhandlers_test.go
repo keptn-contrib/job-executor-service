@@ -418,7 +418,7 @@ func TestEventMatching(t *testing.T) {
 				// CreateK8sJob expectation above, to avoid too much complexity we just expect anything for the correct
 				// number of times
 				mockK8s.EXPECT().AwaitK8sJobDone(
-					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+					gomock.Any(), gomock.Any(), gomock.Any(),
 				).Times(totalNoOfExpectedTasks)
 
 				mockK8s.EXPECT().GetLogsOfPod(
@@ -505,8 +505,8 @@ func TestStartK8s(t *testing.T) {
 		}), gomock.Any(), gomock.Any(),
 		gomock.Any(), jobNamespace2,
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, pollInterval, jobNamespace1).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), defaultMaxPollDuration, pollInterval, jobNamespace2).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, jobNamespace1).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), defaultMaxPollDuration, jobNamespace2).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
@@ -557,7 +557,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock.EXPECT().CreateK8sJob(
 		gomock.Eq(jobName2), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), defaultMaxPollDuration, pollInterval, "").Times(2)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Any(), defaultMaxPollDuration, "").Times(2)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
@@ -597,7 +597,7 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	k8sMock.EXPECT().CreateK8sJob(
 		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
 	// set the global timezone for testing
@@ -669,7 +669,7 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	k8sMock.EXPECT().CreateK8sJob(
 		gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), gomock.Any(), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 
 	// set the global timezone for testing

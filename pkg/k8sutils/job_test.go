@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	watch2 "k8s.io/apimachinery/pkg/watch"
+	k8stesting "k8s.io/client-go/testing"
 	"strconv"
 	"strings"
 	"testing"
@@ -669,8 +671,65 @@ func TestTTLSecondsAfterFinished(t *testing.T) {
 
 }
 
+// jobWatchEventReactor is used in the unit tests to produce a channel that contains
+// the given events in the structure.
+type jobWatchEventReactor struct {
+	events chan watch2.Event
+}
+
+func (f *jobWatchEventReactor) Stop() {
+	close(f.events)
+}
+func (f *jobWatchEventReactor) ResultChan() <-chan watch2.Event {
+	return f.events
+}
+
+// newJobWatchEventReactorFunc is a helper function to create a reactor function, which can respond with the
+// appropriate events for job status changes
+func newJobWatchEventReactorFunc(conditions []v1.JobCondition) func(action k8stesting.Action) (handled bool, ret watch2.Interface, err error) {
+	return func(action k8stesting.Action) (handled bool, ret watch2.Interface, err error) {
+		eventsChannel := make(chan watch2.Event)
+
+		// Add all events to the channel in the background to not block
+		// the calling function ...
+		go func() {
+			var writtenCondition []v1.JobCondition
+
+			for _, condition := range conditions {
+				writtenCondition := append([]v1.JobCondition{condition}, writtenCondition...)
+
+				eventsChannel <- watch2.Event{
+					Type: watch2.Modified,
+					Object: &v1.Job{
+						Status: v1.JobStatus{
+							Conditions: writtenCondition,
+						},
+					},
+				}
+			}
+
+			// Close the channel after all events have been processed
+			close(eventsChannel)
+		}()
+
+		reactor := jobWatchEventReactor{
+			events: eventsChannel,
+		}
+
+		return true, &reactor, nil
+	}
+}
+
 func TestAwaitK8sJobDoneHappyPath(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{
+		{
+			Type:   v1.JobComplete,
+			Status: corev1.ConditionTrue,
+			Reason: "Job has completed successfully!",
+		},
+	}))
+
 	k8s := K8sImpl{clientset: k8sClientSet}
 
 	jobName := "happy-path-job"
@@ -678,56 +737,49 @@ func TestAwaitK8sJobDoneHappyPath(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{
-				{
-					Type:   v1.JobComplete,
-					Status: corev1.ConditionTrue,
-					Reason: "Job has completed successfully!",
-				},
-			},
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
 	namespace := "happy-path-ns"
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, namespace)
 
 	assert.NoError(t, err)
 }
 
 func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
+	failedReason := "Job has gone horribly wrong!"
+	failureMessage := "there has been a problem somewhere"
+
 	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{
+		{
+			Type:    v1.JobFailed,
+			Status:  corev1.ConditionTrue,
+			Reason:  failedReason,
+			Message: failureMessage,
+		},
+	}))
+
 	k8s := K8sImpl{clientset: k8sClientSet}
 
 	jobName := "failed-job"
-	failedReason := "Job has gone horribly wrong!"
-	failureMessage := "there has been a problem somewhere"
 	job := v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{
-				{
-					Type:    v1.JobFailed,
-					Status:  corev1.ConditionTrue,
-					Reason:  failedReason,
-					Message: failureMessage,
-				},
-			},
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
 	namespace := "job-pain-and-misery-ns"
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, namespace)
 
 	require.Error(t, err)
 
@@ -742,25 +794,26 @@ func TestAwaitK8sJobDoneErrorJobFailed(t *testing.T) {
 
 func TestAwaitK8sJobDoneNotStarted(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	// This job won't have a condition set
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{}))
+
 	k8s := K8sImpl{clientset: k8sClientSet}
 
 	jobName := "job-not-started"
-
 	job := v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{}, // this job won't have a condition set
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
 	namespace := "job-pain-and-misery-ns"
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, namespace)
 
 	require.Error(t, err)
 
@@ -903,34 +956,35 @@ func TestCreateJobTaskDeadlineSeconds(t *testing.T) {
 }
 
 func TestAwaitK8sJobDoneErrorJobSuspended(t *testing.T) {
-	k8sClientSet := k8sfake.NewSimpleClientset()
-	k8s := K8sImpl{clientset: k8sClientSet}
-
 	jobName := "suspender-job"
 	suspendedReason := "Job has been suspended"
 	suspendedMessage := "some admin suspended your job"
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{
+		{
+			Type:    v1.JobSuspended,
+			Status:  corev1.ConditionTrue,
+			Reason:  suspendedReason,
+			Message: suspendedMessage,
+		},
+	}))
+
 	job := v1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{
-				{
-					Type:    v1.JobSuspended,
-					Status:  corev1.ConditionTrue,
-					Reason:  suspendedReason,
-					Message: suspendedMessage,
-				},
-			},
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
+
 	namespace := "job-suspended-ns"
+	k8s := K8sImpl{clientset: k8sClientSet}
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 1*time.Second, namespace)
 
 	require.Error(t, err)
 
@@ -946,6 +1000,8 @@ func TestAwaitK8sJobDoneErrorJobSuspended(t *testing.T) {
 
 func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{}))
+
 	k8s := K8sImpl{clientset: k8sClientSet}
 
 	jobName := "looong-running-job"
@@ -961,7 +1017,7 @@ func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, namespace)
 
 	require.Error(t, err)
 
@@ -976,6 +1032,15 @@ func TestAwaitK8sJobDoneErrorNeverComplete(t *testing.T) {
 
 func TestAwaitK8sJobExceededDeadline(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8sClientSet.PrependWatchReactor("jobs", newJobWatchEventReactorFunc([]v1.JobCondition{
+		{
+			Type:    v1.JobFailed,
+			Status:  corev1.ConditionTrue,
+			Reason:  reasonJobDeadlineExceeded,
+			Message: "Job exceeded deadline",
+		},
+	}))
+
 	k8s := K8sImpl{clientset: k8sClientSet}
 
 	jobName := "deadline-exceeding-job"
@@ -983,24 +1048,15 @@ func TestAwaitK8sJobExceededDeadline(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: jobName,
 		},
-		Spec: v1.JobSpec{},
-		Status: v1.JobStatus{
-			Conditions: []v1.JobCondition{
-				{
-					Type:    v1.JobFailed,
-					Status:  corev1.ConditionTrue,
-					Reason:  reasonJobDeadlineExceeded,
-					Message: "Job exceeded deadline",
-				},
-			},
-		},
+		Spec:   v1.JobSpec{},
+		Status: v1.JobStatus{},
 	}
 	namespace := "tight-job-runtimes-only"
 	k8sClientSet.BatchV1().Jobs(namespace).Create(
 		context.Background(), &job, metav1.CreateOptions{},
 	)
 
-	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 500*time.Millisecond, namespace)
 
 	require.Error(t, err)
 
@@ -1047,7 +1103,7 @@ func TestAwaitK8sJobDoneSuccessAfterPolling(t *testing.T) {
 		}
 	}()
 
-	err := k8s.AwaitK8sJobDone(jobName, 2*time.Second, 50*time.Millisecond, namespace)
+	err := k8s.AwaitK8sJobDone(jobName, 2*time.Second, namespace)
 
 	require.NoError(t, err)
 }
