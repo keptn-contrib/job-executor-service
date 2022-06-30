@@ -32,12 +32,13 @@ running in the Keptn ecosystem:
 |    0.13.x     |                               keptncontrib/job-executor-service:0.2.0                                |       v2       |
 |    0.14.x     |                               keptncontrib/job-executor-service:0.2.1                                |       v2       |
 |    0.15.x     |                               keptncontrib/job-executor-service:0.2.2                                |       v2       |
+|    0.16.x     |                               keptncontrib/job-executor-service:0.2.3                                |       v2       |
 
 **Please Note**:
 - Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
 - If you are installing JES in the same namespace as Keptn, versions compatible with Keptn 0.14.x and newer will not be backward compatible due to a change in NATS cluster name
 (see https://github.com/keptn/keptn/releases/tag/0.14.1 for more info about the breaking change).
-- The JES version 0.2.2 is currently not compatible with Keptn 0.16.0
+- Job-Executor-Service version 0.2.2 and older are currently not compatible with Keptn 0.16.0 (caused by [keptn/keptn#8160](https://github.com/keptn/keptn/issues/8160))
 
 **Warning**: We are aware that there might be a problem when trying to install Job-Executor-Service in the same namespace as Keptn 0.14.x. 
 For now, we advise to install Job-Executor-Service in a separate namespace, and set `remoteControlPlane.api.hostname`, `remoteControlPlane.api.token`, ... as detailed in the

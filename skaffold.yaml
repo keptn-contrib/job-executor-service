@@ -54,8 +54,6 @@ deploy:
               k8sMasterPort: 0
         overrides:
           distributor:
-            image:
-              tag: 0.15.1
             securityContext:
               seccompProfile:
                 type: Unconfined # needed for debugging

@@ -17,15 +17,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.12.7", "0.13.5", "0.14.2", "0.15.0"] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
       GO_VERSION: 1.17
+      GOPROXY: "https://proxy.golang.org"
       GO111MODULE: "on"
       BRANCH: ${{ github.head_ref || github.ref_name }}
       JES_E2E_TEST: true
       JES_NAMESPACE: keptn-jes-e2e
+      GITEA_ADMIN_USERNAME: GiteaAdmin
+      GITEA_NAMESPACE: gitea
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       TEST_REPORT_FILENAME: test-report-${{ github.run_id }}-${{ matrix.keptn-version }}-netpolicy-${{matrix.network-policy}}-jobnetpolicy-${{matrix.job-network-policy}}.json
     steps:
@@ -71,12 +74,60 @@ jobs:
           done;
           echo "K3s ready!!!"
 
+      - name: Generate Gitea credentials
+        id: gitea_credentials
+        run: |
+          password=$(date +%s | sha256sum | base64 | head -c 32)
+          echo "::add-mask::$password"
+          echo "::set-output name=GITEA_ADMIN_PASSWORD::$password"
+
+      - name: Install Gitea
+        id: gitea
+        env:
+          GITEA_ADMIN_PASSWORD: ${{ steps.gitea_credentials.outputs.GITEA_ADMIN_PASSWORD }}
+        run: |
+          export GITEA_ENDPOINT="http://gitea-http.${GITEA_NAMESPACE}:3000"
+          
+          helm repo add gitea-charts https://dl.gitea.io/charts/
+          helm repo update
+          helm install -n ${GITEA_NAMESPACE} gitea gitea-charts/gitea \
+            --create-namespace \
+            --set memcached.enabled=false \
+            --set postgresql.enabled=false \
+            --set gitea.config.database.DB_TYPE=sqlite3 \
+            --set gitea.admin.username=${GITEA_ADMIN_USERNAME} \
+            --set gitea.admin.password=${GITEA_ADMIN_PASSWORD} \
+            --set gitea.config.server.OFFLINE_MODE=true \
+            --set gitea.config.server.ROOT_URL=${GITEA_ENDPOINT}/ \
+            --wait
+          
+          # Export Gitea connection details
+          echo "::set-output name=GITEA_ENDPOINT::${GITEA_ENDPOINT}"
+
+      - name: Install gitea provisioner-service
+        env:
+          GITEA_ADMIN_PASSWORD: ${{ steps.gitea_credentials.outputs.GITEA_ADMIN_PASSWORD }}
+          GITEA_ENDPOINT: ${{ steps.gitea.outputs.GITEA_ENDPOINT }}
+        run: |
+          helm install keptn-gitea-provisioner-service https://github.com/keptn-sandbox/keptn-gitea-provisioner-service/releases/download/0.1.0/keptn-gitea-provisioner-service-0.1.0.tgz \
+            --set gitea.endpoint=${GITEA_ENDPOINT} \
+            --set gitea.admin.create=true \
+            --set gitea.admin.username=${GITEA_ADMIN_USERNAME} \
+            --set gitea.admin.password=${GITEA_ADMIN_PASSWORD} \
+            --wait
+
       - name: Install Keptn
         id: install_keptn
         uses: keptn-sandbox/action-install-keptn@v2.0.0
         timeout-minutes: 5
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
+          HELM_VALUES: |
+            control-plane:
+              apiGatewayNginx:
+                type: LoadBalancer
+              features:
+                automaticProvisioningURL: http://keptn-gitea-provisioner-service.default
           KUBECONFIG: ${{ env.KUBECONFIG }}
 
       - name: Test connection to keptn
@@ -131,6 +182,9 @@ jobs:
           kubectl get configmaps,deployments,pods,networkpolicy,serviceaccounts,role,rolebindings,events -n ${JES_NAMESPACE} -o json > k8s_debug/k8s_jes_objects.json
           kubectl logs -n keptn -l app.kubernetes.io/instance=keptn --prefix=true --previous=false --all-containers > k8s_debug/k8s_keptn_logs.txt || true
           kubectl logs -n ${JES_NAMESPACE} deployment/job-executor-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_jes_logs.txt || true
+          kubectl logs deployment/keptn-gitea-provisioner-service --prefix=true --previous=false --all-containers > k8s_debug/k8s_gitea_provisioner_logs.txt || true
+          kubectl get statefulsets,configmaps,pods,networkpolicy,serviceaccounts,role,rolebindings,events,services -n ${GITEA_NAMESPACE} -o json > k8s_debug/k8s_objects_gitea.json
+          kubectl logs statefulsets/gitea --prefix=true --previous=false --all-containers -n ${GITEA_NAMESPACE} > k8s_debug/k8s_logs_gitea.txt || true
 
       # Upload the k8s debug archive, so we can use it for investigating
       - name: Upload k8s debug archive
