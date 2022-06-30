@@ -380,8 +380,10 @@ func (k8s *K8sImpl) CreateK8sJob(
 // If the job completes successfully before we reach maxPollDuration, no error is returned.
 // If the job fails, is suspended or does not complete within maxPollDuration, an appropriate error will be returned
 func (k8s *K8sImpl) AwaitK8sJobDone(jobName string, maxPollDuration time.Duration, namespace string) error {
+	ctx, cancelCtx := context.WithTimeout(context.Background(), maxPollDuration)
+	defer cancelCtx()
 
-	// Create a new field selector with the requirement to only watch for the defined jobName
+	// Create a new field selector with the requirement to only watchJobEvents for the defined jobName
 	requirement, err := labels.NewRequirement("metadata.name", selection.Equals, []string{jobName})
 	if err != nil {
 		return fmt.Errorf("unable to build requirement for field selector: %w", err)
@@ -390,72 +392,94 @@ func (k8s *K8sImpl) AwaitK8sJobDone(jobName string, maxPollDuration time.Duratio
 	fieldSelector := labels.NewSelector()
 	fieldSelector = fieldSelector.Add(*requirement)
 
-	// Start watching and only watch as long as the give timeout specifies to avoid stalling the
+	// Start watching job events and only watch as long as the give timeout specifies to avoid stalling the
 	// await operation for too long
-	timeout := int64(maxPollDuration.Seconds())
-	watch, err := k8s.clientset.BatchV1().Jobs(namespace).Watch(context.TODO(), metav1.ListOptions{
-		FieldSelector:  fieldSelector.String(),
-		Watch:          true,
-		TimeoutSeconds: &timeout,
+	watchJobEvents, err := k8s.clientset.BatchV1().Jobs(namespace).Watch(ctx, metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
 	})
 	if err != nil {
-		return fmt.Errorf("unable to watch for job completion: %w", err)
+		return fmt.Errorf("unable to watch Job events for job completion: %w", err)
 	}
 
-	// As long as there are events in the watch channel we process them and update the job status accordingly
-	for event := range watch.ResultChan() {
+	// Start watching kubernetes events and watch only as long as the given timeout specifies to avoid stalling the
+	// await operation for too long
+	kindSelector, _ := labels.NewRequirement("involvedObject.kind", selection.Equals, []string{"Pod"})
+	selector := labels.NewSelector()
+	selector = selector.Add(*kindSelector)
+	watchEvents, err := k8s.clientset.CoreV1().Events(namespace).Watch(ctx, metav1.ListOptions{
+		FieldSelector: selector.String(),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to watch events for job completion: %w", err)
+	}
 
-		switch event.Type {
-		case watch2.Added:
-			log.Printf("job %s was added\n", jobName)
-			break
+	// As long as there are events in the job events or the pod events, check if the job has already finished or
+	// if an error is encountered for some reason ...
+	for {
+		select {
+		case event := <-watchJobEvents.ResultChan():
+			switch event.Type {
+			case watch2.Added:
+				/* Ignore added, job is most likely already there */
 
-		case watch2.Error:
-			return fmt.Errorf("watch for jobs was unsucessful")
+			case watch2.Error:
+				return fmt.Errorf("job %s encountered error while awaitng completion", jobName)
 
-		case watch2.Deleted:
-			return fmt.Errorf("job %s was deleted while awaiting completion", jobName)
+			case watch2.Deleted:
+				return fmt.Errorf("job %s was deleted while awaiting completion", jobName)
 
-		case watch2.Bookmark:
-			/* Ignore Bookmark */
-			break
+			case watch2.Bookmark:
+				/* Ignore Bookmark */
 
-		case watch2.Modified:
-			job, ok := event.Object.(*batchv1.Job)
-			if !ok {
-				return fmt.Errorf("unable to cast object to job")
-			}
+			case watch2.Modified:
+				job, ok := event.Object.(*batchv1.Job)
+				if !ok {
+					return fmt.Errorf("unable to cast object to *batchv1.job")
+				}
 
-			// TODO: why do we need a for loop here if we return for every element?
-			//       shouldn't it be search for JobComplete if not exists return newest Failed, Suspended error?
-			for _, condition := range job.Status.Conditions {
-				switch condition.Type {
-				case batchv1.JobComplete:
-					// hooray, it worked
-					return nil
+				// TODO: why do we need a for loop here if we return for every element?
+				//       shouldn't it be search for JobComplete if not exists return newest Failed, Suspended error?
+				for _, condition := range job.Status.Conditions {
+					switch condition.Type {
+					case batchv1.JobComplete:
+						// hooray, it worked
+						return nil
 
-				case batchv1.JobSuspended:
-					return fmt.Errorf(
-						"job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
-					)
+					case batchv1.JobSuspended:
+						return fmt.Errorf(
+							"job %s was suspended. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
+						)
 
-				case batchv1.JobFailed:
-					if condition.Reason == reasonJobDeadlineExceeded {
-						return fmt.Errorf("job %s failed: %w", jobName, ErrTaskDeadlineExceeded)
+					case batchv1.JobFailed:
+						if condition.Reason == reasonJobDeadlineExceeded {
+							return fmt.Errorf("job %s failed: %w", jobName, ErrTaskDeadlineExceeded)
+						}
+
+						return fmt.Errorf(
+							"job %s failed. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
+						)
 					}
-
-					return fmt.Errorf(
-						"job %s failed. Reason: %s, Message: %s", jobName, condition.Reason, condition.Message,
-					)
 				}
 			}
+
+		case event := <-watchEvents.ResultChan():
+			evt, ok := event.Object.(*v1.Event)
+
+			// TODO: Is it safe to assume that after 3 "Failed" events the job can't be finished?
+			if ok && strings.Contains(evt.InvolvedObject.FieldPath, jobName) && evt.Count == 3 && evt.Reason == "Failed" {
+				return fmt.Errorf("encounterd %d times an error while waiting for job completion: %s", evt.Count, evt.Message)
+			} else if !ok {
+				return fmt.Errorf("unable to cast object to *v1.job")
+			}
+
+		// If we reach the max poll timeout we stop watching and return an error:
+		case <-time.After(maxPollDuration):
+			return fmt.Errorf(
+				"polling for job %s timing out after %s: %w", jobName, maxPollDuration,
+				ErrMaxPollTimeExceeded,
+			)
 		}
 	}
-
-	return fmt.Errorf(
-		"polling for job %s timing out after %s: %w", jobName, maxPollDuration,
-		ErrMaxPollTimeExceeded,
-	)
 }
 
 // GetFailedEventsForJob will check for events with reason starting with Failed on the specified job
