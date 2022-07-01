@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/keptn-contrib/job-executor-service/compare/0.2.2...0.2.3) (2022-07-01)
+
+
+### Features
+
+* Upgrade dependencies to Keptn 0.16 ([#295](https://github.com/keptn-contrib/job-executor-service/issues/295)) ([7f71c62](https://github.com/keptn-contrib/job-executor-service/commit/7f71c620a297cb0f6ec40b73c51bc508a4891f54))
+
+
+### Bug Fixes
+
+* Integration tests debug archive ([#291](https://github.com/keptn-contrib/job-executor-service/issues/291)) ([4cdb40b](https://github.com/keptn-contrib/job-executor-service/commit/4cdb40b7f25559f535130e9daa0532cade482a75))
+
+
+### Docs
+
+* document ingress/egress job-executor-service network policies ([#293](https://github.com/keptn-contrib/job-executor-service/issues/293)) ([ecccad7](https://github.com/keptn-contrib/job-executor-service/commit/ecccad7f4ba64fb321120f5670b63cc975c3f53a))
+
 ### [0.2.2](https://github.com/keptn-contrib/job-executor-service/compare/0.2.1...0.2.2) (2022-06-21)
 
 
