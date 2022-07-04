@@ -16,7 +16,7 @@ In order to install the *job-executor-service* on the remote execution plane, so
 **Example installation with token:**
 
 ```bash
-JES_VERSION=<VERSION> # e.g. 0.2.1
+JES_VERSION=<VERSION> # e.g. 0.2.3
 
 KEPTN_API_PROTOCOL=http # or https
 KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
@@ -45,10 +45,11 @@ If multiple Keptn installations are present, the `remoteControlPlane.autoDetect.
 The auto-detection feature can be enabled by setting `remoteControlPlane.autoDetect.enabled` to `true`.
 
 ```bash
+JES_VERSION=<VERSION> # e.g. 0.2.3
 TASK_SUBSCRIPTION=sh.keptn.event.remote-task.triggered
 
 helm upgrade --install --create-namespace -n <NAMESPACE> \
-  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
+  job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/${JES_VERSION}/job-executor-service-${JES_VERSION}.tgz \
   --set remoteControlPlane.autoDetect.enabled=true \
   --set remoteControlPlane.topicSubscription=${TASK_SUBSCRIPTION} \
   --set remoteControlPlane.api.token="" \
@@ -66,7 +67,7 @@ If the oauth authentication mode should be used instead of the token, the follow
 * `remoteControlPlane.api.oauth.scopes` - The scopes which should be requested by the job executor service
 
 ```bash
-JES_VERSION=<VERSION> # e.g. 0.2.1
+JES_VERSION=<VERSION> # e.g. 0.2.3
 
 KEPTN_API_PROTOCOL=http # or https
 KEPTN_API_HOST=<INSERT-YOUR-HOSTNAME-HERE> # e.g., 1.2.3.4.nip.io
