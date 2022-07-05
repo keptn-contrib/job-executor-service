@@ -39,11 +39,12 @@ type configServiceImpl struct {
 	resourceHandler    V2ResourceHandler
 }
 
+// EventProperties represents a set of properties of a given cloud event
 type EventProperties struct {
 	Project     string
 	Stage       string
 	Service     string
-	GitCommitId string
+	GitCommitID string
 }
 
 // NewConfigService creates and returns new ConfigService
@@ -64,7 +65,7 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	}
 
 	// https://github.com/keptn/keptn/issues/2707
-	// Note: trimming the prefix is necessary if a gitCommitId is used (?)
+	// Note: trimming the prefix is necessary if a gitCommitID is used (?)
 	encodedResource := url.QueryEscape(strings.TrimPrefix(resource, "/"))
 
 	scope := api.NewResourceScope()
@@ -74,10 +75,10 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	scope.Resource(encodedResource)
 
 	options := api.ResourcesGetResourceOptions{}
-	if k.eventProperties.GitCommitId != "" {
+	if k.eventProperties.GitCommitID != "" {
 		options.URIOptions = []api.URIOption{
 			api.AppendQuery(url.Values{
-				"gitCommitID": []string{k.eventProperties.GitCommitId},
+				"gitCommitID": []string{k.eventProperties.GitCommitID},
 			}),
 		}
 	}
@@ -117,7 +118,7 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 		return nil, fmt.Errorf("resources not found: %s", err)
 	}
 
-	// Go over the resources and fetch the content of each resource with the given gitCommitId:
+	// Go over the resources and fetch the content of each resource with the given gitCommitID:
 	keptnResources := make(map[string][]byte)
 	for _, serviceResource := range requestedResources {
 		// match against with and without starting slash
@@ -129,7 +130,7 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 			keptnResourceContent, err := k.GetKeptnResource(fs, *serviceResource.ResourceURI)
 			if err != nil {
 				return nil, fmt.Errorf("could not find file %s for version %s",
-					*serviceResource.ResourceURI, k.eventProperties.GitCommitId,
+					*serviceResource.ResourceURI, k.eventProperties.GitCommitID,
 				)
 			}
 			keptnResources[*serviceResource.ResourceURI] = keptnResourceContent

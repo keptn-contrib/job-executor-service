@@ -1127,9 +1127,9 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			jobName := "some-job-name-" + strconv.Itoa(i)
-			var gitCommitId string
+			var gitCommitID string
 			if id, ok := test.event["gitCommitid"]; ok {
-				gitCommitId = id.(string)
+				gitCommitID = id.(string)
 			}
 
 			err = k8s.CreateK8sJob(
@@ -1146,7 +1146,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 					ActionIndex:   0,
 					TaskIndex:     0,
 					JobConfigHash: "",
-					GitCommitId:   gitCommitId,
+					GitCommitID:   gitCommitID,
 				},
 				&eventData,
 				JobSettings{
@@ -1171,7 +1171,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 				"app.kubernetes.io/managed-by": "job-executor-service",
 				"keptn.sh/context":             test.event["shkeptncontext"].(string),
 				"keptn.sh/event-id":            test.event["id"].(string),
-				"keptn.sh/commitid":            gitCommitId,
+				"keptn.sh/commitid":            gitCommitID,
 				"keptn.sh/jes-action":          test.expectedActionName,
 				"keptn.sh/jes-task":            test.expectedTaskName,
 				"keptn.sh/jes-job-confighash":  "",

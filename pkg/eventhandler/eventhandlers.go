@@ -38,7 +38,7 @@ type EventMapper interface {
 
 // JobConfigReader retrieves the job-executor-service configuration
 type JobConfigReader interface {
-	GetJobConfig(gitCommitId string) (*config.Config, string, error)
+	GetJobConfig(gitCommitID string) (*config.Config, string, error)
 }
 
 // ErrorLogSender is used to send error logs that will appear in Uniform UI
@@ -98,12 +98,12 @@ func (eh *EventHandler) HandleEvent() error {
 	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
 	// Get the git commit id from the cloud event (if it exists) and use it to query the job configuration
-	var gitCommitId string
+	var gitCommitID string
 	if commitId, ok := eventAsInterface["gitcommitid"]; ok {
-		gitCommitId, _ = commitId.(string)
+		gitCommitID, _ = commitId.(string)
 	}
 
-	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitId)
+	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
 
 	if err != nil {
 		errorLogErr := eh.ErrorSender.SendErrorLogEvent(
@@ -140,14 +140,14 @@ func (eh *EventHandler) HandleEvent() error {
 				eh.Keptn.CloudEvent.Type(), action.Name,
 			)
 
-			eh.startK8sJob(&action, actionIndex, configHash, gitCommitId, eventAsInterface)
+			eh.startK8sJob(&action, actionIndex, configHash, gitCommitID, eventAsInterface)
 		}
 	}
 
 	return nil
 }
 
-func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, configHash string, gitCommitId string,
+func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, configHash string, gitCommitID string,
 	jsonEventData interface{},
 ) {
 
@@ -207,7 +207,7 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 			ActionIndex:   actionIndex,
 			TaskIndex:     index,
 			JobConfigHash: configHash,
-			GitCommitId:   gitCommitId,
+			GitCommitID:   gitCommitID,
 		}
 
 		err = eh.K8s.CreateK8sJob(

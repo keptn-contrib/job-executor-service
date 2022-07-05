@@ -26,11 +26,11 @@ func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockV2ResourceHandler {
 const service = "carts"
 const project = "sockshop"
 const stage = "dev"
-const gitCommitId = "6caf78d2c978f7f787"
+const gitCommitID = "6caf78d2c978f7f787"
 
 func TestGetAllKeptnResources(t *testing.T) {
-	locustBasic := "/locust/basic.py"
-	locustFunctional := "/locust/functional.py"
+	locustBasic := "locust/basic.py"
+	locustFunctional := "locust/functional.py"
 
 	resourceHandlerMock := CreateResourceHandlerMock(t)
 	resourceHandlerMock.EXPECT().GetAllServiceResources(gomock.Any(), project, stage, service, gomock.Any()).Times(1).Return(
@@ -80,7 +80,7 @@ func TestGetAllKeptnResources(t *testing.T) {
 		Project:     project,
 		Stage:       stage,
 		Service:     service,
-		GitCommitId: gitCommitId,
+		GitCommitID: gitCommitID,
 	}
 
 	configService := NewConfigService(false, event, resourceHandlerMock)
@@ -126,7 +126,7 @@ func TestGetAllKeptnResourcesLocal(t *testing.T) {
 		Project:     project,
 		Stage:       stage,
 		Service:     service,
-		GitCommitId: "",
+		GitCommitID: "",
 	}
 
 	configService := NewConfigService(true, event, resourceHandlerMock)
@@ -178,7 +178,7 @@ func TestErrorNoDirectoryResourcesLocal(t *testing.T) {
 		Project:     project,
 		Stage:       stage,
 		Service:     service,
-		GitCommitId: "",
+		GitCommitID: "",
 	}
 
 	configService := NewConfigService(true, event, resourceHandlerMock)

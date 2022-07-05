@@ -31,7 +31,7 @@ func TestGitCommitID(t *testing.T) {
 	defer testEnv.Cleanup()
 
 	// Make sure the integration test is only run for Keptn versions that support the
-	// gitCommitId parameter for resource queries
+	// gitCommitID parameter for resource queries
 	if err := testEnv.ShouldRun(">=0.16.0"); err != nil {
 		t.Skipf("%s\n", err.Error())
 	}
@@ -41,7 +41,7 @@ func TestGitCommitID(t *testing.T) {
 	require.NoError(t, err)
 
 	// Wait for the deployment to be completed
-	var gitCommitId string
+	var gitCommitID string
 	requireWaitForEvent(t,
 		testEnv.API,
 		5*time.Minute,
@@ -49,7 +49,7 @@ func TestGitCommitID(t *testing.T) {
 		keptnContext,
 		"sh.keptn.event.deployment.finished",
 		func(event *models.KeptnContextExtendedCE) bool {
-			gitCommitId = event.GitCommitID
+			gitCommitID = event.GitCommitID
 			return true
 		},
 	)
@@ -63,7 +63,7 @@ func TestGitCommitID(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	testEnv.Event.GitCommitID = gitCommitId
+	testEnv.Event.GitCommitID = gitCommitID
 	keptnContext, err = testEnv.API.SendEvent(testEnv.Event)
 	require.NoError(t, err)
 

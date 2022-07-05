@@ -12,10 +12,11 @@ import (
 // getting of resources of a given event
 type V1ResourceHandler struct {
 	Event           EventProperties
-	ResourceHandler KeptnResourceHandler
+	ResourceHandler V1KeptnResourceHandler
 }
 
-func NewV1ResourceHandler(event keptn.EventProperties, handler KeptnResourceHandler) V1ResourceHandler {
+// NewV1ResourceHandler creates a new V1ResourceHandler from a given Keptn event and a V1KeptnResourceHandler
+func NewV1ResourceHandler(event keptn.EventProperties, handler V1KeptnResourceHandler) V1ResourceHandler {
 	return V1ResourceHandler{
 		Event: EventProperties{
 			Project: event.GetProject(),
@@ -28,13 +29,13 @@ func NewV1ResourceHandler(event keptn.EventProperties, handler KeptnResourceHand
 
 //go:generate mockgen -source=resource_service.go -destination=fake/keptn_resourcehandler_mock.go -package=fake KeptnResourceHandler
 
-// KeptnResourceHandler represents an interface for the api.ResourceHandler struct of the Keptn API
-type KeptnResourceHandler interface {
+// V1KeptnResourceHandler represents an interface for the api.ResourceHandler struct of the Keptn API
+type V1KeptnResourceHandler interface {
 	GetResource(scope api.ResourceScope, options ...api.URIOption) (*models.Resource, error)
 }
 
-// GetResource returns the contents of a resource for a given gitCommitId
-func (r V1ResourceHandler) GetResource(resource string, gitCommitId string) ([]byte, error) {
+// GetResource returns the contents of a resource for a given gitCommitID
+func (r V1ResourceHandler) GetResource(resource string, gitCommitID string) ([]byte, error) {
 	scope := api.NewResourceScope()
 	scope.Resource(url.QueryEscape(resource))
 	scope.Service(r.Event.Service)
@@ -42,9 +43,9 @@ func (r V1ResourceHandler) GetResource(resource string, gitCommitId string) ([]b
 	scope.Stage(r.Event.Stage)
 
 	var queryParam api.URIOption
-	if gitCommitId != "" {
+	if gitCommitID != "" {
 		queryParam = api.AppendQuery(url.Values{
-			"gitCommitID": []string{gitCommitId},
+			"gitCommitID": []string{gitCommitID},
 		})
 	} else {
 		queryParam = api.AppendQuery(url.Values{})

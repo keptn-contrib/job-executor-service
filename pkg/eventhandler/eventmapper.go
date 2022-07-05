@@ -26,7 +26,7 @@ func (kcem *KeptnCloudEventMapper) Map(ce cloudevents.Event) (map[string]interfa
 	extension, _ := ce.Context.GetExtension("shkeptncontext")
 	shKeptnContext := extension.(string)
 
-	gitcommitidExt, _ := ce.Context.GetExtension("gitcommitid")
+	gitCommitID, _ := ce.Context.GetExtension("gitcommitid")
 
 	eventAsInterface := make(map[string]interface{})
 	eventAsInterface["id"] = ce.ID()
@@ -36,7 +36,7 @@ func (kcem *KeptnCloudEventMapper) Map(ce cloudevents.Event) (map[string]interfa
 	eventAsInterface["data"] = eventDataAsInterface
 	eventAsInterface["specversion"] = ce.SpecVersion()
 	eventAsInterface["type"] = ce.Type()
-	eventAsInterface["gitcommitid"] = gitcommitidExt
+	eventAsInterface["gitcommitid"] = gitCommitID
 
 	return eventAsInterface, nil
 }

@@ -125,7 +125,7 @@ func main() {
 		Project:     env.Project,
 		Stage:       env.Stage,
 		Service:     env.Service,
-		GitCommitId: env.GitCommitID,
+		GitCommitID: env.GitCommitID,
 	}
 
 	configService := keptn.NewConfigService(useLocalFileSystem, eventProps, keptnAPI.Resources())

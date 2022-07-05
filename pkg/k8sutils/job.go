@@ -60,7 +60,7 @@ type JobDetails struct {
 	ActionIndex   int
 	TaskIndex     int
 	JobConfigHash string
-	GitCommitId   string
+	GitCommitID   string
 }
 
 // JobSettings contains environment variable settings for the job
@@ -326,7 +326,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 								},
 								{
 									Name:  "GIT_COMMIT_ID",
-									Value: jobDetails.GitCommitId,
+									Value: jobDetails.GitCommitID,
 								},
 							},
 							Resources: *jobSettings.DefaultResourceRequirements,
@@ -641,7 +641,7 @@ func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}, jesD
 		"app.kubernetes.io/managed-by": jesDeploymentName,
 		"keptn.sh/context":             keptnContext,
 		"keptn.sh/event-id":            eventID,
-		"keptn.sh/commitid":            jobDetails.GitCommitId,
+		"keptn.sh/commitid":            jobDetails.GitCommitID,
 		"keptn.sh/jes-action":          sanitizeLabel(jobDetails.Action.Name),
 		"keptn.sh/jes-task":            sanitizeLabel(jobDetails.Task.Name),
 		"keptn.sh/jes-job-confighash":  jobDetails.JobConfigHash,
