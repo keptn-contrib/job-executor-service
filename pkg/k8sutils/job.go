@@ -60,6 +60,7 @@ type JobDetails struct {
 	ActionIndex   int
 	TaskIndex     int
 	JobConfigHash string
+	GitCommitId   string
 }
 
 // JobSettings contains environment variable settings for the job
@@ -322,6 +323,10 @@ func (k8s *K8sImpl) CreateK8sJob(
 								{
 									Name:  "JOB_TASK",
 									Value: task.Name,
+								},
+								{
+									Name:  "GIT_COMMIT_ID",
+									Value: jobDetails.GitCommitId,
 								},
 							},
 							Resources: *jobSettings.DefaultResourceRequirements,
@@ -614,12 +619,6 @@ func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}, jesD
 		return nil, fmt.Errorf("jsonEventData does not contain the field id")
 	}
 
-	gitCommitID, ok := eventAsMap["gitcommitid"].(string)
-	if !ok {
-		// For legacy events that have no git commit id we just set it to an empty string
-		gitCommitID = ""
-	}
-
 	// This function is used to sanitize the labels for the action and the task name to
 	// avoid creating a set of labels that is not allowed by kubernetes
 	sanitizeLabel := func(label string) string {
@@ -642,7 +641,7 @@ func generateK8sJobLabels(jobDetails JobDetails, jsonEventData interface{}, jesD
 		"app.kubernetes.io/managed-by": jesDeploymentName,
 		"keptn.sh/context":             keptnContext,
 		"keptn.sh/event-id":            eventID,
-		"keptn.sh/commitid":            gitCommitID,
+		"keptn.sh/commitid":            jobDetails.GitCommitId,
 		"keptn.sh/jes-action":          sanitizeLabel(jobDetails.Action.Name),
 		"keptn.sh/jes-task":            sanitizeLabel(jobDetails.Task.Name),
 		"keptn.sh/jes-job-confighash":  jobDetails.JobConfigHash,

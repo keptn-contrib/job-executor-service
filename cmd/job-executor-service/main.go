@@ -111,10 +111,12 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 	// create a uniform handler talking to the distributor
 	uniformHandler := api.NewUniformHandler("localhost:8081/controlPlane")
 	var eventHandler = &eventhandler.EventHandler{
-		Keptn:           myKeptn,
-		JobConfigReader: &config.JobConfigReader{Keptn: myKeptn},
-		ServiceName:     ServiceName,
-		Mapper:          new(eventhandler.KeptnCloudEventMapper),
+		Keptn: myKeptn,
+		JobConfigReader: &config.JobConfigReader{
+			Keptn: keptn_interface.NewV1ResourceHandler(myKeptn.Event, myKeptn.ResourceHandler),
+		},
+		ServiceName: ServiceName,
+		Mapper:      new(eventhandler.KeptnCloudEventMapper),
 		ImageFilter: imageFilterImpl{
 			imageFilterList: allowList,
 		},

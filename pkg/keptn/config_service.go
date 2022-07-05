@@ -1,12 +1,14 @@
 package keptn
 
 import (
+	"context"
 	"fmt"
+	"github.com/keptn/go-utils/pkg/api/models"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"net/url"
 	"os"
 	"strings"
 
-	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/spf13/afero"
 )
 
@@ -18,31 +20,36 @@ type ConfigService interface {
 	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
 }
 
-//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake ResourceHandler
+//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake V2ResourceHandler
 
-// ResourceHandler provides methods to work with the keptn configuration service
-type ResourceHandler interface {
-	GetServiceResource(project string, stage string, service string, resourceURI string) (*models.Resource, error)
-	GetAllServiceResources(project string, stage string, service string) ([]*models.Resource, error)
+// V2ResourceHandler provides methods to work with the keptn configuration service
+type V2ResourceHandler interface {
+	// GetAllServiceResources returns a list of all resources.
+	GetAllServiceResources(ctx context.Context, project string, stage string, service string,
+		opts api.ResourcesGetAllServiceResourcesOptions) ([]*models.Resource, error)
+
+	// GetResource returns a resource from the defined ResourceScope.
+	GetResource(ctx context.Context, scope api.ResourceScope, opts api.ResourcesGetResourceOptions) (*models.Resource, error)
 }
 
 type configServiceImpl struct {
 	useLocalFileSystem bool
-	project            string
-	stage              string
-	service            string
-	resourceHandler    ResourceHandler
+	eventProperties    EventProperties
+	resourceHandler    V2ResourceHandler
+}
+
+type EventProperties struct {
+	Project     string
+	Stage       string
+	Service     string
+	GitCommitId string
 }
 
 // NewConfigService creates and returns new ConfigService
-func NewConfigService(
-	useLocalFileSystem bool, project string, stage string, service string, resourceHandler ResourceHandler,
-) ConfigService {
+func NewConfigService(useLocalFileSystem bool, event EventProperties, resourceHandler V2ResourceHandler) ConfigService {
 	return &configServiceImpl{
 		useLocalFileSystem: useLocalFileSystem,
-		project:            project,
-		stage:              stage,
-		service:            service,
+		eventProperties:    event,
 		resourceHandler:    resourceHandler,
 	}
 }
@@ -55,11 +62,25 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 		return k.getKeptnResourceFromLocal(fs, resource)
 	}
 
-	// get it from KeptnBase
 	// https://github.com/keptn/keptn/issues/2707
-	requestedResource, err := k.resourceHandler.GetServiceResource(
-		k.project, k.stage, k.service, url.QueryEscape(resource),
-	)
+	encodedResource := url.QueryEscape(resource)
+
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	scope.Service(k.eventProperties.Service)
+	scope.Resource(encodedResource)
+
+	options := api.ResourcesGetResourceOptions{}
+	if k.eventProperties.GitCommitId != "" {
+		options.URIOptions = []api.URIOption{
+			api.AppendQuery(url.Values{
+				"gitCommitID": []string{k.eventProperties.GitCommitId},
+			}),
+		}
+	}
+
+	requestedResource, err := k.resourceHandler.GetResource(context.Background(), *scope, options)
 
 	// return Nil in case resource couldn't be retrieved
 	if err != nil || requestedResource.ResourceContent == "" {
@@ -78,22 +99,34 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 		return k.getKeptnResourcesFromLocal(fs, resource)
 	}
 
-	// get it from KeptnBase
-	requestedResources, err := k.resourceHandler.GetAllServiceResources(k.project, k.stage, k.service)
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	scope.Service(k.eventProperties.Service)
+
+	// Get all resources from Keptn in the current service
+	requestedResources, err := k.resourceHandler.GetAllServiceResources(context.Background(),
+		k.eventProperties.Project, k.eventProperties.Stage, k.eventProperties.Service,
+		api.ResourcesGetAllServiceResourcesOptions{},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("resources not found: %s", err)
 	}
 
+	// Go over the resources and fetch the content of each resource with the given gitCommitId:
 	keptnResources := make(map[string][]byte)
 	for _, serviceResource := range requestedResources {
 		// match against with and without starting slash
+		// Note: this makes it possible to include directories, maybe a glob might be a better idea
 		resourceURIWithoutSlash := strings.Replace(*serviceResource.ResourceURI, "/", "", 1)
 		if strings.HasPrefix(*serviceResource.ResourceURI, resource) || strings.HasPrefix(
 			resourceURIWithoutSlash, resource,
 		) {
 			keptnResourceContent, err := k.GetKeptnResource(fs, *serviceResource.ResourceURI)
 			if err != nil {
-				return nil, fmt.Errorf("could not find file %s", *serviceResource.ResourceURI)
+				return nil, fmt.Errorf("could not find file %s for version %s",
+					*serviceResource.ResourceURI, k.eventProperties.GitCommitId,
+				)
 			}
 			keptnResources[*serviceResource.ResourceURI] = keptnResourceContent
 		}

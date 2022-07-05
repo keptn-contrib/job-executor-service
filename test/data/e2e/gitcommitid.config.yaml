@@ -1,0 +1,12 @@
+apiVersion: v2
+actions:
+  - name: "Hello World e2e test"
+    events:
+      - name: "sh.keptn.event.deployment.triggered"
+    tasks:
+      - name: "Greet the world"
+        image: "alpine"
+        cmd:
+          - echo
+        args:
+          - "This should not be displayed!"
