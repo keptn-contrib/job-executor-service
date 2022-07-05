@@ -425,6 +425,19 @@ tasks:
     namespace: carts
 ```
 
+### Specify annotations for Job
+
+Custom annotations can be added to Job definitions which is needed for workloads/tools to inject secrets into jobs or execute other functionality on jobs.
+
+```yaml
+tasks:
+  - name: "Greet the world"
+    ...
+    annotations:
+      - key1: value1
+      - key2: value2
+```
+
 ### Job security context
 
 By default the jobs will use the default security context, which was specified at the time of the installation of the 
