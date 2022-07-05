@@ -32,7 +32,7 @@ func TestGitCommitID(t *testing.T) {
 
 	// Make sure the integration test is only run for Keptn versions that support the
 	// gitCommitId parameter for resource queries
-	if err := testEnv.ShouldRun(">=0.13.0"); err != nil {
+	if err := testEnv.ShouldRun(">=0.16.0"); err != nil {
 		t.Skipf("%s\n", err.Error())
 	}
 
