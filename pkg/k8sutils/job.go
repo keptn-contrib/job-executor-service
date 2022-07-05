@@ -200,9 +200,10 @@ func (k8s *K8sImpl) CreateK8sJob(
 
 	jobSpec := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      jobName,
-			Namespace: namespace,
-			Labels:    mergedJobLabels,
+			Name:        jobName,
+			Namespace:   namespace,
+			Labels:      mergedJobLabels,
+			Annotations: task.Annotations,
 		},
 		Spec: batchv1.JobSpec{
 			Template: v1.PodTemplateSpec{
