@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils/v2"
+	"log"
 	"net/url"
 	"os"
 	"strings"
@@ -63,7 +64,8 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	}
 
 	// https://github.com/keptn/keptn/issues/2707
-	encodedResource := url.QueryEscape(resource)
+	// Note: trimming the prefix is necessary if a gitCommitId is used (?)
+	encodedResource := url.QueryEscape(strings.TrimPrefix(resource, "/"))
 
 	scope := api.NewResourceScope()
 	scope.Project(k.eventProperties.Project)
@@ -81,6 +83,8 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	}
 
 	requestedResource, err := k.resourceHandler.GetResource(context.Background(), *scope, options)
+
+	log.Printf("%#v\n%#v\n%#v\n", scope, requestedResource, err)
 
 	// return Nil in case resource couldn't be retrieved
 	if err != nil || requestedResource.ResourceContent == "" {

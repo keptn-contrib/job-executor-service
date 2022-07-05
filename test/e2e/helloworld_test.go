@@ -45,8 +45,6 @@ func TestHelloWorldDeployment(t *testing.T) {
 		},
 	)
 
-	t.Log("Received .started event")
-
 	// If the started event was sent by the job executor we wait for a .finished with the following data:
 	expectedEventData := eventData{
 		Project: testEnv.EventData.Project,
