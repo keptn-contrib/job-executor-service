@@ -1254,6 +1254,68 @@ func TestK8sImpl_CreateK8sJobWithUserDefinedLabels(t *testing.T) {
 	assert.Equal(t, expectedLabels, job.Labels)
 }
 
+func TestK8sImpl_CreateK8sJobWithUserDefinedAnnotations(t *testing.T) {
+	k8sClientSet := k8sfake.NewSimpleClientset()
+	k8s := K8sImpl{clientset: k8sClientSet}
+
+	userDefinedAnnotation := map[string]string{
+		"TestKey": "TestValue",
+		"SomeKey": "Some Value",
+	}
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	var event map[string]interface{}
+	err := json.Unmarshal([]byte(testTriggeredEvent), &event)
+	require.NoError(t, err)
+
+	err = k8s.CreateK8sJob(
+		"job-1-2-3-1",
+		JobDetails{
+			Action: &config.Action{
+				Name: "Test Action",
+			},
+			Task: &config.Task{
+				Name:        "Test Job",
+				Image:       "alpine",
+				Cmd:         []string{"ls"},
+				Annotations: userDefinedAnnotation,
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData,
+		JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext: new(corev1.PodSecurityContext),
+			DefaultSecurityContext:    new(corev1.SecurityContext),
+			JesDeploymentName:         "job-executor-service",
+		},
+		event,
+		testNamespace,
+	)
+	require.NoError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), "job-1-2-3-1", metav1.GetOptions{})
+	require.NoError(t, err)
+
+	expectedAnnotations := map[string]string{}
+	for key, value := range userDefinedAnnotation {
+		expectedAnnotations[key] = value
+	}
+
+	assert.Equal(t, userDefinedAnnotation, job.Annotations)
+}
+
 func TestK8sImpl_CreateK8sJobPodLabels(t *testing.T) {
 	k8sClientSet := k8sfake.NewSimpleClientset()
 	k8s := K8sImpl{clientset: k8sClientSet}

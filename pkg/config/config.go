@@ -39,20 +39,21 @@ type JSONPath struct {
 
 // Task this is the actual task which can be triggered within an Action
 type Task struct {
-	Name                    string          `yaml:"name"`
-	Files                   []string        `yaml:"files"`
-	Image                   string          `yaml:"image"`
-	ImagePullPolicy         string          `yaml:"imagePullPolicy"`
-	Cmd                     []string        `yaml:"cmd"`
-	Args                    []string        `yaml:"args"`
-	Env                     []Env           `yaml:"env"`
-	Resources               *Resources      `yaml:"resources"`
-	WorkingDir              string          `yaml:"workingDir"`
-	MaxPollDuration         *int            `yaml:"maxPollDuration"`
-	Namespace               string          `yaml:"namespace"`
-	TTLSecondsAfterFinished *int32          `yaml:"ttlSecondsAfterFinished"`
-	SecurityContext         SecurityContext `yaml:"securityContext,omitempty"`
-	ServiceAccount          *string         `yaml:"serviceAccount,omitempty"`
+	Name                    string            `yaml:"name"`
+	Files                   []string          `yaml:"files"`
+	Image                   string            `yaml:"image"`
+	ImagePullPolicy         string            `yaml:"imagePullPolicy"`
+	Cmd                     []string          `yaml:"cmd"`
+	Args                    []string          `yaml:"args"`
+	Env                     []Env             `yaml:"env"`
+	Resources               *Resources        `yaml:"resources"`
+	WorkingDir              string            `yaml:"workingDir"`
+	MaxPollDuration         *int              `yaml:"maxPollDuration"`
+	Namespace               string            `yaml:"namespace"`
+	TTLSecondsAfterFinished *int32            `yaml:"ttlSecondsAfterFinished"`
+	SecurityContext         SecurityContext   `yaml:"securityContext,omitempty"`
+	ServiceAccount          *string           `yaml:"serviceAccount,omitempty"`
+	Annotations             map[string]string `yaml:"annotations,omitempty"`
 }
 
 // Env value from the event which will be added as env to the job
