@@ -1,28 +1,34 @@
 
 ## Features
 
-- [Features](#Features)
-    - [Getting started](#getting-started)
-    - [Specifying the working directory](#specifying-the-working-directory)
-    - [Event Matching](#event-matching)
-    - [Kubernetes Job](#kubernetes-job)
-    - [Kubernetes Job Environment Variables](#kubernetes-job-environment-variables)
-        - [From Events](#from-events)
-        - [From Kubernetes Secrets](#from-kubernetes-secrets)
-        - [From String Literal](#from-string-literal)
-    - [File Handling](#file-handling)
-    - [Silent mode](#silent-mode)
-    - [Resource quotas](#resource-quotas)
-    - [Poll duration](#poll-duration)
-    - [Job namespace](#job-namespace)
-    - [Job security context](#job-security-context)
-    - [Job image pull policy](#job-image-pull-policy)
-    - [Job service account](#job-service-account)
-    - [Restrict job images](#restrict-job-images)
-    - [Limit network access](#limit-network-access)
-    - [Additional Event Data](#additional-event-data)
-    - [Remote Control Plane](#remote-control-plane)
-    - [Job clean-up](#job-clean-up)
+- [Features](#features)
+  - [Getting started](#getting-started)
+  - [Specifying the working directory](#specifying-the-working-directory)
+  - [Event Matching](#event-matching)
+  - [Kubernetes Job](#kubernetes-job)
+  - [Kubernetes Job Environment Variables](#kubernetes-job-environment-variables)
+    - [From Events](#from-events)
+    - [From Kubernetes Secrets](#from-kubernetes-secrets)
+    - [From String Literal](#from-string-literal)
+  - [File Handling](#file-handling)
+  - [Silent mode](#silent-mode)
+  - [Resource quotas](#resource-quotas)
+  - [Poll duration](#poll-duration)
+  - [Job namespace](#job-namespace)
+  - [Specify annotations for Job](#specify-annotations-for-job)
+  - [Job security context](#job-security-context)
+  - [Job Image Pull Policy](#job-image-pull-policy)
+  - [Job service account](#job-service-account)
+  - [Restrict job images](#restrict-job-images)
+  - [Limit network access](#limit-network-access)
+    - [Enabling the network-policies when installing/upgrading job-executor-service](#enabling-the-network-policies-when-installingupgrading-job-executor-service)
+      - [Ingress policy](#ingress-policy)
+      - [Egress policy](#egress-policy)
+    - [Network policy for jobs](#network-policy-for-jobs)
+  - [Send start/finished event if the job config.yaml can't be found](#send-startfinished-event-if-the-job-configyaml-cant-be-found)
+  - [Additional Event Data](#additional-event-data)
+  - [Remote Control Plane](#remote-control-plane)
+  - [Job clean-up](#job-clean-up)
 
 
 ### Getting started
@@ -423,6 +429,19 @@ tasks:
   - name: "Run locust tests"
     ...
     namespace: carts
+```
+
+### Specify annotations for Job
+
+Custom annotations can be added to Job definitions which can be used by third-party tools to inject secrets into jobs or execute other functionality on jobs.
+
+```yaml
+tasks:
+  - name: "Greet the world"
+    ...
+    annotations:
+      - key1: value1
+      - key2: value2
 ```
 
 ### Job security context
