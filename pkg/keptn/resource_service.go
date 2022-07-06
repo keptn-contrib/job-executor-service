@@ -37,10 +37,10 @@ type V1KeptnResourceHandler interface {
 // GetResource returns the contents of a resource for a given gitCommitID
 func (r V1ResourceHandler) GetResource(resource string, gitCommitID string) ([]byte, error) {
 	scope := api.NewResourceScope()
-	scope.Resource(url.QueryEscape(resource))
 	scope.Service(r.Event.Service)
 	scope.Project(r.Event.Project)
 	scope.Stage(r.Event.Stage)
+	scope.Resource(resource)
 
 	var queryParam api.URIOption
 	if gitCommitID != "" {

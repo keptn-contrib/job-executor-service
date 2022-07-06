@@ -63,15 +63,11 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 		return k.getKeptnResourceFromLocal(fs, resource)
 	}
 
-	// https://github.com/keptn/keptn/issues/2707
-	// Note: trimming the prefix is necessary if a gitCommitID is used (?)
-	encodedResource := url.QueryEscape(strings.TrimPrefix(resource, "/"))
-
 	scope := api.NewResourceScope()
 	scope.Project(k.eventProperties.Project)
 	scope.Stage(k.eventProperties.Stage)
 	scope.Service(k.eventProperties.Service)
-	scope.Resource(encodedResource)
+	scope.Resource(resource)
 
 	options := api.ResourcesGetResourceOptions{}
 	if k.eventProperties.GitCommitID != "" {

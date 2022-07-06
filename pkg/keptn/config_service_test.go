@@ -18,8 +18,6 @@ import (
 
 func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockV2ResourceHandler {
 	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
 	return keptnfake.NewMockV2ResourceHandler(mockCtrl)
 }
 
@@ -52,7 +50,7 @@ func TestGetAllKeptnResources(t *testing.T) {
 	scope1.Project(project)
 	scope1.Stage(stage)
 	scope1.Service(service)
-	scope1.Resource(url.QueryEscape(locustBasic))
+	scope1.Resource(locustBasic)
 
 	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *scope1, gomock.Any()).Times(1).Return(
 		&models.Resource{
@@ -66,7 +64,7 @@ func TestGetAllKeptnResources(t *testing.T) {
 	scope2.Project(project)
 	scope2.Stage(stage)
 	scope2.Service(service)
-	scope2.Resource(url.QueryEscape(locustFunctional))
+	scope2.Resource(locustFunctional)
 
 	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *scope2, gomock.Any()).Times(1).Return(
 		&models.Resource{
