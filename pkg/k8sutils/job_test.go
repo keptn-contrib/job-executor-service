@@ -1128,7 +1128,7 @@ func TestCreateK8sJobContainsCorrectLabels(t *testing.T) {
 
 			jobName := "some-job-name-" + strconv.Itoa(i)
 			var gitCommitID string
-			if id, ok := test.event["gitCommitid"]; ok {
+			if id, ok := test.event["gitcommitid"]; ok {
 				gitCommitID = id.(string)
 			}
 
