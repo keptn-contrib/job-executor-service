@@ -189,7 +189,11 @@ jobs:
 
       - name: Build Helm Charts
         id: build_helm_charts
-        run: ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}"
+        uses: keptn/gh-automation/.github/actions/build-helm-charts@v1.6.0
+        with:
+          VERSION: ${{ env.VERSION }}
+          APP_VERSION: ${{ env.VERSION }}.${{ env.DATETIME }}
+          CHART_NAME: ${{ env.IMAGE }}
 
       - name: Upload Helm Chart as an artifact
         id: upload_helm_chart
