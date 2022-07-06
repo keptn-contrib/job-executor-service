@@ -193,7 +193,7 @@ jobs:
         with:
           VERSION: ${{ env.VERSION }}
           APP_VERSION: ${{ env.VERSION }}.${{ env.DATETIME }}
-          IMAGE: ${{ env.IMAGE }}
+          CHART_NAME: ${{ env.IMAGE }}
 
       - name: Upload Helm Chart as an artifact
         id: upload_helm_chart

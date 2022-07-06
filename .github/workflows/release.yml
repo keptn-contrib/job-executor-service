@@ -78,7 +78,7 @@ jobs:
         with:
           VERSION: ${{ env.VERSION }}
           APP_VERSION: ${{ env.VERSION }}
-          IMAGE: ${{ env.IMAGE }}
+          CHART_NAME: ${{ env.IMAGE }}
 
       - name: Upload Helm Chart as release asset
         env:
