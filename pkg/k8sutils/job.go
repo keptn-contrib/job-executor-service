@@ -16,8 +16,8 @@ import (
 
 	"keptn-contrib/job-executor-service/pkg/utils"
 
+	"github.com/keptn/go-utils/pkg/common/kubeutils"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
-	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"k8s.io/client-go/kubernetes"
 
 	"keptn-contrib/job-executor-service/pkg/config"
@@ -90,7 +90,7 @@ func NewK8s(namespace string) *K8sImpl {
 // ConnectToCluster returns the k8s Clientset
 func (k8s *K8sImpl) ConnectToCluster() error {
 
-	config, err := keptnutils.GetClientset(true)
+	config, err := kubeutils.GetClientSet(true)
 	if err != nil {
 		return err
 	}
