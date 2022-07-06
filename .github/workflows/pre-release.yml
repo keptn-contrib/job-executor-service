@@ -74,7 +74,11 @@ jobs:
 
       - name: Build Helm Charts
         id: build_helm_charts
-        run: ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
+        uses: keptn/gh-automation/.github/actions/build-helm-charts@v1.6.0
+        with:
+          VERSION: ${{ env.VERSION }}
+          APP_VERSION: ${{ env.VERSION }}
+          IMAGE: ${{ env.IMAGE }}
 
       - name: Upload Helm Chart as release asset
         env:
