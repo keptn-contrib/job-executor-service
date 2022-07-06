@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/keptn/go-utils/pkg/common/kubeutils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/keptn/go-utils/pkg/api/models"
-	keptnutils "github.com/keptn/kubernetes-utils/pkg"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -165,7 +165,7 @@ func newTestEnvironment(eventJSONFilePath string, shipyardPath string, jobConfig
 	}
 
 	// Just test if we can connect to the cluster
-	clientset, err := keptnutils.GetClientset(false)
+	clientset, err := kubeutils.GetClientSet(false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get clientset: %w", err)
 	}
