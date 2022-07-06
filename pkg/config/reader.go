@@ -44,7 +44,5 @@ func (jcr *JobConfigReader) GetJobConfig(gitCommitID string) (*Config, string, e
 		return nil, "", fmt.Errorf("error parsing job configuration: %w", err)
 	}
 
-	log.Printf("config: SHA3: %s\nGIT :%s\n%s\n", resourceHash, gitCommitID, resource)
-
 	return configuration, resourceHash, nil
 }
