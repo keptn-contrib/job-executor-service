@@ -67,7 +67,10 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	scope.Project(k.eventProperties.Project)
 	scope.Stage(k.eventProperties.Stage)
 	scope.Service(k.eventProperties.Service)
-	scope.Resource(resource)
+
+	// NOTE: No idea why, but the API requires a double query escape for a path element and does not accept leading /
+	//       while emitting absolute paths in the response ...
+	scope.Resource(url.QueryEscape(strings.TrimPrefix(resource, "/")))
 
 	options := api.ResourcesGetResourceOptions{}
 	if k.eventProperties.GitCommitID != "" {
@@ -97,35 +100,48 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 		return k.getKeptnResourcesFromLocal(fs, resource)
 	}
 
+	keptnResources := make(map[string][]byte)
+
+	// Check for an exact match in the resources
+	keptnResourceContent, err := k.GetKeptnResource(fs, resource)
+	if err == nil {
+		keptnResources[resource] = keptnResourceContent
+		return keptnResources, nil
+	}
+
+	// NOTE:
+	// 	Since no exact file has been found, we have to assume that the given resource is a directory.
+	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
+
 	scope := api.NewResourceScope()
 	scope.Project(k.eventProperties.Project)
 	scope.Stage(k.eventProperties.Stage)
 	scope.Service(k.eventProperties.Service)
 
-	// Get all resources from Keptn in the current service
+	// Get all files from Keptn to enumerate what is in the directory
 	requestedResources, err := k.resourceHandler.GetAllServiceResources(context.Background(),
 		k.eventProperties.Project, k.eventProperties.Stage, k.eventProperties.Service,
 		api.ResourcesGetAllServiceResourcesOptions{},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("resources not found: %s", err)
+		return nil, fmt.Errorf("unable to list all resources: %w", err)
 	}
 
-	// Go over the resources and fetch the content of each resource with the given gitCommitID:
-	keptnResources := make(map[string][]byte)
+	// Create a path from the / and append a / to the end to match only files in that directory
+	resourceDirectoryName := resource + "/"
+	if !strings.HasPrefix(resourceDirectoryName, "/") {
+		resourceDirectoryName = "/" + resourceDirectoryName
+	}
+
 	for _, serviceResource := range requestedResources {
-		// match against with and without starting slash
-		// Note: this makes it possible to include directories, maybe a glob might be a better idea
-		resourceURIWithoutSlash := strings.Replace(*serviceResource.ResourceURI, "/", "", 1)
-		if strings.HasPrefix(*serviceResource.ResourceURI, resource) || strings.HasPrefix(
-			resourceURIWithoutSlash, resource,
-		) {
+		if strings.HasPrefix(*serviceResource.ResourceURI, resourceDirectoryName) {
+
+			// Query resource with the specified git commit id:
 			keptnResourceContent, err := k.GetKeptnResource(fs, *serviceResource.ResourceURI)
 			if err != nil {
-				return nil, fmt.Errorf("could not find file %s for version %s",
-					*serviceResource.ResourceURI, k.eventProperties.GitCommitID,
-				)
+				return nil, fmt.Errorf("unable to fetch resource %s: %w", *serviceResource.ResourceURI, err)
 			}
+
 			keptnResources[*serviceResource.ResourceURI] = keptnResourceContent
 		}
 	}

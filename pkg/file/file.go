@@ -13,7 +13,7 @@ import (
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
-	resource, err := configService.GetKeptnResource(fs, "job/config.yaml")
+	resource, err := configService.GetKeptnResource(fs, "/job/config.yaml")
 	if err != nil {
 		return fmt.Errorf("could not find config for job-executor-service: %v", err)
 	}
@@ -34,15 +34,14 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 	}
 
 	for _, resourcePath := range task.Files {
-		fileNotFound := true
-
 		allServiceResources, err := configService.GetAllKeptnResources(fs, resourcePath)
 		if err != nil {
 			return fmt.Errorf("could not retrieve resources for task '%v': %v", taskName, err)
 		}
 
+		// If the given resource is a folder, all files contained in the folder have to be copied over
+		// to the filesystem of the workload
 		for resourceURI, resourceContent := range allServiceResources {
-
 			// Our mount starts with /keptn
 			dir := filepath.Join("/keptn", filepath.Dir(resourceURI))
 			fullFilePath := filepath.Join("/keptn", resourceURI)
@@ -70,10 +69,9 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 			}
 
 			log.Printf("successfully moved file %s to %s", resourceURI, fullFilePath)
-			fileNotFound = false
 		}
 
-		if fileNotFound {
+		if len(allServiceResources) == 0 {
 			return fmt.Errorf("could not find file or directory %s for task %s", resourcePath, taskName)
 		}
 	}
