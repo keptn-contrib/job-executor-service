@@ -193,6 +193,8 @@ spec:
                     name: job-service-config
                     key: oauth_scopes
             {{- end }}
+            - name: API_PROXY_MAX_PAYLOAD_BYTES_KB
+              value: "128"
       volumes:
         - name: job-executor-settings
           projected:
