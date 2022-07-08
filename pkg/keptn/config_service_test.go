@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"net/url"
 	"path"
 	"testing"
@@ -15,23 +16,22 @@ import (
 	"github.com/spf13/afero"
 )
 
-func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockResourceHandler {
+func CreateResourceHandlerMock(t *testing.T) *keptnfake.MockV2ResourceHandler {
 	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
-
-	return keptnfake.NewMockResourceHandler(mockCtrl)
+	return keptnfake.NewMockV2ResourceHandler(mockCtrl)
 }
 
 const service = "carts"
 const project = "sockshop"
 const stage = "dev"
+const gitCommitID = "6caf78d2c978f7f787"
 
 func TestGetAllKeptnResources(t *testing.T) {
-	locustBasic := "/locust/basic.py"
-	locustFunctional := "/locust/functional.py"
+	locustBasic := "locust/basic.py"
+	locustFunctional := "locust/functional.py"
 
 	resourceHandlerMock := CreateResourceHandlerMock(t)
-	resourceHandlerMock.EXPECT().GetAllServiceResources(project, stage, service).Times(1).Return(
+	resourceHandlerMock.EXPECT().GetAllServiceResources(gomock.Any(), project, stage, service, gomock.Any()).Times(1).Return(
 		[]*models.Resource{
 			{
 				Metadata:        nil,
@@ -46,9 +46,13 @@ func TestGetAllKeptnResources(t *testing.T) {
 		}, nil,
 	)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustBasic),
-	).Times(1).Return(
+	scope1 := api.NewResourceScope()
+	scope1.Project(project)
+	scope1.Stage(stage)
+	scope1.Service(service)
+	scope1.Resource(locustBasic)
+
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *scope1, gomock.Any()).Times(1).Return(
 		&models.Resource{
 			Metadata:        nil,
 			ResourceContent: locustBasic,
@@ -56,9 +60,13 @@ func TestGetAllKeptnResources(t *testing.T) {
 		}, nil,
 	)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustFunctional),
-	).Times(1).Return(
+	scope2 := api.NewResourceScope()
+	scope2.Project(project)
+	scope2.Stage(stage)
+	scope2.Service(service)
+	scope2.Resource(locustFunctional)
+
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *scope2, gomock.Any()).Times(1).Return(
 		&models.Resource{
 			Metadata:        nil,
 			ResourceContent: locustFunctional,
@@ -66,7 +74,14 @@ func TestGetAllKeptnResources(t *testing.T) {
 		}, nil,
 	)
 
-	configService := NewConfigService(false, project, stage, service, resourceHandlerMock)
+	event := EventProperties{
+		Project:     project,
+		Stage:       stage,
+		Service:     service,
+		GitCommitID: gitCommitID,
+	}
+
+	configService := NewConfigService(false, event, resourceHandlerMock)
 	fs := afero.NewMemMapFs()
 
 	keptnResources, err := configService.GetAllKeptnResources(fs, "locust")
@@ -87,17 +102,32 @@ func TestGetAllKeptnResourcesLocal(t *testing.T) {
 	locustFunctional := path.Join(locustPath, "functional.py")
 
 	resourceHandlerMock := CreateResourceHandlerMock(t)
-	resourceHandlerMock.EXPECT().GetAllServiceResources(project, stage, service).Times(0)
+	resourceHandlerMock.EXPECT().GetAllServiceResources(gomock.Any(), project, stage, service, gomock.Any()).Times(0)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustBasic),
-	).Times(0)
+	scope1 := api.NewResourceScope()
+	scope1.Project(project)
+	scope1.Stage(stage)
+	scope1.Service(service)
+	scope1.Resource(url.QueryEscape(locustBasic))
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustFunctional),
-	).Times(0)
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), scope1, gomock.Any()).Times(0)
 
-	configService := NewConfigService(true, project, stage, service, resourceHandlerMock)
+	scope2 := api.NewResourceScope()
+	scope2.Project(project)
+	scope2.Stage(stage)
+	scope2.Service(service)
+	scope2.Resource(url.QueryEscape(locustFunctional))
+
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), scope2, gomock.Any()).Times(0)
+
+	event := EventProperties{
+		Project:     project,
+		Stage:       stage,
+		Service:     service,
+		GitCommitID: "",
+	}
+
+	configService := NewConfigService(true, event, resourceHandlerMock)
 	fs := afero.NewMemMapFs()
 
 	err := createFile(fs, locustBasic, []byte(locustBasic))
@@ -124,17 +154,32 @@ func TestErrorNoDirectoryResourcesLocal(t *testing.T) {
 	locustFunctional := path.Join(locustPath, "functional.py")
 
 	resourceHandlerMock := CreateResourceHandlerMock(t)
-	resourceHandlerMock.EXPECT().GetAllServiceResources(project, stage, service).Times(0)
+	resourceHandlerMock.EXPECT().GetAllServiceResources(gomock.Any(), project, stage, service, gomock.Any()).Times(0)
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustBasic),
-	).Times(0)
+	scope1 := api.NewResourceScope()
+	scope1.Project(project)
+	scope1.Stage(stage)
+	scope1.Service(service)
+	scope1.Resource(url.QueryEscape(locustBasic))
 
-	resourceHandlerMock.EXPECT().GetServiceResource(
-		project, stage, service, url.QueryEscape(locustFunctional),
-	).Times(0)
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), scope1, gomock.Any()).Times(0)
 
-	configService := NewConfigService(true, project, stage, service, resourceHandlerMock)
+	scope2 := api.NewResourceScope()
+	scope2.Project(project)
+	scope2.Stage(stage)
+	scope2.Service(service)
+	scope2.Resource(url.QueryEscape(locustFunctional))
+
+	resourceHandlerMock.EXPECT().GetResource(gomock.Any(), scope2, gomock.Any()).Times(0)
+
+	event := EventProperties{
+		Project:     project,
+		Stage:       stage,
+		Service:     service,
+		GitCommitID: "",
+	}
+
+	configService := NewConfigService(true, event, resourceHandlerMock)
 	fs := afero.NewMemMapFs()
 
 	_, err := configService.GetAllKeptnResources(fs, locustPath)

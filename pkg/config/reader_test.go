@@ -16,11 +16,11 @@ func TestConfigRetrievalFailed(t *testing.T) {
 
 	mockKeptnResourceService := fake.NewMockKeptnResourceService(mockCtrl)
 	retrievalError := errors.New("error getting resource")
-	mockKeptnResourceService.EXPECT().GetKeptnResource("job/config.yaml").Return(nil, retrievalError)
+	mockKeptnResourceService.EXPECT().GetResource("job/config.yaml", "c25692cb4fe4068fbdc2").Return(nil, retrievalError)
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, _, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig("c25692cb4fe4068fbdc2")
 	assert.ErrorIs(t, err, retrievalError)
 	assert.Nil(t, config)
 }
@@ -35,14 +35,14 @@ func TestMalformedConfig(t *testing.T) {
                             has_nothing_to_do:
                                 with_job_executor: true
                     `
-	mockKeptnResourceService.EXPECT().GetKeptnResource("job/config.yaml").Return(
+	mockKeptnResourceService.EXPECT().GetResource("job/config.yaml", "").Return(
 		[]byte(yamlConfig),
 		nil,
 	)
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, _, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig("")
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
@@ -64,14 +64,14 @@ func TestGetConfigHappyPath(t *testing.T) {
                             cmd:
                                 - echo "Hello World!"
                     `
-	mockKeptnResourceService.EXPECT().GetKeptnResource("job/config.yaml").Return(
+	mockKeptnResourceService.EXPECT().GetResource("job/config.yaml", "c25692cb4fe4068fbdc2").Return(
 		[]byte(yamlConfig),
 		nil,
 	)
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
-	config, _, err := sut.GetJobConfig()
+	config, _, err := sut.GetJobConfig("c25692cb4fe4068fbdc2")
 	assert.NoError(t, err)
 	assert.NotNil(t, config)
 }

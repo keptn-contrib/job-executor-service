@@ -13,7 +13,7 @@ const jobConfigResourceName = "job/config.yaml"
 // KeptnResourceService defines the contract used by JobConfigReader to retrieve a resource from keptn (using project,
 // service, stage from context)
 type KeptnResourceService interface {
-	GetKeptnResource(resource string) ([]byte, error)
+	GetResource(resource string, gitCommitID string) ([]byte, error)
 }
 
 // JobConfigReader retrieves and parses job configuration from Keptn
@@ -25,8 +25,9 @@ type JobConfigReader struct {
 // Additionally, also the SHA1 hash of the retrieved configuration will be returned.
 // In case of error retrieving the resource or parsing the yaml it will return (nil,
 // error) with the original error correctly wrapped in the local one
-func (jcr *JobConfigReader) GetJobConfig() (*Config, string, error) {
-	resource, err := jcr.Keptn.GetKeptnResource(jobConfigResourceName)
+func (jcr *JobConfigReader) GetJobConfig(gitCommitID string) (*Config, string, error) {
+
+	resource, err := jcr.Keptn.GetResource(jobConfigResourceName, gitCommitID)
 	if err != nil {
 		return nil, "", fmt.Errorf("error retrieving job config: %w", err)
 	}
@@ -42,5 +43,6 @@ func (jcr *JobConfigReader) GetJobConfig() (*Config, string, error) {
 		log.Printf("The config was: %s", string(resource))
 		return nil, "", fmt.Errorf("error parsing job configuration: %w", err)
 	}
+
 	return configuration, resourceHash, nil
 }
