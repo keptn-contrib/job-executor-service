@@ -117,7 +117,10 @@ func (k8s *K8sImpl) CreateK8sJob(
 	// TODO configure from outside:
 	jobVolumeMountPath := "/keptn"
 
-	quantity := resource.MustParse(jobSettings.JobEmtpyDirVolumeSizeLimit)
+	quantity := resource.MustParse("20Mi")
+	if jobSettings.JobEmtpyDirVolumeSizeLimit != "" {
+		quantity = resource.MustParse(jobSettings.JobEmtpyDirVolumeSizeLimit)
+	}
 
 	jobResourceRequirements := jobSettings.DefaultResourceRequirements
 	if task.Resources != nil {
