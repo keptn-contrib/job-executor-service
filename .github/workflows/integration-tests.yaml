@@ -306,6 +306,10 @@ jobs:
           name: final-test-report-markdown
           path: ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }}
 
+      - name: Post final Markdown test report as summary
+        if: always()
+        run: cat ${{ env.FINAL_TEST_REPORT_FILEPATH_MARKDOWN }} >> $GITHUB_STEP_SUMMARY
+
       # Check if an integration test failed
       - name: Check test status
         if: always()
