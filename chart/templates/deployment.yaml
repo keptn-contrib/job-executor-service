@@ -58,6 +58,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: job_namespace
+          - name: JOB_EMPTYDIR_SIZELIMIT
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: job_emptydir_sizelimit
           - name: INIT_CONTAINER_IMAGE
             valueFrom:
               configMapKeyRef:

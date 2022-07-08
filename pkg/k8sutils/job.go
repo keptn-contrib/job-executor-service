@@ -75,6 +75,7 @@ type JobSettings struct {
 	AllowPrivilegedJobs         bool
 	TaskDeadlineSeconds         *int64
 	JobLabels                   map[string]string
+	JobEmtpyDirVolumeSizeLimit  string
 	JesDeploymentName           string
 }
 
@@ -116,8 +117,7 @@ func (k8s *K8sImpl) CreateK8sJob(
 	// TODO configure from outside:
 	jobVolumeMountPath := "/keptn"
 
-	// TODO configure from outside:
-	quantity := resource.MustParse("20Mi")
+	quantity := resource.MustParse(jobSettings.JobEmtpyDirVolumeSizeLimit)
 
 	jobResourceRequirements := jobSettings.DefaultResourceRequirements
 	if task.Resources != nil {

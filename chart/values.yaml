@@ -84,6 +84,7 @@ jobConfig:
       # "172.16.0.0/12",
       # "192.168.0.0/16"
     ]
+  emptyDirSizeLimit: "20Mi"                  # Size Limit for emptyDirs for each job (/keptn - containing resources)
 
 imagePullSecrets: [ ]                        # Secrets to use for container registry credentials
 
