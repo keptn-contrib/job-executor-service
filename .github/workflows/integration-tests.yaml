@@ -11,13 +11,27 @@ defaults:
     shell: bash
 
 jobs:
+  prepare:
+    name: Prepare integration test run
+    runs-on: ubuntu-20.04
+    outputs:
+      KEPTN_MATRIX: ${{ steps.prepare_keptn_version_matrix.outputs.KEPTN_MATRIX }}
+    steps:
+      - name: Prepare Keptn version matrix
+        id: prepare_keptn_version_matrix
+        env:
+          BUILD_EVERYTHING: true
+          RELEASE_BUILD: true
+        run: |
+          ./.github/actions/github-script/fetch_keptn_versions.sh
   integration_test:
     name: "Integration Tests"
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0"] # https://github.com/keptn/keptn/releases
+        #keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0"] # https://github.com/keptn/keptn/releases
+        keptn-version: ${{fromJson(needs.prepare.outputs.KEPTN_MATRIX)}}
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
