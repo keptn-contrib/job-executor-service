@@ -28,6 +28,7 @@ jobs:
         run: |
           ./.github/actions/github-script/fetch_keptn_versions.sh
   integration_test:
+    needs: prepare
     name: "Integration Tests"
     runs-on: ubuntu-20.04
     strategy:
