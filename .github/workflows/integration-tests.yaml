@@ -28,16 +28,12 @@ jobs:
         run: |
           ./.github/actions/github-script/fetch_keptn_versions.sh
   integration_test:
-    needs: prepare
     name: "Integration Tests"
+    needs: prepare
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-      matrix:
-        #keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0"] # https://github.com/keptn/keptn/releases
-        keptn-version: ${{fromJson(needs.prepare.outputs.KEPTN_MATRIX)}}
-        network-policy: [true, false]
-        job-network-policy: [true, false]
+      matrix: ${{fromJson(needs.prepare.outputs.KEPTN_MATRIX)}}
     env:
       GO_VERSION: 1.17
       GOPROXY: "https://proxy.golang.org"
