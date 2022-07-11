@@ -151,9 +151,6 @@ jobs:
           echo "Using dev Helm repo"
           echo "::set-output name=HELM_REPO::https://charts-dev.keptn.sh"
           fi
-          
-          
-          helm search keptn keptn/keptn --version
 
       - name: Install Keptn
         id: install_keptn
