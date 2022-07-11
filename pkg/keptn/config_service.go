@@ -1,12 +1,14 @@
 package keptn
 
 import (
+	"context"
 	"fmt"
+	"github.com/keptn/go-utils/pkg/api/models"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"net/url"
 	"os"
 	"strings"
 
-	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/spf13/afero"
 )
 
@@ -18,31 +20,37 @@ type ConfigService interface {
 	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
 }
 
-//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake ResourceHandler
+//go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake V2ResourceHandler
 
-// ResourceHandler provides methods to work with the keptn configuration service
-type ResourceHandler interface {
-	GetServiceResource(project string, stage string, service string, resourceURI string) (*models.Resource, error)
-	GetAllServiceResources(project string, stage string, service string) ([]*models.Resource, error)
+// V2ResourceHandler provides methods to work with the keptn configuration service
+type V2ResourceHandler interface {
+	// GetAllServiceResources returns a list of all resources.
+	GetAllServiceResources(ctx context.Context, project string, stage string, service string,
+		opts api.ResourcesGetAllServiceResourcesOptions) ([]*models.Resource, error)
+
+	// GetResource returns a resource from the defined ResourceScope.
+	GetResource(ctx context.Context, scope api.ResourceScope, opts api.ResourcesGetResourceOptions) (*models.Resource, error)
 }
 
 type configServiceImpl struct {
 	useLocalFileSystem bool
-	project            string
-	stage              string
-	service            string
-	resourceHandler    ResourceHandler
+	eventProperties    EventProperties
+	resourceHandler    V2ResourceHandler
+}
+
+// EventProperties represents a set of properties of a given cloud event
+type EventProperties struct {
+	Project     string
+	Stage       string
+	Service     string
+	GitCommitID string
 }
 
 // NewConfigService creates and returns new ConfigService
-func NewConfigService(
-	useLocalFileSystem bool, project string, stage string, service string, resourceHandler ResourceHandler,
-) ConfigService {
+func NewConfigService(useLocalFileSystem bool, event EventProperties, resourceHandler V2ResourceHandler) ConfigService {
 	return &configServiceImpl{
 		useLocalFileSystem: useLocalFileSystem,
-		project:            project,
-		stage:              stage,
-		service:            service,
+		eventProperties:    event,
 		resourceHandler:    resourceHandler,
 	}
 }
@@ -55,11 +63,25 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 		return k.getKeptnResourceFromLocal(fs, resource)
 	}
 
-	// get it from KeptnBase
-	// https://github.com/keptn/keptn/issues/2707
-	requestedResource, err := k.resourceHandler.GetServiceResource(
-		k.project, k.stage, k.service, url.QueryEscape(resource),
-	)
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	scope.Service(k.eventProperties.Service)
+
+	// NOTE: No idea why, but the API requires a double query escape for a path element and does not accept leading /
+	//       while emitting absolute paths in the response ...
+	scope.Resource(url.QueryEscape(strings.TrimPrefix(resource, "/")))
+
+	options := api.ResourcesGetResourceOptions{}
+	if k.eventProperties.GitCommitID != "" {
+		options.URIOptions = []api.URIOption{
+			api.AppendQuery(url.Values{
+				"gitCommitID": []string{k.eventProperties.GitCommitID},
+			}),
+		}
+	}
+
+	requestedResource, err := k.resourceHandler.GetResource(context.Background(), *scope, options)
 
 	// return Nil in case resource couldn't be retrieved
 	if err != nil || requestedResource.ResourceContent == "" {
@@ -78,23 +100,48 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 		return k.getKeptnResourcesFromLocal(fs, resource)
 	}
 
-	// get it from KeptnBase
-	requestedResources, err := k.resourceHandler.GetAllServiceResources(k.project, k.stage, k.service)
-	if err != nil {
-		return nil, fmt.Errorf("resources not found: %s", err)
+	keptnResources := make(map[string][]byte)
+
+	// Check for an exact match in the resources
+	keptnResourceContent, err := k.GetKeptnResource(fs, resource)
+	if err == nil {
+		keptnResources[resource] = keptnResourceContent
+		return keptnResources, nil
 	}
 
-	keptnResources := make(map[string][]byte)
+	// NOTE:
+	// 	Since no exact file has been found, we have to assume that the given resource is a directory.
+	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
+
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	scope.Service(k.eventProperties.Service)
+
+	// Get all files from Keptn to enumerate what is in the directory
+	requestedResources, err := k.resourceHandler.GetAllServiceResources(context.Background(),
+		k.eventProperties.Project, k.eventProperties.Stage, k.eventProperties.Service,
+		api.ResourcesGetAllServiceResourcesOptions{},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to list all resources: %w", err)
+	}
+
+	// Create a path from the / and append a / to the end to match only files in that directory
+	resourceDirectoryName := resource + "/"
+	if !strings.HasPrefix(resourceDirectoryName, "/") {
+		resourceDirectoryName = "/" + resourceDirectoryName
+	}
+
 	for _, serviceResource := range requestedResources {
-		// match against with and without starting slash
-		resourceURIWithoutSlash := strings.Replace(*serviceResource.ResourceURI, "/", "", 1)
-		if strings.HasPrefix(*serviceResource.ResourceURI, resource) || strings.HasPrefix(
-			resourceURIWithoutSlash, resource,
-		) {
+		if strings.HasPrefix(*serviceResource.ResourceURI, resourceDirectoryName) {
+
+			// Query resource with the specified git commit id:
 			keptnResourceContent, err := k.GetKeptnResource(fs, *serviceResource.ResourceURI)
 			if err != nil {
-				return nil, fmt.Errorf("could not find file %s", *serviceResource.ResourceURI)
+				return nil, fmt.Errorf("unable to fetch resource %s: %w", *serviceResource.ResourceURI, err)
 			}
+
 			keptnResources[*serviceResource.ResourceURI] = keptnResourceContent
 		}
 	}

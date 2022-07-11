@@ -13,7 +13,7 @@ jobs:
   pre-release:
     needs: test
     name: Pre-Release
-    uses: keptn/gh-automation/.github/workflows/pre-release-integration.yml@v1.5.3
+    uses: keptn/gh-automation/.github/workflows/pre-release-integration.yml@v1.6.0
 
   docker_build:
     needs: [pre-release]
@@ -33,7 +33,7 @@ jobs:
 
       - name: Docker Build
         id: docker_build_service
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.3
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.6.0
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
@@ -45,7 +45,7 @@ jobs:
 
       - name: Docker Build Initcontainer
         id: docker_build_initcontainer
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.3
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.6.0
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE_INITCONTAINER }}:${{ env.VERSION }}
@@ -74,7 +74,11 @@ jobs:
 
       - name: Build Helm Charts
         id: build_helm_charts
-        run: ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
+        uses: keptn/gh-automation/.github/actions/build-helm-charts@v1.6.0
+        with:
+          VERSION: ${{ env.VERSION }}
+          APP_VERSION: ${{ env.VERSION }}
+          CHART_NAME: ${{ env.IMAGE }}
 
       - name: Upload Helm Chart as release asset
         env:

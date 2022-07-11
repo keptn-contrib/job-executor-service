@@ -155,7 +155,7 @@ func TestMountFilesFileNotFound(t *testing.T) {
 func TestMountFilesWithLocalFileSystem(t *testing.T) {
 
 	fs := afero.NewMemMapFs()
-	configService := keptn.NewConfigService(true, "", "", "", nil)
+	configService := keptn.NewConfigService(true, keptn.EventProperties{}, nil)
 	err := afero.WriteFile(fs, "job/config.yaml", []byte(simpleConfig), 0644)
 	assert.NoError(t, err)
 	err = afero.WriteFile(fs, "/helm/values.yaml", []byte("here be awesome configuration"), 0644)

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/spf13/afero"
 )
 
@@ -49,6 +49,8 @@ type envConfig struct {
 	OAuthScopes []string `envconfig:"OAUTH_SCOPES" required:"false"`
 	// The well known oauth discovery url for the init container
 	OAuthDiscovery string `envconfig:"OAUTH_DISCOVERY" required:"false"`
+	// The gitCommitId of the initial cloud event, for older Keptn instances this might be empty
+	GitCommitID string `envconfig:"GIT_COMMIT_ID"`
 }
 
 func main() {
@@ -118,7 +120,15 @@ func main() {
 		useLocalFileSystem = true
 	}
 
-	configService := keptn.NewConfigService(useLocalFileSystem, env.Project, env.Stage, env.Service, keptnAPI.ResourcesV1())
+	// re-create the event from job-executor-service
+	eventProps := keptn.EventProperties{
+		Project:     env.Project,
+		Stage:       env.Stage,
+		Service:     env.Service,
+		GitCommitID: env.GitCommitID,
+	}
+
+	configService := keptn.NewConfigService(useLocalFileSystem, eventProps, keptnAPI.Resources())
 
 	err = file.MountFiles(env.Action, env.Task, fs, configService)
 	if err != nil {

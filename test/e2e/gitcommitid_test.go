@@ -4,12 +4,13 @@ import (
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestHelloWorldDeployment(t *testing.T) {
+func TestGitCommitID(t *testing.T) {
 	if !isE2ETestingAllowed() {
 		t.Skip("Skipping TestHelloWorldDeployment, not allowed by environment")
 	}
@@ -29,23 +30,44 @@ func TestHelloWorldDeployment(t *testing.T) {
 	// Make sure project is delete after the tests are completed
 	defer testEnv.Cleanup()
 
+	// Make sure the integration test is only run for Keptn versions that support the
+	// gitCommitID parameter for resource queries
+	if err := testEnv.ShouldRun(">=0.16.0"); err != nil {
+		t.Skipf("%s\n", err.Error())
+	}
+
 	// Send the event to keptn
 	keptnContext, err := testEnv.API.SendEvent(testEnv.Event)
 	require.NoError(t, err)
 
-	// Checking if the job executor service responded with a .started event
+	// Wait for the deployment to be completed
+	var gitCommitID string
 	requireWaitForEvent(t,
 		testEnv.API,
-		2*time.Minute,
+		5*time.Minute,
 		1*time.Second,
 		keptnContext,
-		"sh.keptn.event.deployment.started",
-		func(_ *models.KeptnContextExtendedCE) bool {
+		"sh.keptn.event.deployment.finished",
+		func(event *models.KeptnContextExtendedCE) bool {
+			gitCommitID = event.GitCommitID
 			return true
 		},
 	)
 
-	// If the started event was sent by the job executor we wait for a .finished with the following data:
+	// Upload new job config, that should not get executed when the old git commit id is used:
+	jobConfigYaml, err := ioutil.ReadFile("../data/e2e/gitcommitid.config.yaml")
+	require.NoError(t, err)
+
+	err = testEnv.API.CreateJobConfig(testEnv.EventData.Project, testEnv.EventData.Stage, testEnv.EventData.Service, jobConfigYaml)
+	require.NoError(t, err)
+
+	time.Sleep(1 * time.Second)
+
+	testEnv.Event.GitCommitID = gitCommitID
+	keptnContext, err = testEnv.API.SendEvent(testEnv.Event)
+	require.NoError(t, err)
+
+	// Assert that still the old Hello World example is run and not the new one ...
 	expectedEventData := eventData{
 		Project: testEnv.EventData.Project,
 		Result:  "pass",
@@ -74,4 +96,5 @@ func TestHelloWorldDeployment(t *testing.T) {
 			return true
 		},
 	)
+
 }

@@ -114,9 +114,9 @@ func (m *MockJobConfigReader) EXPECT() *MockJobConfigReaderMockRecorder {
 }
 
 // GetJobConfig mocks base method.
-func (m *MockJobConfigReader) GetJobConfig() (*config.Config, string, error) {
+func (m *MockJobConfigReader) GetJobConfig(arg0 string) (*config.Config, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetJobConfig")
+	ret := m.ctrl.Call(m, "GetJobConfig", arg0)
 	ret0, _ := ret[0].(*config.Config)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -124,9 +124,9 @@ func (m *MockJobConfigReader) GetJobConfig() (*config.Config, string, error) {
 }
 
 // GetJobConfig indicates an expected call of GetJobConfig.
-func (mr *MockJobConfigReaderMockRecorder) GetJobConfig() *gomock.Call {
+func (mr *MockJobConfigReaderMockRecorder) GetJobConfig(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJobConfig", reflect.TypeOf((*MockJobConfigReader)(nil).GetJobConfig))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJobConfig", reflect.TypeOf((*MockJobConfigReader)(nil).GetJobConfig), arg0)
 }
 
 // MockK8s is a mock of K8s interface.

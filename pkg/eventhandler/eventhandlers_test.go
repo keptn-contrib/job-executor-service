@@ -151,7 +151,7 @@ func TestErrorGettingJobConfig(t *testing.T) {
 	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 	errorGettingJobConfig := errors.New("error getting resource")
-	mockJobConfigReader.EXPECT().GetJobConfig().Return(
+	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
 		nil, "",
 		errorGettingJobConfig,
 	).Times(1)
@@ -211,7 +211,7 @@ func TestErrorConnectingToK8s(t *testing.T) {
 				mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
 				mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
-				mockJobConfigReader.EXPECT().GetJobConfig().Return(
+				mockJobConfigReader.EXPECT().GetJobConfig("").Return(
 					&config.Config{
 						APIVersion: &apiVersion,
 						Actions: []config.Action{
@@ -375,7 +375,7 @@ func TestEventMatching(t *testing.T) {
 				}
 
 				mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
-				mockJobConfigReader.EXPECT().GetJobConfig().Return(
+				mockJobConfigReader.EXPECT().GetJobConfig("").Return(
 					&config, "<config-hash-value>",
 					nil,
 				).Times(1)
@@ -510,7 +510,7 @@ func TestStartK8s(t *testing.T) {
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
 
-	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{
@@ -561,7 +561,7 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
-	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes([]string{})
 	assert.NoError(t, err)
@@ -605,7 +605,7 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{
@@ -677,7 +677,7 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, 0, "", eventPayloadAsInterface)
+	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
 
 	err = fakeEventSender.AssertSentEventTypes(
 		[]string{
