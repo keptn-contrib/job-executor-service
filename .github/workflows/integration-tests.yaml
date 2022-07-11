@@ -17,6 +17,9 @@ jobs:
     outputs:
       KEPTN_MATRIX: ${{ steps.prepare_keptn_version_matrix.outputs.KEPTN_MATRIX }}
     steps:
+      - name: Check out code.
+        uses: actions/checkout@v3.0.2
+
       - name: Prepare Keptn version matrix
         id: prepare_keptn_version_matrix
         env:
