@@ -15,16 +15,14 @@ jobs:
     name: Prepare integration test run
     runs-on: ubuntu-20.04
     outputs:
-      KEPTN_MATRIX: ${{ steps.prepare_keptn_version_matrix.outputs.KEPTN_MATRIX }}
+      LATEST_KEPTN_RELEASE: ${{ steps.prepare_keptn_version_matrix.outputs.LATEST_RELEASE }}
+      LATEST_KEPTN_PRERELEASE: ${{ steps.prepare_keptn_version_matrix.outputs.LATEST_PRERELEASE }}
     steps:
       - name: Check out code.
         uses: actions/checkout@v3.0.2
 
       - name: Prepare Keptn version matrix
         id: prepare_keptn_version_matrix
-        env:
-          BUILD_EVERYTHING: true
-          RELEASE_BUILD: true
         run: |
           ./.github/actions/github-script/fetch_keptn_versions.sh
   integration_test:
@@ -33,7 +31,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.prepare.outputs.KEPTN_MATRIX)}}
+      matrix:
+        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0", "${{ needs.prepare.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.prepare.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
+        network-policy: [true, false]
+        job-network-policy: [true, false]
+        # include:
+        #   - keptn-version: ${{ needs.prepare.outputs.LATEST_KEPTN_RELEASE }}
+        #   - keptn-version: ${{ needs.prepare.outputs.LATEST_KEPTN_PRERELEASE }}
     env:
       GO_VERSION: 1.17
       GOPROXY: "https://proxy.golang.org"
@@ -130,6 +134,27 @@ jobs:
             --set gitea.admin.password=${GITEA_ADMIN_PASSWORD} \
             --wait
 
+      - name: Check Helm repo for image
+        id: helm_repo_check
+        shell: bash
+        env:
+          KEPTN_VERSION: ${{ matrix.keptn-version }}
+        run: |
+          echo "Keptn Version: $KEPTN_VERSION"
+          helm repo add keptn https://charts.keptn.sh
+          helm_search = $(helm search keptn keptn/keptn --version $KEPTN_VERSION)
+          
+          if [[ "$helm_search" != "No results found" ]]; then
+          echo "Using standard Helm repo"
+          echo "::set-output name=HELM_REPO::https://charts.keptn.sh"
+          else
+          echo "Using dev Helm repo"
+          echo "::set-output name=HELM_REPO::https://charts-dev.keptn.sh"
+          fi
+          
+          
+          helm search keptn keptn/keptn --version
+
       - name: Install Keptn
         id: install_keptn
         uses: keptn-sandbox/action-install-keptn@v2.0.0
@@ -143,6 +168,7 @@ jobs:
               features:
                 automaticProvisioningURL: http://keptn-gitea-provisioner-service.default
           KUBECONFIG: ${{ env.KUBECONFIG }}
+          KEPTN_HELM_CHART_REPO: ${{ steps.helm_repo_check.outputs.HELM_REPO }}
 
       - name: Test connection to keptn
         run: |
@@ -269,14 +295,14 @@ jobs:
 
             fileList.forEach(fileName => {
               console.log(`Reading file: ${fileName}`);
-              
+            
               const platformReportFile = fs.readFileSync(TEST_REPORTS_PATH + fileName, {encoding:'utf8', flag:'r'});
-              
+            
               const keptnVersion = keptnVersionRegex.exec(fileName)[1];
               const testResults = ndJsonParser(platformReportFile);
-              
+            
               keptnVersionCount++;
-              
+            
               testResults.forEach(testResult => {
 
                 if (testResult.Test !== undefined && (testResult.Action === "pass" || testResult.Action === "fail" || testResult.Action ===  "skip")) {
@@ -353,7 +379,7 @@ jobs:
           fi
 
           INTEGRATION_FILE_LINK=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$BRANCH/.github/workflows/integration_tests.yaml
-            
+          
           # Create issue for the failed integration test:  
           cat <<EOT >> integration-tests-failed.md
           ---
