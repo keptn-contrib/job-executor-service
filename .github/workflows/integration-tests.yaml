@@ -139,9 +139,9 @@ jobs:
         run: |
           echo "Keptn Version: $KEPTN_VERSION"
           helm repo add keptn https://charts.keptn.sh
-          helm_search=$(helm search repo keptn/keptn --version $KEPTN_VERSION)
+          helm_search=$(helm search repo keptn/keptn --version $KEPTN_VERSION -o json | jq '. | length')
           
-          if [[ "$helm_search" != "No results found" ]]; then
+          if [[ "$helm_search" != "0" ]]; then
           echo "Using standard Helm repo"
           echo "::set-output name=HELM_REPO::https://charts.keptn.sh"
           else
