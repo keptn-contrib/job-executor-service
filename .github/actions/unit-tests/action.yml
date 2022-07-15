@@ -10,7 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: Setup Go
-      uses: actions/setup-go@v3.2.0
+      uses: actions/setup-go@v3.2.1
       with:
         go-version-file: "go.mod"
     - name: Install gotestsum
@@ -20,7 +20,7 @@ runs:
       shell: bash
       run: gotestsum --format testname --junitfile unittests_report.xml
     - name: Publish Unit Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
+      uses: EnricoMi/publish-unit-test-result-action@v2
       if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
       with:
         files: "unittests_report.xml"
