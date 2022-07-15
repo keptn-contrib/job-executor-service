@@ -90,7 +90,7 @@ Helper functions of the auto detection feature of Keptn
     {{- /* Find api-gateway-nginx service, which is used as keptn api gatway */ -}}
     {{- $services := lookup "v1" "Service" (.Values.remoteControlPlane.autoDetect.namespace | default "") "" }}
     {{- range $index, $srv := $services.items }}
-        {{- if and (eq "api-gateway-nginx" $srv.metadata.name ) (hasPrefix "keptn-" ( get $srv.metadata.labels "app.kubernetes.io/part-of" )) }}
+        {{- if and (eq "api-gateway-nginx" $srv.metadata.name ) (hasPrefix "keptn" ( get $srv.metadata.labels "app.kubernetes.io/part-of" )) }}
             {{- $detectedKeptnApiGateways = append $detectedKeptnApiGateways $srv }}
         {{- end }}
     {{- end }}
