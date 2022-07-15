@@ -85,12 +85,15 @@ Create the name of the job service account to use
 Helper functions of the auto detection feature of Keptn
 */}}
 {{- define "job-executor-service.remote-control-plane.namespace" -}}
+    {{- if .Values.remoteControlPlane.autoDetect.namespace }}
+    {{- .Values.remoteControlPlane.autoDetect.namespace }}
+    {{- else }}
     {{- $detectedKeptnApiGateways := list }}
 
     {{- /* Find api-gateway-nginx service, which is used as keptn api gatway */ -}}
     {{- $services := lookup "v1" "Service" (.Values.remoteControlPlane.autoDetect.namespace | default "") "" }}
     {{- range $index, $srv := $services.items }}
-        {{- if and (eq "api-gateway-nginx" $srv.metadata.name ) (hasPrefix "keptn-" ( get $srv.metadata.labels "app.kubernetes.io/part-of" )) }}
+        {{- if and (eq "api-gateway-nginx" $srv.metadata.name ) (hasPrefix "keptn" ( get $srv.metadata.labels "app.kubernetes.io/part-of" )) }}
             {{- $detectedKeptnApiGateways = append $detectedKeptnApiGateways $srv }}
         {{- end }}
     {{- end }}
@@ -103,6 +106,7 @@ Helper functions of the auto detection feature of Keptn
     {{- end }}
 
     {{- (index $detectedKeptnApiGateways 0).metadata.namespace }}
+    {{- end }}
 {{- end }}
 
 {{- define "job-executor-service.remote-control-plane.token" -}}
