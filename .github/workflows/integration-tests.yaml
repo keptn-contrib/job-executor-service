@@ -11,8 +11,8 @@ defaults:
     shell: bash
 
 jobs:
-  prepare:
-    name: Prepare integration test run
+  fetch_latest_keptn_versions:
+    name: Fetch latest Keptn version for integration test run
     runs-on: ubuntu-20.04
     outputs:
       LATEST_KEPTN_RELEASE: ${{ steps.prepare_keptn_version_matrix.outputs.LATEST_RELEASE }}
@@ -27,12 +27,12 @@ jobs:
           ./.github/actions/github-script/fetch_keptn_versions.sh
   integration_test:
     name: "Integration Tests"
-    needs: prepare
+    needs: fetch_latest_keptn_versions
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0", "${{ needs.prepare.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.prepare.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
@@ -151,7 +151,7 @@ jobs:
 
       - name: Install Keptn
         id: install_keptn
-        uses: keptn-sandbox/action-install-keptn@main
+        uses: keptn-sandbox/action-install-keptn@v3.0.0
         timeout-minutes: 5
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
