@@ -68,15 +68,16 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [0.2.0](https://github.com/keptn-contrib/job-executor-service/compare/0.1.8...0.2.0) (2022-05-04)
 
+:tada: This release focuses on :closed_lock_with_key: security hardening, quality assurance and refactoring.
 
 ### ⚠ BREAKING CHANGES
 
-* The `enableKubernetesApiAccess` flag is removed in favor of the serviceAccount configuration for jobs
-* - The job-executor-service is moved into it's own namespace (e.g.: keptn-jes) to isolate the jobs from other Keptn services
-- A valid Keptn API token is needed for the job-executor-service to function properly
-- A more restrictive service account is used for jobs
+- :joystick:  The `enableKubernetesApiAccess` flag is removed in favor of the `serviceAccount` configuration for jobs
+- :lock: The job-executor-service is moved into it's own namespace (e.g.: keptn-jes) to isolate the jobs from other Keptn services
+- :key: A valid Keptn API token and Keptn API endpoint need to be configured when installing job-executor-service (it is no longer possible to connect directly to Keptn's nats-cluster)
+- :robot:  A more restrictive service account is used for jobs by default
+- :egg: The default value for `remotecontrolPlane.api.protocol` has been set to `http` (was `https` before). Please take special care when upgrading and specify the desired protocol.
 
-Signed-off-by: Raphael Ludwig <raphael.ludwig@dynatrace.com>
 
 ### Features
 
@@ -87,7 +88,7 @@ Signed-off-by: Raphael Ludwig <raphael.ludwig@dynatrace.com>
 * Job security context ([#221](https://github.com/keptn-contrib/job-executor-service/issues/221)) ([9185e8e](https://github.com/keptn-contrib/job-executor-service/commit/9185e8e3ec1ec1dbdf6070ded245c102208d362f))
 * Move job-executor-service to it's own namespace ([#207](https://github.com/keptn-contrib/job-executor-service/issues/207)) ([8139bd5](https://github.com/keptn-contrib/job-executor-service/commit/8139bd5d228bca1686fbaff752da62290584e141))
 * Restrict service account of jobs ([#204](https://github.com/keptn-contrib/job-executor-service/issues/204)) ([07dd337](https://github.com/keptn-contrib/job-executor-service/commit/07dd33713383d264b9f2627aad96df0737e3b975))
-* send error log when error occurs before starting any job ([5768b46](https://github.com/keptn-contrib/job-executor-service/commit/5768b46cf4ea5a90024db59bddd2fbbfaa30364e))
+* Send error log when error occurs before starting any job ([5768b46](https://github.com/keptn-contrib/job-executor-service/commit/5768b46cf4ea5a90024db59bddd2fbbfaa30364e))
 * Upgrade to Keptn 0.13 ([#228](https://github.com/keptn-contrib/job-executor-service/issues/228)) ([c287632](https://github.com/keptn-contrib/job-executor-service/commit/c287632ccc865e33b8798cfb365d6f83a21fb49a))
 
 
