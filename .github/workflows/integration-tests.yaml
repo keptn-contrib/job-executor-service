@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.13.5", "0.14.2", "0.15.1", "0.16.0", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.15.1", "0.16.1", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
@@ -156,6 +156,13 @@ jobs:
         with:
           KEPTN_VERSION: ${{ matrix.keptn-version }}
           HELM_VALUES: |
+            # Keptn 0.17 and newer
+            apiGatewayNginx:
+              type: LoadBalancer
+            features:
+              automaticProvisioning:
+                serviceURL: http://keptn-gitea-provisioner-service.default
+            # Keptn 0.16 compatibility
             control-plane:
               apiGatewayNginx:
                 type: LoadBalancer
