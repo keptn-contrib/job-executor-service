@@ -13,7 +13,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.24.3
