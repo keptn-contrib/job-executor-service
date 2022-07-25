@@ -73,28 +73,27 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Even
 		return fmt.Errorf("error retrieving uniform registrations: %w", err)
 	}
 
-	var integrationID string
+	sendEvent := false
 	for _, registration := range registrations {
 		if registration.Name == els.integrationName {
-			if integrationID != "" {
-				return fmt.Errorf("found multiple uniform registrations with name %s", els.integrationName)
+			errorCloudEvent, err := createErrorLogCloudEvent(registration.ID, initialCloudEvent, applicationError)
+			if err != nil {
+				log.Printf("unable to create error log cloudevent %+v: %+v", initialCloudEvent, err)
+				continue
 			}
-			integrationID = registration.ID
+
+			err = els.ceSender.SendCloudEvent(errorCloudEvent)
+			if err == nil {
+				sendEvent = true
+			}
 		}
 	}
 
-	if integrationID == "" {
-		return fmt.Errorf("no registration found with name %s", els.integrationName)
+	if sendEvent {
+		return nil
 	}
 
-	errorCloudEvent, err := createErrorLogCloudEvent(integrationID, initialCloudEvent, applicationError)
-	if err != nil {
-		return fmt.Errorf("unable to create error log cloudevent: %w", err)
-	}
-
-	els.ceSender.SendCloudEvent(errorCloudEvent)
-
-	return nil
+	return fmt.Errorf("no registration found with name %s", els.integrationName)
 }
 
 func createErrorLogCloudEvent(

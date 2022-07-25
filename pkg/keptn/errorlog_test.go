@@ -129,13 +129,15 @@ func TestErrorWhenMultipleMatchingRegistrationReturned(t *testing.T) {
 	).Times(1)
 
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
+	mockCloudEventSender.EXPECT().SendCloudEvent(gomock.Any()).Times(2).Return(nil)
+
 	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
 
 	newEvent := cloudevents.NewEvent()
-	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
+	newEvent.SetExtension("shkeptncontext", "034579438ufj-958340958")
 
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "found multiple uniform registrations with name foobar")
+	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
+	assert.NoError(t, err)
 }
 
 func TestSendErrorLogHappyPath(t *testing.T) {
