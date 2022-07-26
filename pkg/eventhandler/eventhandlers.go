@@ -106,17 +106,27 @@ func (eh *EventHandler) HandleEvent() error {
 	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
 
 	if err != nil {
-		errorLogErr := eh.ErrorSender.SendErrorLogEvent(
-			eh.Keptn.CloudEvent, fmt.Errorf(
-				"could not retrieve config for job-executor-service: %w", err,
-			),
-		)
+		log.Printf("Could not retrieve config for job-executor-service: %s", err.Error())
 
-		if errorLogErr != nil {
-			log.Printf(
-				"Failed sending error log for keptn context %s: %v. Initial error: %v", eh.Keptn.KeptnContext,
-				errorLogErr, err,
+		if eh.JobSettings.AlwaysSendFinishedEvent {
+			_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
+			if err != nil {
+				log.Printf("Error while sending started event: %s\n", err.Error())
+			}
+			sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, nil, dataForFinishedEvent{})
+		} else {
+			errorLogErr := eh.ErrorSender.SendErrorLogEvent(
+				eh.Keptn.CloudEvent, fmt.Errorf(
+					"could not retrieve config for job-executor-service: %w", err,
+				),
 			)
+
+			if errorLogErr != nil {
+				log.Printf(
+					"Failed sending error log for keptn context %s: %v. Initial error: %v", eh.Keptn.KeptnContext,
+					errorLogErr, err,
+				)
+			}
 		}
 
 		return err

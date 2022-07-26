@@ -50,6 +50,8 @@ type envConfig struct {
 	DefaultResourceRequestsCPU string `envconfig:"DEFAULT_RESOURCE_REQUESTS_CPU"`
 	// Default resource requests memory for job and init container
 	DefaultResourceRequestsMemory string `envconfig:"DEFAULT_RESOURCE_REQUESTS_MEMORY"`
+	// Respond with .finished event if no configuration found
+	AlwaysSendFinishedEvent bool `envconfig:"ALWAYS_SEND_FINISHED_EVENT"`
 	// The name of the default job service account which should be used
 	DefaultJobServiceAccount string `envconfig:"DEFAULT_JOB_SERVICE_ACCOUNT"`
 	// A list of all allowed images that can be used in jobs
@@ -125,6 +127,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			KeptnAPIToken:               env.KeptnAPIToken,
 			InitContainerImage:          env.InitContainerImage,
 			DefaultResourceRequirements: DefaultResourceRequirements,
+			AlwaysSendFinishedEvent:     env.AlwaysSendFinishedEvent,
 			DefaultJobServiceAccount:    env.DefaultJobServiceAccount,
 			DefaultSecurityContext:      DefaultJobSecurityContext,
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,

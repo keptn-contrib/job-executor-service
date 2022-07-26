@@ -144,3 +144,6 @@ networkPolicy:
     enabled: false
     k8sMasterCIDR: ""
     k8sMasterPort: 0
+
+features:
+  alwaysSendFinishedEvent: false
