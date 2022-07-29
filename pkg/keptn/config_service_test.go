@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -28,6 +29,10 @@ const service = "carts"
 const project = "sockshop"
 const stage = "dev"
 const gitCommitID = "6caf78d2c978f7f787"
+const emptyJobConfig = `apiVersion: v2
+actions:
+  - name: Empty
+`
 
 func TestGetAllKeptnResources(t *testing.T) {
 	locustBasic := "/locust/basic.py"
@@ -211,6 +216,73 @@ func TestErrorNoDirectoryResourcesLocal(t *testing.T) {
 
 	_, err := configService.GetAllKeptnResources(fs, locustPath)
 	require.Error(t, err)
+}
+
+func TestConfigServiceImpl_GetJobConfiguration(t *testing.T) {
+
+	serviceScope := api.NewResourceScope()
+	serviceScope.Project(project)
+	serviceScope.Stage(stage)
+	serviceScope.Service(service)
+	serviceScope.Resource(url.QueryEscape("job/config.yaml"))
+
+	stageScope := api.NewResourceScope()
+	stageScope.Project(project)
+	stageScope.Stage(stage)
+	stageScope.Resource(url.QueryEscape("job/config.yaml"))
+
+	projectScope := api.NewResourceScope()
+	projectScope.Project(project)
+	projectScope.Resource(url.QueryEscape("job/config.yaml"))
+
+	event := EventProperties{
+		Project:     project,
+		Stage:       stage,
+		Service:     service,
+		GitCommitID: "",
+	}
+
+	jobConfigResource := &models.Resource{
+		Metadata:        nil,
+		ResourceContent: emptyJobConfig,
+		ResourceURI:     nil,
+	}
+
+	t.Run("service configuration", func(t *testing.T) {
+		resourceHandlerMock := CreateResourceHandlerMock(t)
+		configService := NewConfigService(false, event, resourceHandlerMock)
+
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *serviceScope, gomock.Any()).Return(jobConfigResource, nil)
+
+		configuration, err := configService.GetJobConfiguration(nil)
+		assert.NoError(t, err)
+		assert.Len(t, configuration.Actions, 1)
+	})
+
+	t.Run("stage configuration", func(t *testing.T) {
+		resourceHandlerMock := CreateResourceHandlerMock(t)
+		configService := NewConfigService(false, event, resourceHandlerMock)
+
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *serviceScope, gomock.Any()).Return(nil, errors.New("error"))
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *stageScope, gomock.Any()).Return(jobConfigResource, nil)
+
+		configuration, err := configService.GetJobConfiguration(nil)
+		assert.NoError(t, err)
+		assert.Len(t, configuration.Actions, 1)
+	})
+
+	t.Run("project configuration", func(t *testing.T) {
+		resourceHandlerMock := CreateResourceHandlerMock(t)
+		configService := NewConfigService(false, event, resourceHandlerMock)
+
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *serviceScope, gomock.Any()).Return(nil, errors.New("error"))
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *stageScope, gomock.Any()).Return(nil, errors.New("error"))
+		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *projectScope, gomock.Any()).Return(jobConfigResource, nil)
+
+		configuration, err := configService.GetJobConfiguration(nil)
+		assert.NoError(t, err)
+		assert.Len(t, configuration.Actions, 1)
+	})
 }
 
 func createFile(fs afero.Fs, fileName string, content []byte) error {

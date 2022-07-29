@@ -12,31 +12,31 @@ import (
 	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
-// MockKeptnResourceHandler is a mock of KeptnResourceHandler interface.
-type MockKeptnResourceHandler struct {
+// MockV1KeptnResourceHandler is a mock of V1KeptnResourceHandler interface.
+type MockV1KeptnResourceHandler struct {
 	ctrl     *gomock.Controller
-	recorder *MockKeptnResourceHandlerMockRecorder
+	recorder *MockV1KeptnResourceHandlerMockRecorder
 }
 
-// MockKeptnResourceHandlerMockRecorder is the mock recorder for MockKeptnResourceHandler.
-type MockKeptnResourceHandlerMockRecorder struct {
-	mock *MockKeptnResourceHandler
+// MockV1KeptnResourceHandlerMockRecorder is the mock recorder for MockV1KeptnResourceHandler.
+type MockV1KeptnResourceHandlerMockRecorder struct {
+	mock *MockV1KeptnResourceHandler
 }
 
-// NewMockKeptnResourceHandler creates a new mock instance.
-func NewMockKeptnResourceHandler(ctrl *gomock.Controller) *MockKeptnResourceHandler {
-	mock := &MockKeptnResourceHandler{ctrl: ctrl}
-	mock.recorder = &MockKeptnResourceHandlerMockRecorder{mock}
+// NewMockV1KeptnResourceHandler creates a new mock instance.
+func NewMockV1KeptnResourceHandler(ctrl *gomock.Controller) *MockV1KeptnResourceHandler {
+	mock := &MockV1KeptnResourceHandler{ctrl: ctrl}
+	mock.recorder = &MockV1KeptnResourceHandlerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockKeptnResourceHandler) EXPECT() *MockKeptnResourceHandlerMockRecorder {
+func (m *MockV1KeptnResourceHandler) EXPECT() *MockV1KeptnResourceHandlerMockRecorder {
 	return m.recorder
 }
 
 // GetResource mocks base method.
-func (m *MockKeptnResourceHandler) GetResource(scope api.ResourceScope, options ...api.URIOption) (*models.Resource, error) {
+func (m *MockV1KeptnResourceHandler) GetResource(scope api.ResourceScope, options ...api.URIOption) (*models.Resource, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{scope}
 	for _, a := range options {
@@ -49,8 +49,8 @@ func (m *MockKeptnResourceHandler) GetResource(scope api.ResourceScope, options 
 }
 
 // GetResource indicates an expected call of GetResource.
-func (mr *MockKeptnResourceHandlerMockRecorder) GetResource(scope interface{}, options ...interface{}) *gomock.Call {
+func (mr *MockV1KeptnResourceHandlerMockRecorder) GetResource(scope interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{scope}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResource", reflect.TypeOf((*MockKeptnResourceHandler)(nil).GetResource), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResource", reflect.TypeOf((*MockV1KeptnResourceHandler)(nil).GetResource), varargs...)
 }
