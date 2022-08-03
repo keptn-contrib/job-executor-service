@@ -1,7 +1,7 @@
 ## Output Metrics
 
-- [#output-metrics-to-prometheus](Prometheus Integration)
-- [#output-metrics-to-dynatrace](Dynatrace Integration)
+- [Prometheus Integration](#output-metrics-to-prometheus)
+- [Dynatrace Integration](#output-metrics-to-dynatrace)
 
 Rather than directly running your container image, you'll need to wrap it in a "parent script" and run that parent script instead (shell scripts, python scripts, powershell scripts etc.).
 
