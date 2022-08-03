@@ -4,6 +4,7 @@ metadata:
   name: job-service-config
 data:
   job_namespace: "{{ .Release.Namespace }}"
+  job_emptydir_sizelimit: "{{ .Values.jobConfig.emptyDirSizeLimit | default "20Mi" }}"
   init_container_image: "{{ .Values.jobexecutorserviceinitcontainer.image.repository }}:{{ .Values.jobexecutorserviceinitcontainer.image.tag | default .Chart.AppVersion }}"
   default_resource_limits_cpu: "1"
   default_resource_limits_memory: "512Mi"

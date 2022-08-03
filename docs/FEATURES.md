@@ -357,6 +357,11 @@ args:
   - /keptn/locust/basic.py
 ```
 
+#### Increase Volume Size for files
+
+By default, `/keptn` reserves `"20Mi"` (20 Mebibyte) as part of an `emptyDir`. This value can be modified at your own
+risk by setting the Helm Value `jobConfig.emptyDirSizeLimit`, e.g., `--set jobConfig.emptyDirSizeLimit=50Mi`.
+
 ### Silent mode
 
 Actions can be run in silent mode, meaning no `.started/.finished` events will be sent by the job-executor-service. This

@@ -489,6 +489,68 @@ func TestSetEmptyNamespace(t *testing.T) {
 	assert.Equal(t, job.Namespace, namespace, "Could not find container in namespace %s", namespace)
 }
 
+func TestSetEmptyDirSizeLimit(t *testing.T) {
+	jobName := "test-job-3"
+
+	eventData := keptnv2.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
+
+	customEmptyDirSizeLimit := "52Mi"
+
+	var eventAsInterface interface{}
+	json.Unmarshal([]byte(testTriggeredEvent), &eventAsInterface)
+
+	k8sClientSet := k8sfake.NewSimpleClientset()
+
+	k8s := K8sImpl{
+		clientset: k8sClientSet,
+	}
+
+	err := k8s.CreateK8sJob(
+		jobName,
+		JobDetails{
+			Action: &config.Action{
+				Name: jobName,
+			},
+			Task: &config.Task{
+				Name:  jobName,
+				Image: "alpine",
+				Cmd:   []string{"ls"},
+			},
+			ActionIndex:   0,
+			TaskIndex:     0,
+			JobConfigHash: "",
+		},
+		&eventData, JobSettings{
+			JobNamespace: testNamespace,
+			DefaultResourceRequirements: &corev1.ResourceRequirements{
+				Limits:   make(corev1.ResourceList),
+				Requests: make(corev1.ResourceList),
+			},
+			DefaultPodSecurityContext:  new(corev1.PodSecurityContext),
+			DefaultSecurityContext:     new(corev1.SecurityContext),
+			JobEmtpyDirVolumeSizeLimit: customEmptyDirSizeLimit,
+		}, eventAsInterface, testNamespace,
+	)
+
+	require.NoError(t, err)
+
+	job, err := k8sClientSet.BatchV1().Jobs(testNamespace).Get(context.TODO(), jobName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	var volume *corev1.Volume
+
+	require.NotNil(t, job.Spec.Template.Spec.Volumes)
+	volume = &job.Spec.Template.Spec.Volumes[0]
+
+	require.NotNil(t, volume.EmptyDir)
+
+	assert.Equal(t, volume.EmptyDir.SizeLimit.String(), customEmptyDirSizeLimit)
+}
+
 func TestImagePullPolicy(t *testing.T) {
 
 	tests := []struct {

@@ -38,6 +38,8 @@ type envConfig struct {
 	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:""`
 	// The k8s namespace the job will run in
 	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
+	// Kubernetes Empty Dir Size Limit for every job (default: "20Mi")
+	JobEmtpyDirVolumeSizeLimit string `envconfig:"JOB_EMPTYDIR_SIZELIMIT" default:"20Mi"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN"`
 	// The init container image to use
@@ -130,6 +132,7 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			DefaultPodSecurityContext:   DefaultPodSecurityContext,
 			AllowPrivilegedJobs:         env.AllowPrivilegedJobs,
 			JobLabels:                   JobLabels,
+			JobEmtpyDirVolumeSizeLimit:  env.JobEmtpyDirVolumeSizeLimit,
 			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
 			JesDeploymentName:           env.FullDeploymentName,
 		},
