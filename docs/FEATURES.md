@@ -29,6 +29,7 @@
   - [Additional Event Data](#additional-event-data)
   - [Remote Control Plane](#remote-control-plane)
   - [Job clean-up](#job-clean-up)
+  - [Output Metrics to Backends](OUTPUT_METRICS.md)
 
 
 ### Getting started
