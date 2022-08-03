@@ -21,7 +21,7 @@ func TestConfigRetrievalFailed(t *testing.T) {
 	mockKeptnResourceService.EXPECT().GetStageResource("job/config.yaml", "c25692cb4fe4068fbdc2").Return(nil, retrievalError)
 
 	// NOTE: fetching project resources works only without a git commit id, because of branches !
-	mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml", "").Return(nil, retrievalError)
+	mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml").Return(nil, retrievalError)
 
 	sut := JobConfigReader{Keptn: mockKeptnResourceService}
 
@@ -136,7 +136,7 @@ func TestJobConfigReader_FindJobConfigResource(t *testing.T) {
 			fmt.Errorf("some error"),
 		)
 
-		mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml", "").Return(
+		mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml").Return(
 			[]byte("abc"),
 			nil,
 		)
@@ -162,7 +162,7 @@ func TestJobConfigReader_FindJobConfigResource(t *testing.T) {
 			fmt.Errorf("some error"),
 		)
 
-		mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml", "").Return(
+		mockKeptnResourceService.EXPECT().GetProjectResource("job/config.yaml").Return(
 			nil,
 			fmt.Errorf("some error"),
 		)

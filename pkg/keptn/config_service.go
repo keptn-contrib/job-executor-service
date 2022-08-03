@@ -189,10 +189,10 @@ func (k *configServiceImpl) GetStageResource(resource string, gitCommitID string
 	return k.fetchKeptnResource(resource, scope, gitCommitID)
 }
 
-func (k *configServiceImpl) GetProjectResource(resource string, gitCommitID string) ([]byte, error) {
+func (k *configServiceImpl) GetProjectResource(resource string) ([]byte, error) {
 	scope := api.NewResourceScope()
 	scope.Project(k.eventProperties.Project)
-	return k.fetchKeptnResource(resource, scope, gitCommitID)
+	return k.fetchKeptnResource(resource, scope, "")
 }
 
 func (k *configServiceImpl) GetJobConfiguration() (*config.Config, error) {

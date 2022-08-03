@@ -10,9 +10,12 @@ import (
 
 // ResourceHandler is an interface that describes the functions for fetching resources from a service, stage or project level
 type ResourceHandler interface {
+	// GetServiceResource fetches the specified resource from the state of a given git commit id
 	GetServiceResource(resource string, gitCommitID string) ([]byte, error)
+	// GetStageResource fetches the specified resource from the state of a given git commit id
 	GetStageResource(resource string, gitCommitID string) ([]byte, error)
-	GetProjectResource(resource string, gitCommitID string) ([]byte, error)
+	// GetProjectResource fetches the specified resource from the project scope
+	GetProjectResource(resource string) ([]byte, error)
 }
 
 // V1ResourceHandler is a wrapper around the v1 ResourceHandler of the Keptn API to simplify the
@@ -72,12 +75,12 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 }
 
 // GetProjectResource returns the resource that was defined on project level
-func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID string) ([]byte, error) {
+func (r V1ResourceHandler) GetProjectResource(resource string) ([]byte, error) {
 	scope := api.NewResourceScope()
 	scope.Project(r.Event.Project)
 	scope.Resource(resource)
 
-	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
+	resourceContent, err := r.ResourceHandler.GetResource(*scope)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
