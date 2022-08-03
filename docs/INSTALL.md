@@ -8,7 +8,7 @@ During the installation process various parameters of the *job-executor-service*
 of these helm values have a look at the [documentation](../chart/README.md).
 In order to install the *job-executor-service* on the remote execution plane, some values of the helm chart need to be configured:
 * `remoteControlPlane.topicSubscription` - list of Keptn CloudEvent types that this instance should listen to, e.g., `sh.keptn.event.remote-task.triggered`
-* `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane
+* `remoteControlPlane.api.protocol` - protocol (`http` or `https`) used to connect to the remote control plane (default: `http` - this has changed with the [0.2.0 release](https://github.com/keptn-contrib/job-executor-service/releases/tag/0.2.0))
 * `remoteControlPlane.api.hostname` - Keptn API Hostname (e.g., `1.2.3.4.nip.io`). If Keptn is installed on the same cluster the API is usually reachable under `api-gateway-nginx.keptn`.
 * `remoteControlPlane.api.token` - Keptn API Token (can be obtained from Bridge)
 * `remoteControlPlane.api.authMode` - Authentication mode which should be used when communicating with Keptn. Must be either `token` or `oauth`. Defaults to `token` if omitted
@@ -122,19 +122,37 @@ helm upgrade -n <NAMESPACE> \
 
 ## Upgrade
 
-To upgrade to a newer version of *job-executor-service*, first save the existing installation values to a helm override
-file
-```shell
+### Preparation
+
+To upgrade to a newer version of *job-executor-service*, first figure out what version you are currently on:
+```bash
+helm -n <NAMESPACE> list job-executor-service
+```
+or via looking at your Keptn Bridge Integration page.
+
+Then figure out which version you want to upgrade to, e.g., from the [GitHub Releases Page](https://github.com/keptn-contrib/job-executor-service/releases).
+
+**Note**: Please get informed about breaking changes via the release notes provided for each release or via looking at
+our [Changelog](../CHANGELOD.md).
+
+### Perform the upgrade
+
+First save the existing installation values to a helm override file:
+```bash
 helm -n <NAMESPACE> get values job-executor-service > values.yaml
 ```
-then upgrade using the previous installation value file as an override
+Perform any changes on values.yaml, especially with breaking changes in mind. Please avoid using 
+`helm upgrade ... --reuse-values` as there are some [limitations](https://github.com/helm/helm/issues/8085), especially
+regarding default values.
+
+Then upgrade using the previous installation value file as an override
 ```bash
 helm upgrade -n <NAMESPACE> \
   job-executor-service https://github.com/keptn-contrib/job-executor-service/releases/download/<VERSION>/job-executor-service-<VERSION>.tgz \
   -f values.yaml
 ```
 
-To upgrade to a newer version of *job-executor-service* and automatically use the auto-detection to configure the Keptn 
+In order to upgrade to a newer version of *job-executor-service* and automatically use the auto-detection to configure the Keptn 
 API token, the `helm upgrade` command should be:
 ```bash
 helm upgrade -n <NAMESPACE> \
@@ -142,10 +160,6 @@ helm upgrade -n <NAMESPACE> \
   -f values.yaml \
   --set remoteControlPlane.api.token="",remoteControlPlane.api.hostname="",remoteControlPlane.api.protocol=""
 ```
-
-**Note:** during upgrade we dump the existing installation values to a file and use it as an override file to work around
-some of the `helm upgrade --reuse-values` [limitations](https://github.com/helm/helm/issues/8085) and make sure that new
-default values are applied as expected when upgrading job-executor-service to a newer version.
 
 ## Uninstall
 
