@@ -1,5 +1,7 @@
 ## Output Metrics
 
+Often you will run an existing container / tool with the job executor service which outputs results. Most likely you want to use these metrics in a subsequent Keptn task (eg. a quality gate evaluation). To do so, you will need to push the metrics to a metric backend. This page demonstrates how this can be done.
+
 - [Prometheus Integration](#output-metrics-to-prometheus)
 - [Dynatrace Integration](#output-metrics-to-dynatrace)
 
