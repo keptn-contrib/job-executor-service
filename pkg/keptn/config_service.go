@@ -21,7 +21,7 @@ type ConfigService interface {
 	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
 
 	// GetJobConfiguration returns the fetched job configuration
-	GetJobConfiguration(fs afero.Fs) (*config.Config, error)
+	GetJobConfiguration() (*config.Config, error)
 }
 
 //go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake V2ResourceHandler
@@ -195,19 +195,7 @@ func (k *configServiceImpl) GetProjectResource(resource string, gitCommitID stri
 	return k.fetchKeptnResource(resource, scope, gitCommitID)
 }
 
-func (k *configServiceImpl) GetJobConfiguration(fs afero.Fs) (*config.Config, error) {
-
-	// TODO: How do we fetch different job configs from the local file system?
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	if k.useLocalFileSystem {
-		content, err := k.getKeptnResourceFromLocal(fs, "job/config.yaml")
-		if err != nil {
-			return nil, fmt.Errorf("unable to read job configuration file: %w", err)
-		}
-
-		return config.NewConfig(content)
-	}
-
+func (k *configServiceImpl) GetJobConfiguration() (*config.Config, error) {
 	config, _, err := k.jobConfigReader.GetJobConfig(k.eventProperties.GitCommitID)
 	return config, err
 }

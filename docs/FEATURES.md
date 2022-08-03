@@ -43,7 +43,8 @@ resource to Keptn. The job-executor-service will scan the resources in the follo
 should be used: 
 - **Service**: A resource that is stored on the service level will always used by the job executor service if available 
 - **Stage**: If no service resource is found, the stage resources are searched for a job configuration
-- **Project**: If no other resources are round the job executor will fallback to a project wide configuration.
+- **Project**: If no other resources are round the job executor will fallback to a project wide configuration
+ *(Note: the latest version of the project wide configuration file will be fetched!)*
 
 If the job executor service can't find a configuration file, it will respond with an error event, which can be viewed
 in the uniform page of the Keptn bridge.

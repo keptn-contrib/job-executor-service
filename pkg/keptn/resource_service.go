@@ -8,6 +8,7 @@ import (
 	"net/url"
 )
 
+// ResourceHandler is an interface that describes the functions for fetching resources from a service, stage or project level
 type ResourceHandler interface {
 	GetServiceResource(resource string, gitCommitID string) ([]byte, error)
 	GetStageResource(resource string, gitCommitID string) ([]byte, error)

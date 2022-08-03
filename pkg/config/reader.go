@@ -39,13 +39,12 @@ func (jcr *JobConfigReader) FindJobConfigResource(gitCommitID string) ([]byte, e
 		return config, nil
 	}
 
-	// FIXME: Since the resource service uses different branches, the commitID may not be in the main
-	//        branch and therefore it's not possible to query the project fallback configuration!
+	// NOTE: Since the resource service uses different branches, the commitID may not be in the main
+	//       branch and therefore it's not possible to query the project fallback configuration!
 	if config, err := jcr.Keptn.GetProjectResource(jobConfigResourceName, ""); err == nil {
 		return config, nil
 	}
 
-	// TODO: Improve error handling:
 	return nil, fmt.Errorf("unable to find job configuration")
 }
 

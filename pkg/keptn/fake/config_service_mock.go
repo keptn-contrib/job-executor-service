@@ -54,18 +54,18 @@ func (mr *MockConfigServiceMockRecorder) GetAllKeptnResources(fs, resource inter
 }
 
 // GetJobConfiguration mocks base method.
-func (m *MockConfigService) GetJobConfiguration(fs afero.Fs) (*config.Config, error) {
+func (m *MockConfigService) GetJobConfiguration() (*config.Config, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetJobConfiguration", fs)
+	ret := m.ctrl.Call(m, "GetJobConfiguration")
 	ret0, _ := ret[0].(*config.Config)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetJobConfiguration indicates an expected call of GetJobConfiguration.
-func (mr *MockConfigServiceMockRecorder) GetJobConfiguration(fs interface{}) *gomock.Call {
+func (mr *MockConfigServiceMockRecorder) GetJobConfiguration() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJobConfiguration", reflect.TypeOf((*MockConfigService)(nil).GetJobConfiguration), fs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJobConfiguration", reflect.TypeOf((*MockConfigService)(nil).GetJobConfiguration))
 }
 
 // GetKeptnResource mocks base method.

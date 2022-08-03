@@ -12,7 +12,7 @@ import (
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
-	configuration, err := configService.GetJobConfiguration(fs)
+	configuration, err := configService.GetJobConfiguration()
 	if err != nil {
 		return fmt.Errorf("could not find config for job-executor-service: %v", err)
 	}

@@ -254,7 +254,7 @@ func TestConfigServiceImpl_GetJobConfiguration(t *testing.T) {
 
 		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *serviceScope, gomock.Any()).Return(jobConfigResource, nil)
 
-		configuration, err := configService.GetJobConfiguration(nil)
+		configuration, err := configService.GetJobConfiguration()
 		assert.NoError(t, err)
 		assert.Len(t, configuration.Actions, 1)
 	})
@@ -266,7 +266,7 @@ func TestConfigServiceImpl_GetJobConfiguration(t *testing.T) {
 		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *serviceScope, gomock.Any()).Return(nil, errors.New("error"))
 		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *stageScope, gomock.Any()).Return(jobConfigResource, nil)
 
-		configuration, err := configService.GetJobConfiguration(nil)
+		configuration, err := configService.GetJobConfiguration()
 		assert.NoError(t, err)
 		assert.Len(t, configuration.Actions, 1)
 	})
@@ -279,7 +279,7 @@ func TestConfigServiceImpl_GetJobConfiguration(t *testing.T) {
 		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *stageScope, gomock.Any()).Return(nil, errors.New("error"))
 		resourceHandlerMock.EXPECT().GetResource(gomock.Any(), *projectScope, gomock.Any()).Return(jobConfigResource, nil)
 
-		configuration, err := configService.GetJobConfiguration(nil)
+		configuration, err := configService.GetJobConfiguration()
 		assert.NoError(t, err)
 		assert.Len(t, configuration.Actions, 1)
 	})
