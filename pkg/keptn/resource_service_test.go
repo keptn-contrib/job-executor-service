@@ -85,13 +85,13 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Project("project")
 			scope.Resource("resource")
 
-			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(0)).Times(1).Return(&models.Resource{
+			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
 			}, nil)
 
-			resource, err := handler.GetProjectResource("resource")
+			resource, err := handler.GetProjectResource("resource", test.GitCommitID)
 			require.NoError(t, err)
 			require.Equal(t, expectedBytes, resource)
 		})

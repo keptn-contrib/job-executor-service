@@ -34,18 +34,18 @@ func (m *MockKeptnResourceService) EXPECT() *MockKeptnResourceServiceMockRecorde
 }
 
 // GetProjectResource mocks base method.
-func (m *MockKeptnResourceService) GetProjectResource(arg0 string) ([]byte, error) {
+func (m *MockKeptnResourceService) GetProjectResource(arg0, arg1 string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProjectResource", arg0)
+	ret := m.ctrl.Call(m, "GetProjectResource", arg0, arg1)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProjectResource indicates an expected call of GetProjectResource.
-func (mr *MockKeptnResourceServiceMockRecorder) GetProjectResource(arg0 interface{}) *gomock.Call {
+func (mr *MockKeptnResourceServiceMockRecorder) GetProjectResource(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetProjectResource), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetProjectResource), arg0, arg1)
 }
 
 // GetServiceResource mocks base method.

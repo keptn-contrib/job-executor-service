@@ -16,11 +16,11 @@ type KeptnResourceService interface {
 	// GetServiceResource returns the service level resource
 	GetServiceResource(resource string, gitCommitID string) ([]byte, error)
 
+	// GetProjectResource returns the resource that was defined on project level
+	GetProjectResource(resource string, gitCommitID string) ([]byte, error)
+
 	// GetStageResource returns the resource that was defined in the stage
 	GetStageResource(resource string, gitCommitID string) ([]byte, error)
-
-	// GetProjectResource returns the resource that was defined on project level
-	GetProjectResource(resource string) ([]byte, error)
 }
 
 // JobConfigReader retrieves and parses job configuration from Keptn
@@ -41,7 +41,7 @@ func (jcr *JobConfigReader) FindJobConfigResource(gitCommitID string) ([]byte, e
 
 	// NOTE: Since the resource service uses different branches, the commitID may not be in the main
 	//       branch and therefore it's not possible to query the project fallback configuration!
-	if config, err := jcr.Keptn.GetProjectResource(jobConfigResourceName); err == nil {
+	if config, err := jcr.Keptn.GetProjectResource(jobConfigResourceName, ""); err == nil {
 		return config, nil
 	}
 
