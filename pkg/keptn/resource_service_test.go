@@ -13,7 +13,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockResourceHandler := keptnfake.NewMockKeptnResourceHandler(mockCtrl)
+	mockResourceHandler := keptnfake.NewMockV1KeptnResourceHandler(mockCtrl)
 
 	handler := V1ResourceHandler{
 		Event: EventProperties{
@@ -39,7 +39,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.Test, func(t *testing.T) {
+		t.Run("GetServiceResource_"+test.Test, func(t *testing.T) {
 			expectedBytes := []byte("<expected-file-payload>")
 
 			scope := api.NewResourceScope()
@@ -54,7 +54,44 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 				ResourceURI:     nil,
 			}, nil)
 
-			resource, err := handler.GetResource("resource", test.GitCommitID)
+			resource, err := handler.GetServiceResource("resource", test.GitCommitID)
+			require.NoError(t, err)
+			require.Equal(t, expectedBytes, resource)
+		})
+
+		t.Run("GetStageResource_"+test.Test, func(t *testing.T) {
+			expectedBytes := []byte("<expected-file-payload>")
+
+			scope := api.NewResourceScope()
+			scope.Project("project")
+			scope.Resource("resource")
+			scope.Stage("stage")
+
+			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
+				Metadata:        nil,
+				ResourceContent: string(expectedBytes),
+				ResourceURI:     nil,
+			}, nil)
+
+			resource, err := handler.GetStageResource("resource", test.GitCommitID)
+			require.NoError(t, err)
+			require.Equal(t, expectedBytes, resource)
+		})
+
+		t.Run("GetProjectResource_"+test.Test, func(t *testing.T) {
+			expectedBytes := []byte("<expected-file-payload>")
+
+			scope := api.NewResourceScope()
+			scope.Project("project")
+			scope.Resource("resource")
+
+			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
+				Metadata:        nil,
+				ResourceContent: string(expectedBytes),
+				ResourceURI:     nil,
+			}, nil)
+
+			resource, err := handler.GetProjectResource("resource", test.GitCommitID)
 			require.NoError(t, err)
 			require.Equal(t, expectedBytes, resource)
 		})

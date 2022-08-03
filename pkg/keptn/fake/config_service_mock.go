@@ -6,6 +6,7 @@ package fake
 
 import (
 	context "context"
+	config "keptn-contrib/job-executor-service/pkg/config"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -50,6 +51,21 @@ func (m *MockConfigService) GetAllKeptnResources(fs afero.Fs, resource string) (
 func (mr *MockConfigServiceMockRecorder) GetAllKeptnResources(fs, resource interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeptnResources", reflect.TypeOf((*MockConfigService)(nil).GetAllKeptnResources), fs, resource)
+}
+
+// GetJobConfiguration mocks base method.
+func (m *MockConfigService) GetJobConfiguration() (*config.Config, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetJobConfiguration")
+	ret0, _ := ret[0].(*config.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetJobConfiguration indicates an expected call of GetJobConfiguration.
+func (mr *MockConfigServiceMockRecorder) GetJobConfiguration() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJobConfiguration", reflect.TypeOf((*MockConfigService)(nil).GetJobConfiguration))
 }
 
 // GetKeptnResource mocks base method.

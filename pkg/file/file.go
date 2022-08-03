@@ -2,7 +2,6 @@ package file
 
 import (
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/keptn"
 	"log"
 	"path/filepath"
@@ -13,14 +12,9 @@ import (
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
 func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
 
-	resource, err := configService.GetKeptnResource(fs, "job/config.yaml")
+	configuration, err := configService.GetJobConfiguration()
 	if err != nil {
 		return fmt.Errorf("could not find config for job-executor-service: %v", err)
-	}
-
-	configuration, err := config.NewConfig(resource)
-	if err != nil {
-		return fmt.Errorf("could not parse config: %s", err)
 	}
 
 	found, action := configuration.FindActionByName(actionName)

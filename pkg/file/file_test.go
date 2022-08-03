@@ -2,12 +2,12 @@ package file
 
 import (
 	"errors"
+	config2 "keptn-contrib/job-executor-service/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"keptn-contrib/job-executor-service/pkg/keptn"
 	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
 
 	"github.com/golang/mock/gomock"
@@ -57,7 +57,8 @@ func TestMountFiles(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	config, _ := config2.NewConfig([]byte(simpleConfig))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
 	configServiceMock.EXPECT().GetAllKeptnResources(
 		fs, "locust",
 	).Times(1).Return(
@@ -94,7 +95,7 @@ func TestMountFilesConfigFileNotFound(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return(nil, errors.New("not found"))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(nil, errors.New("not found"))
 
 	err := MountFiles("action", "task", fs, configServiceMock)
 	require.Error(t, err)
@@ -106,7 +107,8 @@ func TestMountFilesConfigFileNotValid(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return([]byte(pythonFile), nil)
+	config, configErr := config2.NewConfig([]byte(pythonFile))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, configErr)
 
 	err := MountFiles("action", "task", fs, configServiceMock)
 	require.Error(t, err)
@@ -118,7 +120,8 @@ func TestMountFilesNoActionMatch(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	config, _ := config2.NewConfig([]byte(simpleConfig))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
 
 	err := MountFiles("actionNotMatching", "task", fs, configServiceMock)
 	require.Error(t, err)
@@ -130,7 +133,8 @@ func TestMountFilesNoTaskMatch(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	config, _ := config2.NewConfig([]byte(simpleConfig))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
 
 	err := MountFiles("action", "taskNotMatching", fs, configServiceMock)
 	require.Error(t, err)
@@ -142,7 +146,8 @@ func TestMountFilesFileNotFound(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	configServiceMock := CreateKeptnConfigServiceMock(t)
 
-	configServiceMock.EXPECT().GetKeptnResource(fs, "job/config.yaml").Times(1).Return([]byte(simpleConfig), nil)
+	config, _ := config2.NewConfig([]byte(simpleConfig))
+	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
 	configServiceMock.EXPECT().GetAllKeptnResources(fs, "/helm/values.yaml").Times(1).Return(
 		nil, errors.New("not found"),
 	)
@@ -150,28 +155,4 @@ func TestMountFilesFileNotFound(t *testing.T) {
 	err := MountFiles("action", "task", fs, configServiceMock)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
-}
-
-func TestMountFilesWithLocalFileSystem(t *testing.T) {
-
-	fs := afero.NewMemMapFs()
-	configService := keptn.NewConfigService(true, keptn.EventProperties{}, nil)
-	err := afero.WriteFile(fs, "job/config.yaml", []byte(simpleConfig), 0644)
-	assert.NoError(t, err)
-	err = afero.WriteFile(fs, "/helm/values.yaml", []byte("here be awesome configuration"), 0644)
-	assert.NoError(t, err)
-	err = afero.WriteFile(fs, "locust/basic.py", []byte("here be awesome test code"), 0644)
-	assert.NoError(t, err)
-	err = afero.WriteFile(fs, "locust/functional.py", []byte("here be more awesome test code"), 0644)
-	assert.NoError(t, err)
-
-	err = MountFiles("action", "task", fs, configService)
-	assert.NoError(t, err)
-
-	_, err = fs.Stat("/keptn/helm/values.yaml")
-	assert.NoError(t, err)
-	_, err = fs.Stat("/keptn/locust/basic.py")
-	assert.NoError(t, err)
-	_, err = fs.Stat("/keptn/locust/functional.py")
-	assert.NoError(t, err)
 }

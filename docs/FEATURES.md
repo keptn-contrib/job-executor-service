@@ -3,6 +3,7 @@
 
 - [Features](#features)
   - [Getting started](#getting-started)
+  - [Job Configuration](#job-configuration)
   - [Specifying the working directory](#specifying-the-working-directory)
   - [Event Matching](#event-matching)
   - [Kubernetes Job](#kubernetes-job)
@@ -35,6 +36,30 @@
 
 To get started with job-executor-service, please follow the [Quickstart](../README.md#quickstart).
 
+### Job Configuration
+
+The job-executor-service can be configured with the `job/config.yaml` configuration file, which should be uploaded as
+resource to Keptn. The job-executor-service will scan the resources in the following order to determine which configuration
+should be used: 
+- **Service**: A resource that is stored on the service level will always used by the job executor service if available 
+- **Stage**: If no service resource is found, the stage resources are searched for a job configuration
+- **Project**: If no other resources are found the job executor will fallback to a project wide configuration
+ *(Note: the latest version of the project wide configuration file will be fetched!)*
+
+If the job executor service can't find a configuration file, it will respond with an error event, which can be viewed
+in the uniform page of the Keptn bridge.
+
+A typical job configuration usually contains one or more actions that will be triggered when a specific event is
+received: 
+```yaml
+apiVersion: v2
+actions:
+  - name: "Print files"
+    events:
+      - name: "sh.keptn.event.sample.triggered"
+    tasks:
+      - ...
+```
 
 ### Specifying the working directory
 

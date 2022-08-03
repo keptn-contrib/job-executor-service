@@ -33,17 +33,47 @@ func (m *MockKeptnResourceService) EXPECT() *MockKeptnResourceServiceMockRecorde
 	return m.recorder
 }
 
-// GetResource mocks base method.
-func (m *MockKeptnResourceService) GetResource(arg0, arg1 string) ([]byte, error) {
+// GetProjectResource mocks base method.
+func (m *MockKeptnResourceService) GetProjectResource(arg0, arg1 string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetResource", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetProjectResource", arg0, arg1)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetResource indicates an expected call of GetResource.
-func (mr *MockKeptnResourceServiceMockRecorder) GetResource(arg0, arg1 interface{}) *gomock.Call {
+// GetProjectResource indicates an expected call of GetProjectResource.
+func (mr *MockKeptnResourceServiceMockRecorder) GetProjectResource(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetResource), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetProjectResource), arg0, arg1)
+}
+
+// GetServiceResource mocks base method.
+func (m *MockKeptnResourceService) GetServiceResource(arg0, arg1 string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServiceResource", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetServiceResource indicates an expected call of GetServiceResource.
+func (mr *MockKeptnResourceServiceMockRecorder) GetServiceResource(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetServiceResource), arg0, arg1)
+}
+
+// GetStageResource mocks base method.
+func (m *MockKeptnResourceService) GetStageResource(arg0, arg1 string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStageResource", arg0, arg1)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStageResource indicates an expected call of GetStageResource.
+func (mr *MockKeptnResourceServiceMockRecorder) GetStageResource(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStageResource", reflect.TypeOf((*MockKeptnResourceService)(nil).GetStageResource), arg0, arg1)
 }

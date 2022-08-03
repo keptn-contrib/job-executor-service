@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils/v2"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"net/url"
 	"os"
 	"strings"
@@ -14,10 +15,13 @@ import (
 
 //go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake ConfigService
 
-// ConfigService provides methods to retrieve and match resources from the keptn configuration service
+// ConfigService provides methods to retrieve and match resources from the keptn resource service
 type ConfigService interface {
 	GetKeptnResource(fs afero.Fs, resource string) ([]byte, error)
 	GetAllKeptnResources(fs afero.Fs, resource string) (map[string][]byte, error)
+
+	// GetJobConfiguration returns the fetched job configuration
+	GetJobConfiguration() (*config.Config, error)
 }
 
 //go:generate mockgen -source=config_service.go -destination=fake/config_service_mock.go -package=fake V2ResourceHandler
@@ -36,6 +40,7 @@ type configServiceImpl struct {
 	useLocalFileSystem bool
 	eventProperties    EventProperties
 	resourceHandler    V2ResourceHandler
+	jobConfigReader    config.JobConfigReader
 }
 
 // EventProperties represents a set of properties of a given cloud event
@@ -48,11 +53,51 @@ type EventProperties struct {
 
 // NewConfigService creates and returns new ConfigService
 func NewConfigService(useLocalFileSystem bool, event EventProperties, resourceHandler V2ResourceHandler) ConfigService {
-	return &configServiceImpl{
-		useLocalFileSystem: useLocalFileSystem,
-		eventProperties:    event,
-		resourceHandler:    resourceHandler,
+	configurationService := new(configServiceImpl)
+
+	configurationService.useLocalFileSystem = useLocalFileSystem
+	configurationService.eventProperties = event
+	configurationService.resourceHandler = resourceHandler
+	configurationService.jobConfigReader = config.JobConfigReader{
+		Keptn: configurationService,
 	}
+
+	return configurationService
+}
+
+// buildResourceHandlerV2Options builds the URIOption list such that it contains a well formatted gitCommitID
+func buildResourceHandlerV2Options(gitCommitID string) api.ResourcesGetResourceOptions {
+	options := api.ResourcesGetResourceOptions{}
+
+	if gitCommitID != "" {
+		options.URIOptions = []api.URIOption{
+			api.AppendQuery(url.Values{
+				"gitCommitID": []string{gitCommitID},
+			}),
+		}
+	}
+
+	return options
+}
+
+// fetchKeptnResource sets the resource in the scope correctly and fetches the resource from Keptn with the given gitCommitID
+func (k *configServiceImpl) fetchKeptnResource(resource string, scope *api.ResourceScope, gitCommitID string) ([]byte, error) {
+	// NOTE: No idea why, but the API requires a double query escape for a path element and does not accept leading /
+	//       while emitting absolute paths in the response ...
+	scope.Resource(url.QueryEscape(strings.TrimPrefix(resource, "/")))
+
+	requestedResource, err := k.resourceHandler.GetResource(
+		context.Background(),
+		*scope,
+		buildResourceHandlerV2Options(gitCommitID),
+	)
+
+	// return Nil in case resource couldn't be retrieved
+	if err != nil || requestedResource.ResourceContent == "" {
+		return nil, fmt.Errorf("resource not found: %s - %s", resource, err)
+	}
+
+	return []byte(requestedResource.ResourceContent), nil
 }
 
 // GetKeptnResource returns a resource from the configuration repo based on the incoming cloud events project, service and stage
@@ -68,27 +113,8 @@ func (k *configServiceImpl) GetKeptnResource(fs afero.Fs, resource string) ([]by
 	scope.Stage(k.eventProperties.Stage)
 	scope.Service(k.eventProperties.Service)
 
-	// NOTE: No idea why, but the API requires a double query escape for a path element and does not accept leading /
-	//       while emitting absolute paths in the response ...
-	scope.Resource(url.QueryEscape(strings.TrimPrefix(resource, "/")))
-
-	options := api.ResourcesGetResourceOptions{}
-	if k.eventProperties.GitCommitID != "" {
-		options.URIOptions = []api.URIOption{
-			api.AppendQuery(url.Values{
-				"gitCommitID": []string{k.eventProperties.GitCommitID},
-			}),
-		}
-	}
-
-	requestedResource, err := k.resourceHandler.GetResource(context.Background(), *scope, options)
-
-	// return Nil in case resource couldn't be retrieved
-	if err != nil || requestedResource.ResourceContent == "" {
-		return nil, fmt.Errorf("resource not found: %s - %s", resource, err)
-	}
-
-	return []byte(requestedResource.ResourceContent), nil
+	// finally download the resource:
+	return k.fetchKeptnResource(resource, scope, k.eventProperties.GitCommitID)
 }
 
 // GetAllKeptnResources returns a map of keptn resources (key=URI, value=content) from the configuration repo with
@@ -112,7 +138,6 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 	// NOTE:
 	// 	Since no exact file has been found, we have to assume that the given resource is a directory.
 	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
-
 	scope := api.NewResourceScope()
 	scope.Project(k.eventProperties.Project)
 	scope.Stage(k.eventProperties.Stage)
@@ -147,6 +172,32 @@ func (k *configServiceImpl) GetAllKeptnResources(fs afero.Fs, resource string) (
 	}
 
 	return keptnResources, nil
+}
+
+func (k *configServiceImpl) GetServiceResource(resource string, gitCommitID string) ([]byte, error) {
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	scope.Service(k.eventProperties.Service)
+	return k.fetchKeptnResource(resource, scope, gitCommitID)
+}
+
+func (k *configServiceImpl) GetStageResource(resource string, gitCommitID string) ([]byte, error) {
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	scope.Stage(k.eventProperties.Stage)
+	return k.fetchKeptnResource(resource, scope, gitCommitID)
+}
+
+func (k *configServiceImpl) GetProjectResource(resource string, gitCommitID string) ([]byte, error) {
+	scope := api.NewResourceScope()
+	scope.Project(k.eventProperties.Project)
+	return k.fetchKeptnResource(resource, scope, gitCommitID)
+}
+
+func (k *configServiceImpl) GetJobConfiguration() (*config.Config, error) {
+	config, _, err := k.jobConfigReader.GetJobConfig(k.eventProperties.GitCommitID)
+	return config, err
 }
 
 /**
