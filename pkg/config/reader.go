@@ -21,6 +21,9 @@ type KeptnResourceService interface {
 
 	// GetStageResource returns the resource that was defined in the stage
 	GetStageResource(resource string, gitCommitID string) ([]byte, error)
+
+	// GetAllKeptnResources returns all resources that were defined in the stage
+	GetAllKeptnResources(resource string) (map[string][]byte, error)
 }
 
 // JobConfigReader retrieves and parses job configuration from Keptn

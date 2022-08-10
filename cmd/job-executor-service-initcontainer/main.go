@@ -4,8 +4,9 @@ import (
 	"context"
 	oauthutils "github.com/keptn/go-utils/pkg/common/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"keptn-contrib/job-executor-service/pkg/file"
-	"keptn-contrib/job-executor-service/pkg/keptn"
+	keptn_interface "keptn-contrib/job-executor-service/pkg/keptn"
 	"log"
 	"net/http"
 	"net/url"
@@ -13,7 +14,9 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	api "github.com/keptn/go-utils/pkg/api/utils/v2"
+	api "github.com/keptn/go-utils/pkg/api/utils"
+	//api "github.com/keptn/go-utils/pkg/api/utils/v2"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/spf13/afero"
 )
 
@@ -112,25 +115,22 @@ func main() {
 		log.Fatalf("unable to create keptn API: %s", err)
 	}
 
-	useLocalFileSystem := false
-
-	// configure keptn options
-	if env.Env == "local" {
-		log.Println("env=local: Running with local filesystem to fetch resources")
-		useLocalFileSystem = true
-	}
-
 	// re-create the event from job-executor-service
-	eventProps := keptn.EventProperties{
-		Project:     env.Project,
-		Stage:       env.Stage,
-		Service:     env.Service,
-		GitCommitID: env.GitCommitID,
+	eventProps := &keptnv2.EventData{
+		Project: env.Project,
+		Stage:   env.Stage,
+		Service: env.Service,
 	}
 
-	configService := keptn.NewConfigService(useLocalFileSystem, eventProps, keptnAPI.Resources())
+	resourceHandler := keptnAPI.ResourcesV1().(*api.ResourceHandler)
 
-	err = file.MountFiles(env.Action, env.Task, fs, configService)
+	resourceService := keptn_interface.NewV1ResourceHandler(eventProps, resourceHandler)
+
+	jobConfigHandler := config.JobConfigReader{
+		Keptn: resourceService,
+	}
+
+	err = file.MountFiles(env.Action, env.Task, fs, jobConfigHandler)
 	if err != nil {
 		log.Printf("Error while copying files: %s", err.Error())
 		os.Exit(-1)

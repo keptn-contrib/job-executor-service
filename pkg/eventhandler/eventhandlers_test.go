@@ -85,7 +85,6 @@ func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.E
 	var keptnOptions = keptn.KeptnOpts{
 		EventSender: fakeEventSender,
 	}
-	keptnOptions.UseLocalFileSystem = true
 	myKeptn, err := keptnv2.NewKeptn(incomingEvent, keptnOptions)
 
 	return myKeptn, incomingEvent, fakeEventSender, err

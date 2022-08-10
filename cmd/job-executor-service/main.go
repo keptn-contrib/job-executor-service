@@ -146,9 +146,6 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 /**
  * Usage: ./main
  * no args: starts listening for cloudnative events on localhost:port/path
- *
- * Environment Variables
- * env=runlocal   -> will fetch resources from local drive instead of configuration service
  */
 func main() {
 	if err := envconfig.Process("", &env); err != nil {
@@ -201,13 +198,6 @@ func main() {
  * Opens up a listener on localhost:port/path and passes incoming requets to gotEvent
  */
 func _main(args []string, env envConfig) int {
-
-	// configure keptn options
-	if env.Env == "local" {
-		log.Println("env=local: Running with local filesystem to fetch resources")
-		keptnOptions.UseLocalFileSystem = true
-	}
-
 	// Checking if the given job service account is empty
 	if env.DefaultJobServiceAccount == "" {
 		log.Println("WARNING: No default service account for jobs configured: using kubernetes default service account!")

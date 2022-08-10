@@ -12,6 +12,89 @@ import (
 	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
+// MockResourceHandler is a mock of ResourceHandler interface.
+type MockResourceHandler struct {
+	ctrl     *gomock.Controller
+	recorder *MockResourceHandlerMockRecorder
+}
+
+// MockResourceHandlerMockRecorder is the mock recorder for MockResourceHandler.
+type MockResourceHandlerMockRecorder struct {
+	mock *MockResourceHandler
+}
+
+// NewMockResourceHandler creates a new mock instance.
+func NewMockResourceHandler(ctrl *gomock.Controller) *MockResourceHandler {
+	mock := &MockResourceHandler{ctrl: ctrl}
+	mock.recorder = &MockResourceHandlerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockResourceHandler) EXPECT() *MockResourceHandlerMockRecorder {
+	return m.recorder
+}
+
+// GetAllKeptnResources mocks base method.
+func (m *MockResourceHandler) GetAllKeptnResources(resource string) (map[string][]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllKeptnResources", resource)
+	ret0, _ := ret[0].(map[string][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllKeptnResources indicates an expected call of GetAllKeptnResources.
+func (mr *MockResourceHandlerMockRecorder) GetAllKeptnResources(resource interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeptnResources", reflect.TypeOf((*MockResourceHandler)(nil).GetAllKeptnResources), resource)
+}
+
+// GetProjectResource mocks base method.
+func (m *MockResourceHandler) GetProjectResource(resource, gitCommitID string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProjectResource", resource, gitCommitID)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetProjectResource indicates an expected call of GetProjectResource.
+func (mr *MockResourceHandlerMockRecorder) GetProjectResource(resource, gitCommitID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectResource", reflect.TypeOf((*MockResourceHandler)(nil).GetProjectResource), resource, gitCommitID)
+}
+
+// GetServiceResource mocks base method.
+func (m *MockResourceHandler) GetServiceResource(resource, gitCommitID string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServiceResource", resource, gitCommitID)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetServiceResource indicates an expected call of GetServiceResource.
+func (mr *MockResourceHandlerMockRecorder) GetServiceResource(resource, gitCommitID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceResource", reflect.TypeOf((*MockResourceHandler)(nil).GetServiceResource), resource, gitCommitID)
+}
+
+// GetStageResource mocks base method.
+func (m *MockResourceHandler) GetStageResource(resource, gitCommitID string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStageResource", resource, gitCommitID)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStageResource indicates an expected call of GetStageResource.
+func (mr *MockResourceHandlerMockRecorder) GetStageResource(resource, gitCommitID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStageResource", reflect.TypeOf((*MockResourceHandler)(nil).GetStageResource), resource, gitCommitID)
+}
+
 // MockV1KeptnResourceHandler is a mock of V1KeptnResourceHandler interface.
 type MockV1KeptnResourceHandler struct {
 	ctrl     *gomock.Controller
@@ -33,6 +116,21 @@ func NewMockV1KeptnResourceHandler(ctrl *gomock.Controller) *MockV1KeptnResource
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockV1KeptnResourceHandler) EXPECT() *MockV1KeptnResourceHandlerMockRecorder {
 	return m.recorder
+}
+
+// GetAllServiceResources mocks base method.
+func (m *MockV1KeptnResourceHandler) GetAllServiceResources(project, stage, service string) ([]*models.Resource, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllServiceResources", project, stage, service)
+	ret0, _ := ret[0].([]*models.Resource)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllServiceResources indicates an expected call of GetAllServiceResources.
+func (mr *MockV1KeptnResourceHandlerMockRecorder) GetAllServiceResources(project, stage, service interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllServiceResources", reflect.TypeOf((*MockV1KeptnResourceHandler)(nil).GetAllServiceResources), project, stage, service)
 }
 
 // GetResource mocks base method.
