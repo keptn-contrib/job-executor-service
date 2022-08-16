@@ -1,0 +1,10 @@
+{
+  "data": {
+    "project": "e2e-project",
+    "service": "service-1",
+    "stage": "prod"
+  },
+  "source": "e2e-test",
+  "specversion": "1.0",
+  "type": "sh.keptn.event.prod.jes.triggered"
+}
