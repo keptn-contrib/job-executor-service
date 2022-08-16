@@ -16,7 +16,7 @@ func TestJobConfig(t *testing.T) {
 	}
 
 	/* const */
-	var jobConfigUri = "job/config.yaml"
+	var jobConfigURI = "job/config.yaml"
 
 	testEnv, err := newTestEnvironment(
 		"../events/e2e/jobconfig.dev-1.triggered.json",
@@ -43,7 +43,7 @@ func TestJobConfig(t *testing.T) {
 	_, err = testEnv.API.ResourceHandler.CreateResource([]*models.Resource{
 		{
 			ResourceContent: string(stageConfig),
-			ResourceURI:     &jobConfigUri,
+			ResourceURI:     &jobConfigURI,
 		},
 	}, *stageScope)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestJobConfig(t *testing.T) {
 	_, err = testEnv.API.ResourceHandler.CreateResource([]*models.Resource{
 		{
 			ResourceContent: string(projectConfig),
-			ResourceURI:     &jobConfigUri,
+			ResourceURI:     &jobConfigURI,
 		},
 	}, *projectScope)
 	require.NoError(t, err)
