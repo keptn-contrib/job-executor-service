@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.15.1", "0.16.1", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.16.1", "0.17.0", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:

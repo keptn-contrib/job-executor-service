@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/keptn-contrib/job-executor-service/compare/0.2.3...0.2.4) (2022-08-11)
+
+
+### Features
+
+* Ability to specify annotations for jobs ([#302](https://github.com/keptn-contrib/job-executor-service/issues/302)) ([487c2a3](https://github.com/keptn-contrib/job-executor-service/commit/487c2a3ce4f769406af4faf0cd184015ba62186b))
+* Add global and stage job configuration lookup ([#338](https://github.com/keptn-contrib/job-executor-service/issues/338)) ([c146449](https://github.com/keptn-contrib/job-executor-service/commit/c1464492b09039bc8365516a7c6910b98ed591b9))
+* Add Keptn dev version to integration tests ([#314](https://github.com/keptn-contrib/job-executor-service/issues/314)) ([db5686a](https://github.com/keptn-contrib/job-executor-service/commit/db5686a4bb100557fb440520d2161af85a354568))
+* Post integration test summary to GH workflow ([#312](https://github.com/keptn-contrib/job-executor-service/issues/312)) ([956422f](https://github.com/keptn-contrib/job-executor-service/commit/956422f8005d5c288dfa2ff42711808b04b026d6))
+* Use helm build action ([#305](https://github.com/keptn-contrib/job-executor-service/issues/305)) ([5507b45](https://github.com/keptn-contrib/job-executor-service/commit/5507b45ea3c83431dd6de783f5de2e4880e6fe1e))
+* Utilize gitCommitID from cloud events to fetch resources  ([#303](https://github.com/keptn-contrib/job-executor-service/issues/303)) ([5187bd9](https://github.com/keptn-contrib/job-executor-service/commit/5187bd9b4654efa45182ef0b414ea2af0191e792))
+
+
+### Bug Fixes
+
+* Auto-detection of Keptn 0.17.0 ([#319](https://github.com/keptn-contrib/job-executor-service/issues/319)) ([c9667b1](https://github.com/keptn-contrib/job-executor-service/commit/c9667b17d12effd45489e7dae4d57cb248468115))
+* Handling of directories in the init container  ([#309](https://github.com/keptn-contrib/job-executor-service/issues/309)) ([7bd83dc](https://github.com/keptn-contrib/job-executor-service/commit/7bd83dcd3ec62c577dd1279773b854b81c03481e))
+* Sending error logs to all registered jes instances in uniform ([#334](https://github.com/keptn-contrib/job-executor-service/issues/334)) ([17ee4e2](https://github.com/keptn-contrib/job-executor-service/commit/17ee4e2df6a2564d695738612482f8e3a8562b23))
+
+
+### Other
+
+* Improve integration tests log output ([#320](https://github.com/keptn-contrib/job-executor-service/issues/320)) ([8a9bcbd](https://github.com/keptn-contrib/job-executor-service/commit/8a9bcbd678ec9ba92647f282abedb4a04f33b4a8))
+* Remove kubernetes-utils dependency ([#304](https://github.com/keptn-contrib/job-executor-service/issues/304)) ([c69cbec](https://github.com/keptn-contrib/job-executor-service/commit/c69cbecdaf025207244ee10d79e27636657efcff))
+* Update pipeline to be compatible with Keptn 0.17 ([#327](https://github.com/keptn-contrib/job-executor-service/issues/327)) ([cd649c8](https://github.com/keptn-contrib/job-executor-service/commit/cd649c88851dd00d17da920182ecac532081389c))
+
+
+### Docs
+
+* Improve upgrade guide and breaking change documentation ([#331](https://github.com/keptn-contrib/job-executor-service/issues/331)) ([ebfdd65](https://github.com/keptn-contrib/job-executor-service/commit/ebfdd65d565d9c2ff0be8535c58f305351beb3a6))
+* Update JES version in installation docs ([#300](https://github.com/keptn-contrib/job-executor-service/issues/300)) ([934728f](https://github.com/keptn-contrib/job-executor-service/commit/934728f30b495ed5e04c608d3245eecfce9290fb))
+
 ### [0.2.3](https://github.com/keptn-contrib/job-executor-service/compare/0.2.2...0.2.3) (2022-07-01)
 
 
