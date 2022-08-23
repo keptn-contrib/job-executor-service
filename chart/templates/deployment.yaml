@@ -49,8 +49,6 @@ spec:
               secretKeyRef:
                 name: job-service-keptn-secrets
                 key: token
-          - name: CONFIGURATION_SERVICE
-            value: "http://localhost:8081/configuration-service"
           - name: env
             value: 'production'
           - name: JOB_NAMESPACE
@@ -100,6 +98,11 @@ spec:
               configMapKeyRef:
                 name: job-service-config
                 key: task_deadline_seconds
+          - name: KEPTN_API_ENDPOINT
+            valueFrom:
+              configMapKeyRef:
+                name: job-service-config
+                key: keptn_api_endpoint
           - name: FULL_DEPLOYMENT_NAME
             value: {{ include "job-executor-service.fullname" . }}
           resources:
@@ -119,6 +122,8 @@ spec:
               memory: "32Mi"
               cpu: "100m"
           env:
+            - name: LOG_LEVEL
+              value: "debug"
             - name: PUBSUB_TOPIC
               value: "{{ .Values.remoteControlPlane.topicSubscription }}"
             - name: PUBSUB_RECIPIENT

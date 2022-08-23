@@ -27,7 +27,7 @@ const OAuthDiscoveryTimeout = 10 * time.Second
 type envConfig struct {
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
-	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
+	// URL of the Keptn API Endpoint
 	KeptnAPIURL string `envconfig:"KEPTN_API_URL" required:"true"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN" required:"true"`
@@ -54,6 +54,8 @@ type envConfig struct {
 	OAuthDiscovery string `envconfig:"OAUTH_DISCOVERY" required:"false"`
 	// The gitCommitId of the initial cloud event, for older Keptn instances this might be empty
 	GitCommitID string `envconfig:"GIT_COMMIT_ID"`
+	// The URL to the resource service
+	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:"resource-service:8080"`
 }
 
 func main() {
@@ -66,6 +68,7 @@ func main() {
 	fs := afero.NewOsFs()
 
 	baseURL, err := url.Parse(env.KeptnAPIURL)
+	log.Printf("BaseURL casting: %s", baseURL)
 	if err != nil {
 		log.Fatalf("unable to parse the keptn api url: %s", err)
 	}
@@ -123,8 +126,10 @@ func main() {
 	}
 
 	resourceHandler := keptnAPI.ResourcesV1().(*api.ResourceHandler)
+	log.Printf("Token: %s, Auth Headers: %s, Base URL: %s", resourceHandler.AuthToken, resourceHandler.AuthHeader,
+		resourceHandler.BaseURL)
 
-	resourceService := keptn_interface.NewV1ResourceHandler(eventProps, resourceHandler)
+	resourceService := keptn_interface.NewV1ResourceHandler(*eventProps, resourceHandler)
 
 	jobConfigHandler := config.JobConfigReader{
 		Keptn: resourceService,

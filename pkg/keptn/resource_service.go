@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
-	"github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"log"
 	"net/url"
 	"strings"
 )
@@ -33,7 +34,7 @@ type V1ResourceHandler struct {
 }
 
 // NewV1ResourceHandler creates a new V1ResourceHandler from a given Keptn event and a V1KeptnResourceHandler
-func NewV1ResourceHandler(event keptn.EventProperties, handler V1KeptnResourceHandler) ResourceHandler {
+func NewV1ResourceHandler(event keptnv2.EventData, handler V1KeptnResourceHandler) ResourceHandler {
 	return V1ResourceHandler{
 		Event: EventProperties{
 			Project: event.GetProject(),
@@ -49,7 +50,7 @@ func NewV1ResourceHandler(event keptn.EventProperties, handler V1KeptnResourceHa
 // V1KeptnResourceHandler represents an interface for the api.ResourceHandler struct of the Keptn API
 type V1KeptnResourceHandler interface {
 	GetResource(scope api.ResourceScope, options ...api.URIOption) (*models.Resource, error)
-	GetAllServiceResources(project string, stage string, service string) ([]*models.Resource, error)
+	//GetAllServiceResources(project string, stage string, service string) ([]*models.Resource, error)
 }
 
 // buildResourceHandlerV1Options builds the URIOption list such that it contains a well formatted gitCommitID
@@ -76,6 +77,7 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
+		log.Printf("unable to get resouce from keptn: %w", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -90,6 +92,7 @@ func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID strin
 
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
+		log.Printf("unable to get resouce from keptn: %w", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -105,6 +108,7 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
+		log.Printf("unable to get resouce from keptn: %w", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
