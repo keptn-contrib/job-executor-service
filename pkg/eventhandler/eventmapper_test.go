@@ -1,40 +1,42 @@
 package eventhandler
 
 import (
+	"encoding/json"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/keptn/go-utils/pkg/sdk"
 	"testing"
 	"time"
 
-	"github.com/cloudevents/sdk-go/v2/binding/spec"
-	"github.com/cloudevents/sdk-go/v2/event"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestInitializeEventPayloadAsInterface(t *testing.T) {
-
-	context := spec.V1.NewContext()
-	context.SetID("0123")
-	context.SetSource("sourcysource")
+	source := "sourcysource"
 	now := time.Now()
-	context.SetTime(now)
-	context.SetExtension("shkeptncontext", interface{}("mycontext"))
 
-	event := event.Event{
-		Context:     context,
-		DataEncoded: []byte(testEvent),
+	eventData := &keptnv2.EventData{}
+	err := json.Unmarshal([]byte(testEvent), eventData)
+	require.NoError(t, err)
+
+	keptnEvent := sdk.KeptnEvent{
+		ID:             "0123",
+		Source:         &source,
+		Time:           now,
+		Shkeptncontext: "mycontext",
+		Data:           eventData,
 	}
 
 	mapper := new(KeptnCloudEventMapper)
-	eventPayloadAsInterface, err := mapper.Map(event)
+	eventPayloadAsInterface, err := mapper.Map(keptnEvent)
 	require.NoError(t, err)
 
-	assert.Equal(t, eventPayloadAsInterface["id"], "0123")
-	assert.Equal(t, eventPayloadAsInterface["source"], "sourcysource")
-	assert.Equal(t, eventPayloadAsInterface["time"], now)
-	assert.Equal(t, eventPayloadAsInterface["shkeptncontext"], "mycontext")
+	assert.Equal(t, "0123", eventPayloadAsInterface["id"])
+	assert.Equal(t, now, eventPayloadAsInterface["time"])
+	assert.Equal(t, "mycontext", eventPayloadAsInterface["shkeptncontext"])
 
 	data := eventPayloadAsInterface["data"]
-	dataAsMap := data.(map[string]interface{})
+	dataAsMap := data.(interface{}).(map[string]interface{})
 
 	assert.Equal(t, dataAsMap["project"], "sockshop")
 }

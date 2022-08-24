@@ -81,7 +81,7 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %w", err)
+		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -97,7 +97,7 @@ func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID strin
 	log.Printf("Resource: %s", scope.GetResourcePath())
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %w", err)
+		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -114,7 +114,7 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 	log.Printf("Resource: %s", scope.GetResourcePath())
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %w", err)
+		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 

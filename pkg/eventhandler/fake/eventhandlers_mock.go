@@ -13,6 +13,7 @@ import (
 	event "github.com/cloudevents/sdk-go/v2/event"
 	gomock "github.com/golang/mock/gomock"
 	keptn "github.com/keptn/go-utils/pkg/lib/keptn"
+	sdk "github.com/keptn/go-utils/pkg/sdk"
 )
 
 // MockImageFilter is a mock of ImageFilter interface.
@@ -76,7 +77,7 @@ func (m *MockEventMapper) EXPECT() *MockEventMapperMockRecorder {
 }
 
 // Map mocks base method.
-func (m *MockEventMapper) Map(arg0 event.Event) (map[string]interface{}, error) {
+func (m *MockEventMapper) Map(arg0 sdk.KeptnEvent) (map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Map", arg0)
 	ret0, _ := ret[0].(map[string]interface{})

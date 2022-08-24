@@ -118,21 +118,6 @@ func (m *MockV1KeptnResourceHandler) EXPECT() *MockV1KeptnResourceHandlerMockRec
 	return m.recorder
 }
 
-// GetAllServiceResources mocks base method.
-func (m *MockV1KeptnResourceHandler) GetAllServiceResources(project, stage, service string) ([]*models.Resource, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllServiceResources", project, stage, service)
-	ret0, _ := ret[0].([]*models.Resource)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllServiceResources indicates an expected call of GetAllServiceResources.
-func (mr *MockV1KeptnResourceHandlerMockRecorder) GetAllServiceResources(project, stage, service interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllServiceResources", reflect.TypeOf((*MockV1KeptnResourceHandler)(nil).GetAllServiceResources), project, stage, service)
-}
-
 // GetResource mocks base method.
 func (m *MockV1KeptnResourceHandler) GetResource(scope api.ResourceScope, options ...api.URIOption) (*models.Resource, error) {
 	m.ctrl.T.Helper()
