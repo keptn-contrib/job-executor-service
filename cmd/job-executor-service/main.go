@@ -208,14 +208,16 @@ func _main(args []string, env EnvConfig) {
 }
 
 func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
+	keptnHandle.Logger().Infof("Received event of type: %s from %s with id: %s", *event.Type, *event.Source, event.ID)
+
 	data := &keptnv2.EventData{}
 	if err := keptnv2.Decode(event.Data, data); err != nil {
-		keptnHandle.Logger().Errorf("Could not parse test.triggered event: %s", err.Error())
+		keptnHandle.Logger().Errorf("Could not parse event: %s", err.Error())
 		return false
 	}
 
 	jcr := &config.JobConfigReader{
-		Keptn: keptn_interface.NewV1ResourceHandler(*data, keptnHandle.GetResourceHandler()),
+		Keptn: keptn_interface.NewV1ResourceHandler(*data, keptnHandle.GetResourceHandler(), keptnHandle.APIV1().ResourcesV1()),
 	}
 
 	// Check if the job configuration can be found
@@ -230,13 +232,13 @@ func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
 	mapper := new(eventhandler.KeptnCloudEventMapper)
 	eventAsInterface, err := mapper.Map(event)
 	if err != nil {
-		log.Printf("failed to convert incoming cloudevent: %v", err)
+		keptnHandle.Logger().Infof("failed to convert incoming cloudevent: %v", err)
 		return false
 	}
 
 	hasMatchingEvent := configuration.IsEventMatch(*event.Type, eventAsInterface)
 	if !hasMatchingEvent {
-		log.Printf(
+		keptnHandle.Logger().Infof(
 			"No match found for event %s of type %s. Skipping...", event.ID,
 			event.Type,
 		)

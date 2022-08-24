@@ -129,7 +129,7 @@ func main() {
 	log.Printf("Token: %s, Auth Headers: %s, Base URL: %s", resourceHandler.AuthToken, resourceHandler.AuthHeader,
 		resourceHandler.BaseURL)
 
-	resourceService := keptn_interface.NewV1ResourceHandler(*eventProps, resourceHandler)
+	resourceService := keptn_interface.NewV1ResourceHandler(*eventProps, resourceHandler, keptnAPI.ResourcesV1())
 
 	jobConfigHandler := config.JobConfigReader{
 		Keptn: resourceService,

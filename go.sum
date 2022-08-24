@@ -278,6 +278,10 @@ github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dv
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/keptn/go-utils v0.18.1-0.20220816133935-4b7a8f70fa40 h1:DWbQcA4oV1p1CpXQRktCEmgYGF/UcJfiuzCDoPHqRk8=
 github.com/keptn/go-utils v0.18.1-0.20220816133935-4b7a8f70fa40/go.mod h1:jPys4TFvxkN6KY3IhM5XWBeCCPQeLzsT6zTwt4iYfes=
+github.com/keptn/go-utils v0.18.1-0.20220823104849-8b8ec792d2b2 h1:UUWi/sUz/4wAMLC1yqd1qH76hvtR3t3D1/6ruIZfZvo=
+github.com/keptn/go-utils v0.18.1-0.20220823104849-8b8ec792d2b2/go.mod h1:jPys4TFvxkN6KY3IhM5XWBeCCPQeLzsT6zTwt4iYfes=
+github.com/keptn/go-utils v0.18.1-0.20220823112436-8d1cb537ccfa h1:cwaIYdR4tQ3Ax825wlkX1rWafmmaUYBHbs8qi3R3ORk=
+github.com/keptn/go-utils v0.18.1-0.20220823112436-8d1cb537ccfa/go.mod h1:jPys4TFvxkN6KY3IhM5XWBeCCPQeLzsT6zTwt4iYfes=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.14.4 h1:eijASRJcobkVtSt81Olfh7JX43osYLwy5krOJo6YEu4=

@@ -31,10 +31,11 @@ type ResourceHandler interface {
 type V1ResourceHandler struct {
 	Event           EventProperties
 	ResourceHandler V1KeptnResourceHandler
+	ResourceApi     api.ResourcesV1Interface
 }
 
 // NewV1ResourceHandler creates a new V1ResourceHandler from a given Keptn event and a V1KeptnResourceHandler
-func NewV1ResourceHandler(event keptnv2.EventData, handler V1KeptnResourceHandler) ResourceHandler {
+func NewV1ResourceHandler(event keptnv2.EventData, handler V1KeptnResourceHandler, resourceApi api.ResourcesV1Interface) ResourceHandler {
 	return V1ResourceHandler{
 		Event: EventProperties{
 			Project: event.GetProject(),
@@ -42,6 +43,7 @@ func NewV1ResourceHandler(event keptnv2.EventData, handler V1KeptnResourceHandle
 			Service: event.GetService(),
 		},
 		ResourceHandler: handler,
+		ResourceApi:     resourceApi,
 	}
 }
 
@@ -73,7 +75,9 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 	scope.Service(r.Event.Service)
 	scope.Project(r.Event.Project)
 	scope.Stage(r.Event.Stage)
-	scope.Resource(resource)
+	scope.Resource(url.QueryEscape(resource))
+
+	log.Printf("Resource: %s", scope.GetResourcePath())
 
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
@@ -88,8 +92,9 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID string) ([]byte, error) {
 	scope := api.NewResourceScope()
 	scope.Project(r.Event.Project)
-	scope.Resource(resource)
+	scope.Resource(url.QueryEscape(resource))
 
+	log.Printf("Resource: %s", scope.GetResourcePath())
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %w", err)
@@ -104,8 +109,9 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 	scope := api.NewResourceScope()
 	scope.Project(r.Event.Project)
 	scope.Stage(r.Event.Stage)
-	scope.Resource(resource)
+	scope.Resource(url.QueryEscape(resource))
 
+	log.Printf("Resource: %s", scope.GetResourcePath())
 	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %w", err)
@@ -132,7 +138,7 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
 
 	// Get all files from Keptn to enumerate what is in the directory
-	requestedResources, err := r.ResourceHandler.GetAllServiceResources(r.Event.Project, r.Event.Stage, r.Event.Service)
+	requestedResources, err := r.ResourceApi.GetAllServiceResources(r.Event.Project, r.Event.Stage, r.Event.Service)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to list all resources: %w", err)

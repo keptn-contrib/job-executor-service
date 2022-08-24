@@ -82,20 +82,19 @@ type dataForFinishedEvent struct {
 	end   time.Time
 }
 
-// HandleEvent handles all events in a generic manner
+// Execute handles all events in a generic manner
 func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}, *sdk.Error) {
-
 	eventAsInterface, err := eh.Mapper.Map(event)
 	if err != nil {
 		log.Printf("failed to convert incoming cloudevent: %v", err)
 		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: "failed to convert incoming cloudevent: " + err.Error()}
 	}
 
-	log.Printf(
+	k.Logger().Infof(
 		"Attempting to handle event %s of type %s ...", event.ID,
 		*event.Type,
 	)
-	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
+	k.Logger().Infof("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
 	// Get the git commit id from the cloud event (if it exists) and use it to query the job configuration
 	var gitCommitID string
@@ -109,7 +108,7 @@ func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}
 		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse test.triggered event: %s", err.Error())}
 	}
 	eh.JobConfigReader = &config.JobConfigReader{
-		Keptn: keptn_interface.NewV1ResourceHandler(*data, k.GetResourceHandler()),
+		Keptn: keptn_interface.NewV1ResourceHandler(*data, k.GetResourceHandler(), k.APIV1().ResourcesV1()),
 	}
 
 	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
@@ -125,10 +124,16 @@ func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}
 				*event.Type, action.Name,
 			)
 
-			eh.startK8sJob(k, event, data, &action, actionIndex, configHash, gitCommitID, eventAsInterface)
+			finishedEvent, err := eh.startK8sJob(k, event, data, &action, actionIndex, configHash, gitCommitID, eventAsInterface)
+			if err != nil {
+				return nil, err
+			} else if finishedEvent != nil {
+				return finishedEvent, nil
+			}
 		}
 	}
 
+	k.Logger().Info("Returning empty response")
 	return nil, nil
 }
 
@@ -137,7 +142,10 @@ func (eh *EventHandler) startK8sJob(k sdk.IKeptn, event sdk.KeptnEvent, eventDat
 ) (interface{}, *sdk.Error) {
 	err := eh.K8s.ConnectToCluster()
 	if err != nil {
-		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while connecting to cluster: %s", err.Error())}
+		if !action.Silent {
+			return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while connecting to cluster: %s", err.Error())}
+		}
+		return nil, nil
 	}
 
 	var allJobLogs []jobLogs
@@ -235,7 +243,8 @@ func (eh *EventHandler) startK8sJob(k sdk.IKeptn, event sdk.KeptnEvent, eventDat
 	k.Logger().Infof("Successfully finished processing of event: %s\n", event.ID)
 
 	if !action.Silent {
-		return getTaskFinishedEvent(event, eh.ServiceName, allJobLogs, additionalFinishedEventData), nil
+		k.Logger().Infof("Getting task finished event")
+		return getTaskFinishedEvent(event, eventData, allJobLogs, additionalFinishedEventData), nil
 	}
 
 	return nil, nil
@@ -277,7 +286,7 @@ func sendJobFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName stri
 	}
 }
 
-func getTaskFinishedEvent(event sdk.KeptnEvent, serviceName string, jobLogs []jobLogs, data dataForFinishedEvent) interface{} {
+func getTaskFinishedEvent(event sdk.KeptnEvent, receivedEventData keptn.EventProperties, jobLogs []jobLogs, data dataForFinishedEvent) interface{} {
 	var logMessage strings.Builder
 
 	for _, jobLogs := range jobLogs {
@@ -290,6 +299,9 @@ func getTaskFinishedEvent(event sdk.KeptnEvent, serviceName string, jobLogs []jo
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
 		Message: logMessage.String(),
+		Project: receivedEventData.GetProject(),
+		Stage:   receivedEventData.GetStage(),
+		Service: receivedEventData.GetService(),
 	}
 
 	if isTestTriggeredEvent(*event.Type) && !data.start.IsZero() && !data.end.IsZero() {
