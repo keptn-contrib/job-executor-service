@@ -9,12 +9,12 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.17.0
+	github.com/keptn/go-utils v0.18.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/spf13/afero v1.8.2
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	golang.org/x/oauth2 v0.0.0-20220630143837-2104d58473e0
+	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.24.3
 	k8s.io/apimachinery v0.24.3
