@@ -9,7 +9,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.18.1-0.20220823112436-8d1cb537ccfa
+	github.com/keptn/go-utils v0.18.1-0.20220829063445-1f5af67a8cf3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2

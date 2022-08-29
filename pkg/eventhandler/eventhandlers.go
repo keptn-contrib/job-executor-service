@@ -104,11 +104,11 @@ func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}
 
 	data := &keptnv2.EventData{}
 	if err := keptnv2.Decode(event.Data, data); err != nil {
-		k.Logger().Errorf("Could not parse test.triggered event: %s", err.Error())
-		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse test.triggered event: %s", err.Error())}
+		k.Logger().Errorf("Could not parse event: %s", err.Error())
+		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse event: %s", err.Error())}
 	}
 	eh.JobConfigReader = &config.JobConfigReader{
-		Keptn: keptn_interface.NewV1ResourceHandler(*data, k.GetResourceHandler(), k.APIV1().ResourcesV1()),
+		Keptn: keptn_interface.NewV1ResourceHandler(*data, k.APIV2().Resources()),
 	}
 
 	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)

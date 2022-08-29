@@ -6,20 +6,19 @@ import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/golang/mock/gomock"
+	"github.com/keptn/go-utils/pkg/api/models"
+	keptnapi "github.com/keptn/go-utils/pkg/api/models"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
 	"github.com/keptn/go-utils/pkg/sdk"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	eventhandlerfake "keptn-contrib/job-executor-service/pkg/eventhandler/fake"
 	"keptn-contrib/job-executor-service/pkg/k8sutils"
 	"log"
 	"strings"
 	"testing"
-
-	"github.com/keptn/go-utils/pkg/api/models"
-	keptnapi "github.com/keptn/go-utils/pkg/api/models"
-	eventhandlerfake "keptn-contrib/job-executor-service/pkg/eventhandler/fake"
 )
 
 const testEvent = `

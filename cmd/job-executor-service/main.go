@@ -217,7 +217,7 @@ func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
 	}
 
 	jcr := &config.JobConfigReader{
-		Keptn: keptn_interface.NewV1ResourceHandler(*data, keptnHandle.GetResourceHandler(), keptnHandle.APIV1().ResourcesV1()),
+		Keptn: keptn_interface.NewV1ResourceHandler(*data, keptnHandle.APIV2().Resources()),
 	}
 
 	// Check if the job configuration can be found

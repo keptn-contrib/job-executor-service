@@ -1,9 +1,10 @@
 package keptn
 
 import (
+	"context"
 	"fmt"
 	"github.com/keptn/go-utils/pkg/api/models"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"log"
 	"net/url"
@@ -26,24 +27,35 @@ type ResourceHandler interface {
 	GetAllKeptnResources(resource string) (map[string][]byte, error)
 }
 
+type ResourcesInterface interface {
+	CreateResources(ctx context.Context, project string, stage string, service string, resources []*models.Resource, opts api.ResourcesCreateResourcesOptions) (*models.EventContext, *models.Error)
+	CreateProjectResources(ctx context.Context, project string, resources []*models.Resource, opts api.ResourcesCreateProjectResourcesOptions) (string, error)
+	UpdateProjectResources(ctx context.Context, project string, resources []*models.Resource, opts api.ResourcesUpdateProjectResourcesOptions) (string, error)
+	UpdateServiceResources(ctx context.Context, project string, stage string, service string, resources []*models.Resource, opts api.ResourcesUpdateServiceResourcesOptions) (string, error)
+	GetAllStageResources(ctx context.Context, project string, stage string, opts api.ResourcesGetAllStageResourcesOptions) ([]*models.Resource, error)
+	GetAllServiceResources(ctx context.Context, project string, stage string, service string, opts api.ResourcesGetAllServiceResourcesOptions) ([]*models.Resource, error)
+	GetResource(ctx context.Context, scope api.ResourceScope, opts api.ResourcesGetResourceOptions) (*models.Resource, error)
+	DeleteResource(ctx context.Context, scope api.ResourceScope, opts api.ResourcesDeleteResourceOptions) error
+	UpdateResource(ctx context.Context, resource *models.Resource, scope api.ResourceScope, opts api.ResourcesUpdateResourceOptions) (string, error)
+	CreateResource(ctx context.Context, resource []*models.Resource, scope api.ResourceScope, opts api.ResourcesCreateResourceOptions) (string, error)
+}
+
 // V1ResourceHandler is a wrapper around the v1 ResourceHandler of the Keptn API to simplify the
 // getting of resources of a given event
 type V1ResourceHandler struct {
-	Event           EventProperties
-	ResourceHandler V1KeptnResourceHandler
-	ResourceApi     api.ResourcesV1Interface
+	Event       EventProperties
+	ResourceApi ResourcesInterface
 }
 
 // NewV1ResourceHandler creates a new V1ResourceHandler from a given Keptn event and a V1KeptnResourceHandler
-func NewV1ResourceHandler(event keptnv2.EventData, handler V1KeptnResourceHandler, resourceApi api.ResourcesV1Interface) ResourceHandler {
+func NewV1ResourceHandler(event keptnv2.EventData, resourceApi ResourcesInterface) ResourceHandler {
 	return V1ResourceHandler{
 		Event: EventProperties{
 			Project: event.GetProject(),
 			Stage:   event.GetStage(),
 			Service: event.GetService(),
 		},
-		ResourceHandler: handler,
-		ResourceApi:     resourceApi,
+		ResourceApi: resourceApi,
 	}
 }
 
@@ -79,7 +91,10 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 
 	log.Printf("Resource: %s", scope.GetResourcePath())
 
-	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
+	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
+		buildResourceHandlerV1Options(gitCommitID),
+	}}
+	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -95,7 +110,10 @@ func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID strin
 	scope.Resource(url.QueryEscape(resource))
 
 	log.Printf("Resource: %s", scope.GetResourcePath())
-	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
+	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
+		buildResourceHandlerV1Options(gitCommitID),
+	}}
+	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -112,7 +130,10 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 	scope.Resource(url.QueryEscape(resource))
 
 	log.Printf("Resource: %s", scope.GetResourcePath())
-	resourceContent, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(gitCommitID))
+	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
+		buildResourceHandlerV1Options(gitCommitID),
+	}}
+	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -138,7 +159,7 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
 
 	// Get all files from Keptn to enumerate what is in the directory
-	requestedResources, err := r.ResourceApi.GetAllServiceResources(r.Event.Project, r.Event.Stage, r.Event.Service)
+	requestedResources, err := r.ResourceApi.GetAllServiceResources(context.Background(), r.Event.Project, r.Event.Stage, r.Event.Service, api.ResourcesGetAllServiceResourcesOptions{})
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to list all resources: %w", err)
@@ -160,7 +181,10 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 			scope.Resource(*serviceResource.ResourceURI)
 
 			// Query resource with the specified git commit id:
-			keptnResource, err := r.ResourceHandler.GetResource(*scope, buildResourceHandlerV1Options(r.Event.GitCommitID))
+			options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
+				buildResourceHandlerV1Options(r.Event.GitCommitID),
+			}}
+			keptnResource, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
 			if err != nil {
 				return nil, fmt.Errorf("unable to fetch resource %s: %w", *serviceResource.ResourceURI, err)
 			}

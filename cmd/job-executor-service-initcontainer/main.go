@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	//api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/spf13/afero"
@@ -125,11 +125,7 @@ func main() {
 		Service: env.Service,
 	}
 
-	resourceHandler := keptnAPI.ResourcesV1().(*api.ResourceHandler)
-	log.Printf("Token: %s, Auth Headers: %s, Base URL: %s", resourceHandler.AuthToken, resourceHandler.AuthHeader,
-		resourceHandler.BaseURL)
-
-	resourceService := keptn_interface.NewV1ResourceHandler(*eventProps, resourceHandler, keptnAPI.ResourcesV1())
+	resourceService := keptn_interface.NewV1ResourceHandler(*eventProps, keptnAPI.Resources())
 
 	jobConfigHandler := config.JobConfigReader{
 		Keptn: resourceService,

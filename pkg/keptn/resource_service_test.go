@@ -1,9 +1,10 @@
 package keptn
 
 import (
+	"context"
 	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/api/models"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/stretchr/testify/require"
 	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
 	"testing"
@@ -13,7 +14,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockResourceHandler := keptnfake.NewMockV1KeptnResourceHandler(mockCtrl)
+	mockResourceApi := keptnfake.NewMockResourcesInterface(mockCtrl)
 
 	handler := V1ResourceHandler{
 		Event: EventProperties{
@@ -21,7 +22,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			Stage:   "stage",
 			Service: "service",
 		},
-		ResourceHandler: mockResourceHandler,
+		ResourceApi: mockResourceApi,
 	}
 
 	tests := []struct {
@@ -48,7 +49,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Service("service")
 			scope.Stage("stage")
 
-			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
+			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
@@ -67,7 +68,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Resource("resource")
 			scope.Stage("stage")
 
-			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
+			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
@@ -85,7 +86,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Project("project")
 			scope.Resource("resource")
 
-			mockResourceHandler.EXPECT().GetResource(*scope, gomock.Len(1)).Times(1).Return(&models.Resource{
+			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
