@@ -27,6 +27,7 @@ type ResourceHandler interface {
 	GetAllKeptnResources(resource string) (map[string][]byte, error)
 }
 
+// ResourcesInterface is an interface that describes the Keptn resource API
 type ResourcesInterface interface {
 	CreateResources(ctx context.Context, project string, stage string, service string, resources []*models.Resource, opts api.ResourcesCreateResourcesOptions) (*models.EventContext, *models.Error)
 	CreateProjectResources(ctx context.Context, project string, resources []*models.Resource, opts api.ResourcesCreateProjectResourcesOptions) (string, error)
@@ -44,18 +45,18 @@ type ResourcesInterface interface {
 // getting of resources of a given event
 type V1ResourceHandler struct {
 	Event       EventProperties
-	ResourceApi ResourcesInterface
+	ResourceAPI ResourcesInterface
 }
 
 // NewV1ResourceHandler creates a new V1ResourceHandler from a given Keptn event and a V1KeptnResourceHandler
-func NewV1ResourceHandler(event keptnv2.EventData, resourceApi ResourcesInterface) ResourceHandler {
+func NewV1ResourceHandler(event keptnv2.EventData, resourceAPI ResourcesInterface) ResourceHandler {
 	return V1ResourceHandler{
 		Event: EventProperties{
 			Project: event.GetProject(),
 			Stage:   event.GetStage(),
 			Service: event.GetService(),
 		},
-		ResourceApi: resourceApi,
+		ResourceAPI: resourceAPI,
 	}
 }
 
@@ -94,7 +95,7 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
-	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
+	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -113,7 +114,7 @@ func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID strin
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
-	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
+	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -133,7 +134,7 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
-	resourceContent, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
+	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
 		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
@@ -159,7 +160,7 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 	// 	Directories don't really exist in the API, so we have to use a HasPrefix match here
 
 	// Get all files from Keptn to enumerate what is in the directory
-	requestedResources, err := r.ResourceApi.GetAllServiceResources(context.Background(), r.Event.Project, r.Event.Stage, r.Event.Service, api.ResourcesGetAllServiceResourcesOptions{})
+	requestedResources, err := r.ResourceAPI.GetAllServiceResources(context.Background(), r.Event.Project, r.Event.Stage, r.Event.Service, api.ResourcesGetAllServiceResourcesOptions{})
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to list all resources: %w", err)
@@ -184,7 +185,7 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 			options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 				buildResourceHandlerV1Options(r.Event.GitCommitID),
 			}}
-			keptnResource, err := r.ResourceApi.GetResource(context.Background(), *scope, options)
+			keptnResource, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 			if err != nil {
 				return nil, fmt.Errorf("unable to fetch resource %s: %w", *serviceResource.ResourceURI, err)
 			}

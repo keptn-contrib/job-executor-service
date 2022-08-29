@@ -14,7 +14,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	mockResourceApi := keptnfake.NewMockResourcesInterface(mockCtrl)
+	mockResourceAPI := keptnfake.NewMockResourcesInterface(mockCtrl)
 
 	handler := V1ResourceHandler{
 		Event: EventProperties{
@@ -22,7 +22,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			Stage:   "stage",
 			Service: "service",
 		},
-		ResourceApi: mockResourceApi,
+		ResourceAPI: mockResourceAPI,
 	}
 
 	tests := []struct {
@@ -49,7 +49,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Service("service")
 			scope.Stage("stage")
 
-			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
+			mockResourceAPI.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
@@ -68,7 +68,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Resource("resource")
 			scope.Stage("stage")
 
-			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
+			mockResourceAPI.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,
@@ -86,7 +86,7 @@ func TestV1ResourceHandler_GetResource(t *testing.T) {
 			scope.Project("project")
 			scope.Resource("resource")
 
-			mockResourceApi.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
+			mockResourceAPI.EXPECT().GetResource(context.Background(), *scope, gomock.Any()).Times(1).Return(&models.Resource{
 				Metadata:        nil,
 				ResourceContent: string(expectedBytes),
 				ResourceURI:     nil,

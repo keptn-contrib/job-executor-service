@@ -49,6 +49,8 @@ spec:
               secretKeyRef:
                 name: job-service-keptn-secrets
                 key: token
+          - name: PUBSUB_TOPIC
+            value: {{ ((.Values).subscription).pubsubTopic | default "sh.keptn.>" }}
           - name: env
             value: 'production'
           - name: JOB_NAMESPACE

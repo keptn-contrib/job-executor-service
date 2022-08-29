@@ -6,6 +6,9 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+subscription:
+  pubsubTopic: "sh.keptn.>" # Sets the events the service subscribes to
+
 jobexecutorserviceinitcontainer:
   image:
     repository: docker.io/keptncontrib/job-executor-service-initcontainer # Container Image Name

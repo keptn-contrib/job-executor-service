@@ -25,9 +25,9 @@ import (
 )
 
 var keptnOptions = keptn.KeptnOpts{}
-var env EnvConfig
+var env envConfig
 
-type EnvConfig struct {
+type envConfig struct {
 	// Port on which to listen for cloudevents
 	Port int `envconfig:"RCV_PORT" default:"8080"`
 	// Path to which cloudevents are sent
@@ -176,7 +176,7 @@ func main() {
 /**
  * Opens up a listener on localhost:port/path and passes incoming requets to gotEvent
  */
-func _main(args []string, env EnvConfig) {
+func _main(args []string, env envConfig) {
 	// Checking if the given job service account is empty
 	if env.DefaultJobServiceAccount == "" {
 		log.Println("WARNING: No default service account for jobs configured: using kubernetes default service account!")
