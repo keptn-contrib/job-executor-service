@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/keptn-contrib/job-executor-service/compare/0.2.4...0.2.5) (2022-08-29)
+
+
+### Features
+
+* Keptn 0.17 compatibility ([#310](https://github.com/keptn-contrib/job-executor-service/issues/310)) ([e9aefac](https://github.com/keptn-contrib/job-executor-service/commit/e9aefacb3a68817c2f2885df6da171efe770d3e0))
+
+This release introduces `API_PROXY_MAX_PAYLOAD_BYTES_KB`, an environment variable for the Keptn distributor. It is currently set to 128 (Kilobyte) and defines the maximum payload size that job-executor can send back to Keptn, i.e., the log output of your job (+ a bit of overhead). Should your job create more log output, you have to increase the `API_PROXY_MAX_PAYLOAD_BYTES_KB` environment variable in the Kubernetes manifest.
+
+
+### Docs
+
+* Update compatibility matrix ([#345](https://github.com/keptn-contrib/job-executor-service/issues/345)) ([eeffbaf](https://github.com/keptn-contrib/job-executor-service/commit/eeffbaf4c85fbb6fadb42ab97346353e8f5da4d4))
+
 ### [0.2.4](https://github.com/keptn-contrib/job-executor-service/compare/0.2.3...0.2.4) (2022-08-11)
 
 
