@@ -7,7 +7,7 @@ image:
   tag: ""
 
 subscription:
-  pubsubTopic: "sh.keptn.>" # Sets the events the service subscribes to
+  pubsubTopic: "sh.keptn.event.test.triggered,sh.keptn.event.deployment.triggered,sh.keptn.event.evaluation.triggered,sh.keptn.event.release.triggered,sh.keptn.event.approval.triggered,sh.keptn.event.action.triggered" # Sets the events the service subscribes to
 
 jobexecutorserviceinitcontainer:
   image:
