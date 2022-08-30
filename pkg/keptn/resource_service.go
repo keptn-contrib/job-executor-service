@@ -179,7 +179,7 @@ func (r V1ResourceHandler) GetAllKeptnResources(resource string) (map[string][]b
 			scope.Project(r.Event.Project)
 			scope.Stage(r.Event.Stage)
 			scope.Service(r.Event.Service)
-			scope.Resource(*serviceResource.ResourceURI)
+			scope.Resource(url.QueryEscape(*serviceResource.ResourceURI))
 
 			// Query resource with the specified git commit id:
 			options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
