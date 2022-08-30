@@ -10,8 +10,8 @@ import (
 )
 
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
-func MountFiles(actionName string, taskName string, fs afero.Fs, jcr config.JobConfigReader) error {
-	configuration, _, err := jcr.GetJobConfig("")
+func MountFiles(actionName string, taskName string, gitCommitID string, fs afero.Fs, jcr config.JobConfigReader) error {
+	configuration, _, err := jcr.GetJobConfig(gitCommitID)
 	if err != nil {
 		return fmt.Errorf("could not find config for job-executor-service: %v", err)
 	}

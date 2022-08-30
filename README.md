@@ -91,7 +91,7 @@ keptn add-resource --project jes-example --service hello --stage production --re
 
 Trigger the `example-seq` sequence. 
 ```shell
-keptn trigger sequence --sequence example-seq --project jes-example --service hello --stage production
+keptn trigger sequence example-seq --project jes-example --service hello --stage production
 ```
 
 Have a look at the sequences for the project in Keptn bridge, it should look similar to the screenshot below:

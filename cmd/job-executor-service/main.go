@@ -197,6 +197,7 @@ func _main(args []string, env envConfig) {
 		log.Fatalf("failed to generate the allowlist, %v", err)
 	}
 
+	// Handle all events and filter them later in jobEventFilter
 	log.Fatal(sdk.NewKeptn(
 		serviceName,
 		sdk.WithTaskHandler(
@@ -207,6 +208,7 @@ func _main(args []string, env envConfig) {
 	).Start())
 }
 
+// jobEventFilter checks if a job/config exists and whether it contains the event type
 func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
 	keptnHandle.Logger().Infof("Received event of type: %s from %s with id: %s", *event.Type, *event.Source, event.ID)
 

@@ -6,7 +6,6 @@ import (
 	"log"
 )
 
-// TODO: Escape /
 // Needs to be escaped manually when sending it to the api-gateway-nginx
 const jobConfigResourceName = "job/config.yaml"
 

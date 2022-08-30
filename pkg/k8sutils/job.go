@@ -329,10 +329,6 @@ func (k8s *K8sImpl) CreateK8sJob(
 									Name:  "GIT_COMMIT_ID",
 									Value: jobDetails.GitCommitID,
 								},
-								{
-									Name:  "CONFIGURATION_SERVICE",
-									Value: "http://resource-service:8080",
-								},
 							},
 							Resources: *jobSettings.DefaultResourceRequirements,
 						},

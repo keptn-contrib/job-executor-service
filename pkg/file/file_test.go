@@ -1,11 +1,16 @@
 package file
 
 import (
+	"errors"
+	config2 "keptn-contrib/job-executor-service/pkg/config"
 	"testing"
 
-	keptnfake "keptn-contrib/job-executor-service/pkg/keptn/fake"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
+	"github.com/spf13/afero"
+	configfake "keptn-contrib/job-executor-service/pkg/config/fake"
 )
 
 const simpleConfig = `
@@ -38,38 +43,36 @@ const yamlFile = `
 // This is a yaml file
 `
 
-func CreateKeptnResourceServiceMock(t *testing.T) *keptnfake.MockResourceHandler {
-
+func CreateKeptnResourceServiceMock(t *testing.T) *configfake.MockKeptnResourceService {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	return keptnfake.NewMockResourceHandler(mockCtrl)
+	return configfake.NewMockKeptnResourceService(mockCtrl)
 }
 
-/*func TestMountFiles(t *testing.T) {
-
+func TestMountFiles(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	config, _ := config2.NewConfig([]byte(simpleConfig))
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		[]byte(simpleConfig),
+		nil,
+	)
 
 	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
 
-	jcr, _, err := sut.GetJobConfig("")
-
-	resourceServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
 	resourceServiceMock.EXPECT().GetAllKeptnResources(
-		fs, "locust",
+		"locust",
 	).Times(1).Return(
 		map[string][]byte{
 			"locust/basic.py": []byte(pythonFile), "locust/functional.py": []byte(pythonFile),
 		}, nil,
 	)
 	resourceServiceMock.EXPECT().GetAllKeptnResources(
-		fs, "/helm/values.yaml",
+		"/helm/values.yaml",
 	).Times(1).Return(map[string][]byte{"helm/values.yaml": []byte(yamlFile)}, nil)
 
-	err := MountFiles("action", "task", fs, resourceServiceMock)
+	err := MountFiles("action", "task", "", fs, sut)
 	require.NoError(t, err)
 
 	exists, err := afero.Exists(fs, "/keptn/locust/basic.py")
@@ -90,68 +93,86 @@ func CreateKeptnResourceServiceMock(t *testing.T) *keptnfake.MockResourceHandler
 }
 
 func TestMountFilesConfigFileNotFound(t *testing.T) {
-
 	fs := afero.NewMemMapFs()
-	configServiceMock := CreateKeptnResourceServiceMock(t)
+	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(nil, errors.New("not found"))
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		nil,
+		nil,
+	)
 
-	err := MountFiles("action", "task", fs, configServiceMock)
+	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
+
+	err := MountFiles("action", "task", "", fs, sut)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not found")
+	assert.Contains(t, err.Error(), "could not find config for job-executor-service")
 }
 
 func TestMountFilesConfigFileNotValid(t *testing.T) {
-
 	fs := afero.NewMemMapFs()
-	configServiceMock := CreateKeptnResourceServiceMock(t)
+	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	config, configErr := config2.NewConfig([]byte(pythonFile))
-	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, configErr)
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		[]byte(pythonFile),
+		nil,
+	)
 
-	err := MountFiles("action", "task", fs, configServiceMock)
+	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
+
+	err := MountFiles("action", "task", "", fs, sut)
+
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot unmarshal")
 }
 
 func TestMountFilesNoActionMatch(t *testing.T) {
-
 	fs := afero.NewMemMapFs()
-	configServiceMock := CreateKeptnResourceServiceMock(t)
+	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	config, _ := config2.NewConfig([]byte(simpleConfig))
-	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		[]byte(simpleConfig),
+		nil,
+	)
 
-	err := MountFiles("actionNotMatching", "task", fs, configServiceMock)
+	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
+
+	err := MountFiles("actionNotMatching", "task", "", fs, sut)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no action found with name 'actionNotMatching'")
 }
 
 func TestMountFilesNoTaskMatch(t *testing.T) {
-
 	fs := afero.NewMemMapFs()
-	configServiceMock := CreateKeptnResourceServiceMock(t)
+	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	config, _ := config2.NewConfig([]byte(simpleConfig))
-	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		[]byte(simpleConfig),
+		nil,
+	)
 
-	err := MountFiles("action", "taskNotMatching", fs, configServiceMock)
+	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
+
+	err := MountFiles("action", "taskNotMatching", "", fs, sut)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no task found with name 'taskNotMatching'")
 }
 
 func TestMountFilesFileNotFound(t *testing.T) {
-
 	fs := afero.NewMemMapFs()
-	configServiceMock := CreateKeptnResourceServiceMock(t)
+	resourceServiceMock := CreateKeptnResourceServiceMock(t)
 
-	config, _ := config2.NewConfig([]byte(simpleConfig))
-	configServiceMock.EXPECT().GetJobConfiguration().Times(1).Return(config, nil)
-	configServiceMock.EXPECT().GetAllKeptnResources(fs, "/helm/values.yaml").Times(1).Return(
-		nil, errors.New("not found"),
+	resourceServiceMock.EXPECT().GetServiceResource("job/config.yaml", "").Return(
+		[]byte(simpleConfig),
+		nil,
 	)
 
-	err := MountFiles("action", "task", fs, configServiceMock)
+	resourceServiceMock.EXPECT().GetAllKeptnResources(
+		"/helm/values.yaml",
+	).Times(1).Return(nil, errors.New("not found"))
+
+	sut := config2.JobConfigReader{Keptn: resourceServiceMock}
+
+	err := MountFiles("action", "task", "", fs, sut)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
-}*/
+}

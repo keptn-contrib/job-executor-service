@@ -54,8 +54,6 @@ type envConfig struct {
 	OAuthDiscovery string `envconfig:"OAUTH_DISCOVERY" required:"false"`
 	// The gitCommitId of the initial cloud event, for older Keptn instances this might be empty
 	GitCommitID string `envconfig:"GIT_COMMIT_ID"`
-	// The URL to the resource service
-	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:"resource-service:8080"`
 }
 
 func main() {
@@ -131,7 +129,7 @@ func main() {
 		Keptn: resourceService,
 	}
 
-	err = file.MountFiles(env.Action, env.Task, fs, jobConfigHandler)
+	err = file.MountFiles(env.Action, env.Task, env.GitCommitID, fs, jobConfigHandler)
 	if err != nil {
 		log.Printf("Error while copying files: %s", err.Error())
 		os.Exit(-1)
