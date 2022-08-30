@@ -66,7 +66,6 @@ func main() {
 	fs := afero.NewOsFs()
 
 	baseURL, err := url.Parse(env.KeptnAPIURL)
-	log.Printf("BaseURL casting: %s", baseURL)
 	if err != nil {
 		log.Fatalf("unable to parse the keptn api url: %s", err)
 	}

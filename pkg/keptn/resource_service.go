@@ -6,7 +6,6 @@ import (
 	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"log"
 	"net/url"
 	"strings"
 )
@@ -90,14 +89,11 @@ func (r V1ResourceHandler) GetServiceResource(resource string, gitCommitID strin
 	scope.Stage(r.Event.Stage)
 	scope.Resource(url.QueryEscape(resource))
 
-	log.Printf("Resource: %s", scope.GetResourcePath())
-
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
 	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -110,13 +106,11 @@ func (r V1ResourceHandler) GetProjectResource(resource string, gitCommitID strin
 	scope.Project(r.Event.Project)
 	scope.Resource(url.QueryEscape(resource))
 
-	log.Printf("Resource: %s", scope.GetResourcePath())
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
 	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
@@ -130,13 +124,11 @@ func (r V1ResourceHandler) GetStageResource(resource string, gitCommitID string)
 	scope.Stage(r.Event.Stage)
 	scope.Resource(url.QueryEscape(resource))
 
-	log.Printf("Resource: %s", scope.GetResourcePath())
 	options := api.ResourcesGetResourceOptions{URIOptions: []api.URIOption{
 		buildResourceHandlerV1Options(gitCommitID),
 	}}
 	resourceContent, err := r.ResourceAPI.GetResource(context.Background(), *scope, options)
 	if err != nil {
-		log.Printf("unable to get resouce from keptn: %e", err)
 		return nil, fmt.Errorf("unable to get resouce from keptn: %w", err)
 	}
 
