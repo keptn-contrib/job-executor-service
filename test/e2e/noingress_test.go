@@ -100,6 +100,7 @@ func TestJobExecutorServiceNoIngress(t *testing.T) {
 		require.NoError(t, err)
 
 		// exit code 7 from curl signals that the connection to the host has failed
+		t.Logf("Container termination logs : %s", completedPod.Status.ContainerStatuses[0].State.Terminated.String())
 		assert.Equal(t, int32(7), completedPod.Status.ContainerStatuses[0].State.Terminated.ExitCode)
 	}
 
