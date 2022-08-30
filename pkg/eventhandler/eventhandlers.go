@@ -107,8 +107,11 @@ func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}
 		k.Logger().Errorf("Could not parse event: %s", err.Error())
 		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse event: %s", err.Error())}
 	}
-	eh.JobConfigReader = &config.JobConfigReader{
-		Keptn: keptn_interface.NewV1ResourceHandler(*data, k.APIV2().Resources()),
+
+	if eh.JobConfigReader == nil {
+		eh.JobConfigReader = &config.JobConfigReader{
+			Keptn: keptn_interface.NewV1ResourceHandler(*data, k.APIV2().Resources()),
+		}
 	}
 
 	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
@@ -142,6 +145,7 @@ func (eh *EventHandler) startK8sJob(k sdk.IKeptn, event sdk.KeptnEvent, eventDat
 ) (interface{}, *sdk.Error) {
 	err := eh.K8s.ConnectToCluster()
 	if err != nil {
+		k.Logger().Infof("Error while connecting to k8s cluster: %e", err)
 		if !action.Silent {
 			return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while connecting to cluster: %s", err.Error())}
 		}
