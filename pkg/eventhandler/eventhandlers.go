@@ -294,6 +294,7 @@ func sendJobFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName stri
 	}
 }
 
+// getTaskFinishedEvent returns the finished data for the received event as an interface which can be directly returned using the go-sdk
 func getTaskFinishedEvent(event sdk.KeptnEvent, receivedEventData keptn.EventProperties, jobLogs []jobLogs, data dataForFinishedEvent) interface{} {
 	var logMessage strings.Builder
 
