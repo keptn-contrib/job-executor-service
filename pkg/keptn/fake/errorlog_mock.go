@@ -5,11 +5,12 @@
 package fake
 
 import (
+	context "context"
 	reflect "reflect"
 
-	event "github.com/cloudevents/sdk-go/v2/event"
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/keptn/go-utils/pkg/api/models"
+	v2 "github.com/keptn/go-utils/pkg/api/utils/v2"
 )
 
 // MockUniformClient is a mock of UniformClient interface.
@@ -36,18 +37,18 @@ func (m *MockUniformClient) EXPECT() *MockUniformClientMockRecorder {
 }
 
 // GetRegistrations mocks base method.
-func (m *MockUniformClient) GetRegistrations() ([]*models.Integration, error) {
+func (m *MockUniformClient) GetRegistrations(arg0 context.Context, arg1 v2.UniformGetRegistrationsOptions) ([]*models.Integration, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistrations")
+	ret := m.ctrl.Call(m, "GetRegistrations", arg0, arg1)
 	ret0, _ := ret[0].([]*models.Integration)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetRegistrations indicates an expected call of GetRegistrations.
-func (mr *MockUniformClientMockRecorder) GetRegistrations() *gomock.Call {
+func (mr *MockUniformClientMockRecorder) GetRegistrations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrations", reflect.TypeOf((*MockUniformClient)(nil).GetRegistrations))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistrations", reflect.TypeOf((*MockUniformClient)(nil).GetRegistrations), arg0, arg1)
 }
 
 // MockCloudEventSender is a mock of CloudEventSender interface.
@@ -73,16 +74,17 @@ func (m *MockCloudEventSender) EXPECT() *MockCloudEventSenderMockRecorder {
 	return m.recorder
 }
 
-// SendCloudEvent mocks base method.
-func (m *MockCloudEventSender) SendCloudEvent(arg0 event.Event) error {
+// SendEvent mocks base method.
+func (m *MockCloudEventSender) SendEvent(arg0 context.Context, arg1 models.KeptnContextExtendedCE, arg2 v2.APISendEventOptions) (*models.EventContext, *models.Error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendCloudEvent", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "SendEvent", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*models.EventContext)
+	ret1, _ := ret[1].(*models.Error)
+	return ret0, ret1
 }
 
-// SendCloudEvent indicates an expected call of SendCloudEvent.
-func (mr *MockCloudEventSenderMockRecorder) SendCloudEvent(arg0 interface{}) *gomock.Call {
+// SendEvent indicates an expected call of SendEvent.
+func (mr *MockCloudEventSenderMockRecorder) SendEvent(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCloudEvent", reflect.TypeOf((*MockCloudEventSender)(nil).SendCloudEvent), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendEvent", reflect.TypeOf((*MockCloudEventSender)(nil).SendEvent), arg0, arg1, arg2)
 }

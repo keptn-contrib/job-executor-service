@@ -1,14 +1,14 @@
 package keptn
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log"
-
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/keptn/go-utils/pkg/api/models"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/keptn/go-utils/pkg/sdk"
+	"log"
 )
 
 const errorType = "sh.keptn.log.error"
@@ -21,12 +21,12 @@ var /*const*/ ErrorProcessingErrorNotSpecified = errors.New("processing error is
 
 // UniformClient represents the interface implemented  by the Keptn Uniform API client
 type UniformClient interface {
-	GetRegistrations() ([]*models.Integration, error)
+	GetRegistrations(ctx context.Context, opts api.UniformGetRegistrationsOptions) ([]*models.Integration, error)
 }
 
 // CloudEventSender represents the interface implemented by the Keptn API client for sending cloudevents
 type CloudEventSender interface {
-	SendCloudEvent(event cloudevents.Event) error
+	SendEvent(ctx context.Context, event models.KeptnContextExtendedCE, opts api.APISendEventOptions) (*models.EventContext, *models.Error)
 }
 
 //go:generate mockgen -destination=fake/errorlog_mock.go -package=fake .  UniformClient,CloudEventSender
@@ -58,7 +58,7 @@ type ErrorData struct {
 // create a cloudevent of type sh.keptn.log.error and send it back to keptn using the information retrieved from the
 // triggering cloud event and the encountered error.
 // If retrieving the integration registration or sending the error log fails, an error will be returned
-func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Event, applicationError error) error {
+func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *sdk.KeptnEvent, applicationError error) error {
 
 	if initialCloudEvent == nil {
 		return ErrorInitialCloudEventNotSpecified
@@ -68,7 +68,7 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Even
 		return ErrorProcessingErrorNotSpecified
 	}
 
-	registrations, err := els.uniformHandler.GetRegistrations()
+	registrations, err := els.uniformHandler.GetRegistrations(context.Background(), api.UniformGetRegistrationsOptions{})
 	if err != nil {
 		return fmt.Errorf("error retrieving uniform registrations: %w", err)
 	}
@@ -82,10 +82,11 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Even
 				continue
 			}
 
-			err = els.ceSender.SendCloudEvent(errorCloudEvent)
-			if err == nil {
+			_, eventErr := els.ceSender.SendEvent(context.Background(), errorCloudEvent, api.APISendEventOptions{})
+			if eventErr == nil {
 				sendEvent = true
 			}
+
 		}
 	}
 
@@ -97,33 +98,24 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *cloudevents.Even
 }
 
 func createErrorLogCloudEvent(
-	integrationID string, initialEvent *cloudevents.Event, err error,
-) (cloudevents.Event, error) {
+	integrationID string, initialEvent *sdk.KeptnEvent, err error,
+) (models.KeptnContextExtendedCE, error) {
 	errorData := ErrorData{
 		Message:       err.Error(),
 		IntegrationID: integrationID,
-		Task:          getTaskFromEvent(initialEvent.Type()),
+		Task:          getTaskFromEvent(*initialEvent.Type),
 	}
 
-	ev := cloudevents.NewEvent()
-	ev.SetSource(initialEvent.Source())
-	ev.SetExtension("triggeredid", initialEvent.ID())
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetType(errorType)
-
-	keptnCtx, err := types.ToString(initialEvent.Extensions()["shkeptncontext"])
-	if err != nil {
-		return ev, fmt.Errorf("unable to extract keptnshcontext from initial cloud event: %w", err)
+	eventType := errorType
+	event := models.KeptnContextExtendedCE{
+		Data:           errorData,
+		Source:         initialEvent.Source,
+		Type:           &eventType,
+		Triggeredid:    initialEvent.ID,
+		Shkeptncontext: initialEvent.Shkeptncontext,
 	}
 
-	ev.SetExtension("shkeptncontext", keptnCtx)
-
-	err = ev.SetData(cloudevents.ApplicationJSON, errorData)
-	if err != nil {
-		return ev, fmt.Errorf("could not marshal cloud event payload: %w", err)
-	}
-
-	return ev, nil
+	return event, nil
 }
 
 func getTaskFromEvent(eventType string) string {

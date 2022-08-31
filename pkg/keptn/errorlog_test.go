@@ -3,11 +3,10 @@ package keptn
 import (
 	"encoding/json"
 	"errors"
+	"github.com/keptn/go-utils/pkg/sdk"
 	"os"
 	"testing"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/golang/mock/gomock"
 	"github.com/keptn/go-utils/pkg/api/models"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +39,7 @@ func TestErrorWhenProcessingErrorNil(t *testing.T) {
 
 	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
 
-	newEvent := cloudevents.NewEvent()
+	newEvent := sdk.KeptnEvent{}
 	err := sut.SendErrorLogEvent(&newEvent, nil)
 
 	assert.ErrorIs(t, err, ErrorProcessingErrorNotSpecified)
@@ -54,12 +53,12 @@ func TestErrorWhenGetRegistrationsFails(t *testing.T) {
 
 	uniformClient := fake.NewMockUniformClient(ctrl)
 	getRegistrationError := errors.New("getRegistrations didn't work for some reason")
-	uniformClient.EXPECT().GetRegistrations().Return(nil, getRegistrationError).Times(1)
+	uniformClient.EXPECT().GetRegistrations(gomock.Any(), gomock.Any()).Return(nil, getRegistrationError).Times(1)
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
 
 	sut := NewErrorLogSender("", uniformClient, mockCloudEventSender)
 
-	newEvent := cloudevents.NewEvent()
+	newEvent := sdk.KeptnEvent{}
 	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
 
 	assert.Error(t, err)
@@ -71,11 +70,11 @@ func TestErrorWhenNoRegistrationIsReturned(t *testing.T) {
 	defer ctrl.Finish()
 
 	uniformClient := fake.NewMockUniformClient(ctrl)
-	uniformClient.EXPECT().GetRegistrations().Return([]*models.Integration{}, nil).Times(1)
+	uniformClient.EXPECT().GetRegistrations(gomock.Any(), gomock.Any()).Return([]*models.Integration{}, nil).Times(1)
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
 	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
 
-	newEvent := cloudevents.NewEvent()
+	newEvent := sdk.KeptnEvent{}
 	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
 
 	assert.Error(t, err)
@@ -87,7 +86,7 @@ func TestErrorWhenNoMatchingRegistrationIsReturned(t *testing.T) {
 	defer ctrl.Finish()
 
 	uniformClient := fake.NewMockUniformClient(ctrl)
-	uniformClient.EXPECT().GetRegistrations().Return(
+	uniformClient.EXPECT().GetRegistrations(gomock.Any(), gomock.Any()).Return(
 		[]*models.Integration{
 			{
 				ID:   "idbazz",
@@ -99,7 +98,7 @@ func TestErrorWhenNoMatchingRegistrationIsReturned(t *testing.T) {
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
 	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
 
-	newEvent := cloudevents.NewEvent()
+	newEvent := sdk.KeptnEvent{}
 	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
 
 	assert.Error(t, err)
@@ -111,7 +110,7 @@ func TestErrorWhenMultipleMatchingRegistrationReturned(t *testing.T) {
 	defer ctrl.Finish()
 
 	uniformClient := fake.NewMockUniformClient(ctrl)
-	uniformClient.EXPECT().GetRegistrations().Return(
+	uniformClient.EXPECT().GetRegistrations(gomock.Any(), gomock.Any()).Return(
 		[]*models.Integration{
 			{
 				ID:   "idfoobar1",
@@ -128,13 +127,18 @@ func TestErrorWhenMultipleMatchingRegistrationReturned(t *testing.T) {
 		}, nil,
 	).Times(1)
 
+	keptnContext := "returnedEventContext"
+
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
-	mockCloudEventSender.EXPECT().SendCloudEvent(gomock.Any()).Times(2).Return(nil)
+	mockCloudEventSender.EXPECT().SendEvent(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil, nil)
 
 	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
 
-	newEvent := cloudevents.NewEvent()
-	newEvent.SetExtension("shkeptncontext", "034579438ufj-958340958")
+	eventType := "sh.keptn.test.triggered"
+	newEvent := sdk.KeptnEvent{
+		Shkeptncontext: keptnContext,
+		Type:           &eventType,
+	}
 
 	err := sut.SendErrorLogEvent(&newEvent, errors.New("some error"))
 	assert.NoError(t, err)
@@ -145,7 +149,7 @@ func TestSendErrorLogHappyPath(t *testing.T) {
 	defer ctrl.Finish()
 
 	uniformClient := fake.NewMockUniformClient(ctrl)
-	uniformClient.EXPECT().GetRegistrations().Return(
+	uniformClient.EXPECT().GetRegistrations(gomock.Any(), gomock.Any()).Return(
 		[]*models.Integration{
 			{
 				ID:   "idfoo",
@@ -163,33 +167,15 @@ func TestSendErrorLogHappyPath(t *testing.T) {
 		nil,
 	).Times(1)
 
-	initialCloudEvent := cloudevents.NewEvent()
+	initialCloudEvent := sdk.KeptnEvent{}
 	bytes, err := os.ReadFile("../../test/events/action.triggered.json")
 	require.NoError(t, err)
 	json.Unmarshal(bytes, &initialCloudEvent)
 
-	expectedErrorCloudEvent := cloudevents.NewEvent()
-	expectedErrorCloudEvent.SetType(errorType)
-	expectedErrorCloudEvent.SetSource("test-events")
-	expectedKeptnCtx, err := types.ToString(
-		initialCloudEvent.Extensions()["shkeptncontext"],
-	)
-	require.NoError(t, err)
-
-	expectedErrorCloudEvent.SetExtension("shkeptncontext", expectedKeptnCtx)
-	expectedErrorCloudEvent.SetExtension("triggeredid", initialCloudEvent.ID())
-
 	testError := errors.New("some job executor error")
-	expectedErrorData := ErrorData{
-		Message:       testError.Error(),
-		IntegrationID: "idbar",
-		Task:          "action",
-	}
-
-	expectedErrorCloudEvent.SetData(cloudevents.ApplicationJSON, expectedErrorData)
 
 	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
-	mockCloudEventSender.EXPECT().SendCloudEvent(gomock.Eq(expectedErrorCloudEvent)).Times(1)
+	mockCloudEventSender.EXPECT().SendEvent(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 
 	sut := NewErrorLogSender("bar", uniformClient, mockCloudEventSender)
 
