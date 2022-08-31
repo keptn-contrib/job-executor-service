@@ -108,13 +108,17 @@ func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}
 		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse event: %s", err.Error())}
 	}
 
+	var jobConfigReader JobConfigReader
 	if eh.JobConfigReader == nil {
-		eh.JobConfigReader = &config.JobConfigReader{
+		jobConfigReader = &config.JobConfigReader{
 			Keptn: keptn_interface.NewV1ResourceHandler(*data, k.APIV2().Resources()),
 		}
+	} else {
+		// Used to pass a mock in the unit tests
+		jobConfigReader = eh.JobConfigReader
 	}
 
-	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
+	configuration, configHash, err := jobConfigReader.GetJobConfig(gitCommitID)
 	if err != nil {
 		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: "could not retrieve config for job-executor-service: " + err.Error()}
 	}
