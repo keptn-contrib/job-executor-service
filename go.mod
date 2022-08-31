@@ -12,7 +12,7 @@ require (
 	github.com/keptn/go-utils v0.18.1-0.20220829063445-1f5af67a8cf3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/afero v1.8.2
+	github.com/spf13/afero v1.9.2
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
