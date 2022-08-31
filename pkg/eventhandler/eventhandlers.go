@@ -1,8 +1,9 @@
 package eventhandler
 
 import (
-	"errors"
 	"fmt"
+	"github.com/keptn/go-utils/pkg/sdk"
+	keptn_interface "keptn-contrib/job-executor-service/pkg/keptn"
 	"log"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ type ImageFilter interface {
 // parsed JSON of the event data
 type EventMapper interface {
 	// Map transforms a cloud event into a generic map[string]interface{}
-	Map(cloudevents.Event) (map[string]interface{}, error)
+	Map(event sdk.KeptnEvent) (map[string]interface{}, error)
 }
 
 // JobConfigReader retrieves the job-executor-service configuration
@@ -62,7 +63,6 @@ type K8s interface {
 
 // EventHandler contains all information needed to process an event
 type EventHandler struct {
-	Keptn           *keptnv2.Keptn
 	ServiceName     string
 	JobConfigReader JobConfigReader
 	JobSettings     k8sutils.JobSettings
@@ -82,20 +82,19 @@ type dataForFinishedEvent struct {
 	end   time.Time
 }
 
-// HandleEvent handles all events in a generic manner
-func (eh *EventHandler) HandleEvent() error {
-
-	eventAsInterface, err := eh.Mapper.Map(*eh.Keptn.CloudEvent)
+// Execute handles all events in a generic manner
+func (eh *EventHandler) Execute(k sdk.IKeptn, event sdk.KeptnEvent) (interface{}, *sdk.Error) {
+	eventAsInterface, err := eh.Mapper.Map(event)
 	if err != nil {
 		log.Printf("failed to convert incoming cloudevent: %v", err)
-		return err
+		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: "failed to convert incoming cloudevent: " + err.Error()}
 	}
 
-	log.Printf(
-		"Attempting to handle event %s of type %s ...", eh.Keptn.CloudEvent.Context.GetID(),
-		eh.Keptn.CloudEvent.Type(),
+	k.Logger().Infof(
+		"Attempting to handle event %s of type %s ...", event.ID,
+		*event.Type,
 	)
-	log.Printf("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
+	k.Logger().Infof("CloudEvent %T: %v", eventAsInterface, eventAsInterface)
 
 	// Get the git commit id from the cloud event (if it exists) and use it to query the job configuration
 	var gitCommitID string
@@ -103,69 +102,58 @@ func (eh *EventHandler) HandleEvent() error {
 		gitCommitID, _ = commitId.(string)
 	}
 
-	configuration, configHash, err := eh.JobConfigReader.GetJobConfig(gitCommitID)
-
-	if err != nil {
-		errorLogErr := eh.ErrorSender.SendErrorLogEvent(
-			eh.Keptn.CloudEvent, fmt.Errorf(
-				"could not retrieve config for job-executor-service: %w", err,
-			),
-		)
-
-		if errorLogErr != nil {
-			log.Printf(
-				"Failed sending error log for keptn context %s: %v. Initial error: %v", eh.Keptn.KeptnContext,
-				errorLogErr, err,
-			)
-		}
-
-		return err
+	data := &keptnv2.EventData{}
+	if err := keptnv2.Decode(event.Data, data); err != nil {
+		k.Logger().Errorf("Could not parse event: %s", err.Error())
+		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Could not parse event: %s", err.Error())}
 	}
 
-	// Check if we have an action that we can use, if it isn't the case we produce a log output
-	hasMatchingEvent := configuration.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface)
-	if !hasMatchingEvent {
-		log.Printf(
-			"No match found for event %s of type %s. Skipping...", eh.Keptn.CloudEvent.Context.GetID(),
-			eh.Keptn.CloudEvent.Type(),
-		)
-		return nil
+	var jobConfigReader JobConfigReader
+	if eh.JobConfigReader == nil {
+		jobConfigReader = &config.JobConfigReader{
+			Keptn: keptn_interface.NewV1ResourceHandler(*data, k.APIV2().Resources()),
+		}
+	} else {
+		// Used to pass a mock in the unit tests
+		jobConfigReader = eh.JobConfigReader
+	}
+
+	configuration, configHash, err := jobConfigReader.GetJobConfig(gitCommitID)
+	if err != nil {
+		return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: "could not retrieve config for job-executor-service: " + err.Error()}
 	}
 
 	// For each action that matches the given event type we execute all containing tasks:
 	for actionIndex, action := range configuration.Actions {
-		if action.IsEventMatch(eh.Keptn.CloudEvent.Type(), eventAsInterface) {
+		if action.IsEventMatch(*event.Type, eventAsInterface) {
 			log.Printf(
-				"Match found for event %s of type %s. Starting k8s job to run action '%s'", eh.Keptn.CloudEvent.Context.GetID(),
-				eh.Keptn.CloudEvent.Type(), action.Name,
+				"Match found for event %s of type %s. Starting k8s job to run action '%s'", event.ID,
+				*event.Type, action.Name,
 			)
 
-			eh.startK8sJob(&action, actionIndex, configHash, gitCommitID, eventAsInterface)
+			finishedEvent, err := eh.startK8sJob(k, event, data, &action, actionIndex, configHash, gitCommitID, eventAsInterface)
+			if err != nil {
+				return nil, err
+			} else if finishedEvent != nil {
+				return finishedEvent, nil
+			}
 		}
 	}
 
-	return nil
+	k.Logger().Info("Returning empty response")
+	return nil, nil
 }
 
-func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, configHash string, gitCommitID string,
+func (eh *EventHandler) startK8sJob(k sdk.IKeptn, event sdk.KeptnEvent, eventData keptn.EventProperties, action *config.Action, actionIndex int, configHash string, gitCommitID string,
 	jsonEventData interface{},
-) {
-
-	if !action.Silent {
-		_, err := eh.Keptn.SendTaskStartedEvent(nil, eh.ServiceName)
-		if err != nil {
-			log.Printf("Error while sending started event: %s\n", err.Error())
-			return
-		}
-	}
-
+) (interface{}, *sdk.Error) {
 	err := eh.K8s.ConnectToCluster()
 	if err != nil {
-		log.Printf("Error while connecting to cluster: %s\n", err.Error())
+		k.Logger().Infof("Error while connecting to k8s cluster: %e", err)
 		if !action.Silent {
-			sendJobFailedEvent(eh.Keptn, "", eh.ServiceName, err)
+			return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while connecting to cluster: %s", err.Error())}
 		}
-		return
+		return nil, nil
 	}
 
 	var allJobLogs []jobLogs
@@ -179,21 +167,21 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 		if !eh.ImageFilter.IsImageAllowed(task.Image) {
 			errorText := fmt.Sprintf("Forbidden: Image %s does not match configured image allowlist.\n", task.Image)
 
-			log.Printf(errorText)
+			k.Logger().Infof(errorText)
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, errors.New(errorText), "")
+				return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: errorText}
 			}
 
-			return
+			return nil, nil
 		}
 	}
 
 	for index, task := range action.Tasks {
-		log.Printf("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
+		k.Logger().Infof("Starting task %s/%s: '%s' ...", strconv.Itoa(index+1), strconv.Itoa(len(action.Tasks)), task.Name)
 
 		// k8s job name max length is 63 characters, with the naming scheme below up to 999 tasks per action are supported
 		// the naming scheme is also unique if multiple actions in one cloud event are executed
-		jobName := fmt.Sprintf("job-executor-service-job-%s-%03d-%03d", eh.Keptn.CloudEvent.ID()[:24], actionIndex, index+1)
+		jobName := fmt.Sprintf("job-executor-service-job-%s-%03d-%03d", event.ID[:24], actionIndex, index+1)
 
 		namespace := eh.JobSettings.JobNamespace
 
@@ -211,15 +199,14 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 		}
 
 		err = eh.K8s.CreateK8sJob(
-			jobName, jobDetails, eh.Keptn.Event, eh.JobSettings, jsonEventData, namespace,
+			jobName, jobDetails, eventData, eh.JobSettings, jsonEventData, namespace,
 		)
 
 		if err != nil {
-			log.Printf("Error while creating job: %s\n", err)
+			k.Logger().Infof("Error while creating job: %s\n", err)
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, err, "")
+				return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while creating job: %s", err)}
 			}
-			return
 		}
 
 		maxPollDuration := defaultMaxPollDuration
@@ -230,25 +217,25 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 
 		logs, err := eh.K8s.GetLogsOfPod(jobName, namespace)
 		if err != nil {
-			log.Printf("Error while retrieving logs: %s\n", err.Error())
+			k.Logger().Infof("Error while retrieving logs: %s\n", err.Error())
 		}
 
 		if jobErr != nil {
-			log.Printf("Error while creating job: %s\n", jobErr.Error())
+			k.Logger().Infof("Error while creating job: %s\n", jobErr.Error())
 
 			erroredEventMessages, eventErr := eh.K8s.GetFailedEventsForJob(jobName, namespace)
 
 			if eventErr != nil {
-				log.Printf("Error while retrieving events: %s\n", eventErr.Error())
+				k.Logger().Infof("Error while retrieving events: %s\n", eventErr.Error())
 			} else if erroredEventMessages != "" {
 				// Found some failed events for this job - appending them to logs
 				logs = logs + "\n" + erroredEventMessages
 			}
 
 			if !action.Silent {
-				sendTaskFailedEvent(eh.Keptn, task.Name, eh.ServiceName, jobErr, logs)
+				return nil, &sdk.Error{Err: err, StatusType: keptnv2.StatusErrored, ResultType: keptnv2.ResultFailed, Message: fmt.Sprintf("Error while creating job: %s", jobErr.Error())}
 			}
-			return
+			return nil, nil
 		}
 
 		allJobLogs = append(
@@ -261,11 +248,14 @@ func (eh *EventHandler) startK8sJob(action *config.Action, actionIndex int, conf
 
 	additionalFinishedEventData.end = time.Now()
 
-	log.Printf("Successfully finished processing of event: %s\n", eh.Keptn.CloudEvent.ID())
+	k.Logger().Infof("Successfully finished processing of event: %s\n", event.ID)
 
 	if !action.Silent {
-		sendTaskFinishedEvent(eh.Keptn, eh.ServiceName, allJobLogs, additionalFinishedEventData)
+		k.Logger().Infof("Getting task finished event")
+		return getTaskFinishedEvent(event, eventData, allJobLogs, additionalFinishedEventData), nil
 	}
+
+	return nil, nil
 }
 
 func sendTaskFailedEvent(myKeptn *keptnv2.Keptn, taskName string, serviceName string, err error, logs string) {
@@ -304,7 +294,8 @@ func sendJobFailedEvent(myKeptn *keptnv2.Keptn, jobName string, serviceName stri
 	}
 }
 
-func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs []jobLogs, data dataForFinishedEvent) {
+// getTaskFinishedEvent returns the finished data for the received event as an interface which can be directly returned using the go-sdk
+func getTaskFinishedEvent(event sdk.KeptnEvent, receivedEventData keptn.EventProperties, jobLogs []jobLogs, data dataForFinishedEvent) interface{} {
 	var logMessage strings.Builder
 
 	for _, jobLogs := range jobLogs {
@@ -317,26 +308,21 @@ func sendTaskFinishedEvent(myKeptn *keptnv2.Keptn, serviceName string, jobLogs [
 		Status:  keptnv2.StatusSucceeded,
 		Result:  keptnv2.ResultPass,
 		Message: logMessage.String(),
+		Project: receivedEventData.GetProject(),
+		Stage:   receivedEventData.GetStage(),
+		Service: receivedEventData.GetService(),
 	}
 
-	var err error
-
-	if isTestTriggeredEvent(myKeptn.CloudEvent.Type()) && !data.start.IsZero() && !data.end.IsZero() {
-		event := &keptnv2.TestFinishedEventData{
+	if isTestTriggeredEvent(*event.Type) && !data.start.IsZero() && !data.end.IsZero() {
+		return keptnv2.TestFinishedEventData{
 			Test: keptnv2.TestFinishedDetails{
 				Start: data.start.Format(time.RFC3339),
 				End:   data.end.Format(time.RFC3339),
 			},
 			EventData: *eventData,
 		}
-		_, err = myKeptn.SendTaskFinishedEvent(event, serviceName)
 	} else {
-		_, err = myKeptn.SendTaskFinishedEvent(eventData, serviceName)
-	}
-
-	if err != nil {
-		log.Printf("Error while sending finished event: %s\n", err.Error())
-		return
+		return eventData
 	}
 }
 

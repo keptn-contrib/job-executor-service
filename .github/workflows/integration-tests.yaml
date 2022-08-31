@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        keptn-version: ["0.16.1", "0.17.0", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
+        keptn-version: ["0.18.1", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_RELEASE }}", "${{ needs.fetch_latest_keptn_versions.outputs.LATEST_KEPTN_PRERELEASE }}"] # https://github.com/keptn/keptn/releases
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
@@ -42,6 +42,7 @@ jobs:
       BRANCH: ${{ github.head_ref || github.ref_name }}
       JES_E2E_TEST: true
       JES_NAMESPACE: keptn-jes-e2e
+      GITEA_PROVISIONER_VERSION: "0.1.1"
       GITEA_ADMIN_USERNAME: GiteaAdmin
       GITEA_NAMESPACE: gitea
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
@@ -124,7 +125,7 @@ jobs:
           GITEA_ADMIN_PASSWORD: ${{ steps.gitea_credentials.outputs.GITEA_ADMIN_PASSWORD }}
           GITEA_ENDPOINT: ${{ steps.gitea.outputs.GITEA_ENDPOINT }}
         run: |
-          helm install keptn-gitea-provisioner-service https://github.com/keptn-sandbox/keptn-gitea-provisioner-service/releases/download/0.1.0/keptn-gitea-provisioner-service-0.1.0.tgz \
+          helm install keptn-gitea-provisioner-service https://github.com/keptn-sandbox/keptn-gitea-provisioner-service/releases/download/${GITEA_PROVISIONER_VERSION}/keptn-gitea-provisioner-service-${GITEA_PROVISIONER_VERSION}.tgz \
             --set gitea.endpoint=${GITEA_ENDPOINT} \
             --set gitea.admin.create=true \
             --set gitea.admin.username=${GITEA_ADMIN_USERNAME} \

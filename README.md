@@ -35,7 +35,7 @@ running in the Keptn ecosystem:
 |    0.16.x     |                               keptncontrib/job-executor-service:0.2.3                                |       v2       |
 |    0.16.x     |                               keptncontrib/job-executor-service:0.2.4                                |       v2       |
 |    0.17.x     |                               keptncontrib/job-executor-service:0.2.5                                |       v2       |
-
+|    0.18.x     |                               keptncontrib/job-executor-service:0.3.0                                |       v2       |
 
 **Please Note**:
 - Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
@@ -91,7 +91,7 @@ keptn add-resource --project jes-example --service hello --stage production --re
 
 Trigger the `example-seq` sequence. 
 ```shell
-keptn trigger sequence --sequence example-seq --project jes-example --service hello --stage production
+keptn trigger sequence example-seq --project jes-example --service hello --stage production
 ```
 
 Have a look at the sequences for the project in Keptn bridge, it should look similar to the screenshot below:

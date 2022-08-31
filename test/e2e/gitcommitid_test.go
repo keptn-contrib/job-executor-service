@@ -86,9 +86,9 @@ func TestGitCommitID(t *testing.T) {
 			responseEventData, err := parseKeptnEventData(event)
 			require.NoError(t, err)
 
-			// If the log contains the Hello world output from the job, we assume that the log
+			// If the log contains the output from the job, we assume that the log
 			// was correctly read from the job container and set it as expected message
-			if strings.Contains(responseEventData.Message, "Hello World") {
+			if strings.Contains(responseEventData.Message, "Greet the world") {
 				expectedEventData.Message = responseEventData.Message
 			}
 

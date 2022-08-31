@@ -1,8 +1,9 @@
 package e2e
 
 import (
+	"context"
 	"github.com/keptn/go-utils/pkg/api/models"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/stretchr/testify/require"
 	"os"
 	"strings"
@@ -40,12 +41,12 @@ func TestJobConfig(t *testing.T) {
 	stageScope.Project(testEnv.EventData.Project)
 	stageScope.Stage("dev")
 
-	_, err = testEnv.API.ResourceHandler.CreateResource([]*models.Resource{
+	_, err = testEnv.API.ResourceHandler.CreateResource(context.Background(), []*models.Resource{
 		{
 			ResourceContent: string(stageConfig),
 			ResourceURI:     &jobConfigURI,
 		},
-	}, *stageScope)
+	}, *stageScope, api.ResourcesCreateResourceOptions{})
 	require.NoError(t, err)
 
 	// Upload the project configuration
@@ -55,12 +56,12 @@ func TestJobConfig(t *testing.T) {
 	projectScope := api.NewResourceScope()
 	projectScope.Project(testEnv.EventData.Project)
 
-	_, err = testEnv.API.ResourceHandler.CreateResource([]*models.Resource{
+	_, err = testEnv.API.ResourceHandler.CreateResource(context.Background(), []*models.Resource{
 		{
 			ResourceContent: string(projectConfig),
 			ResourceURI:     &jobConfigURI,
 		},
-	}, *projectScope)
+	}, *projectScope, api.ResourcesCreateResourceOptions{})
 	require.NoError(t, err)
 
 	tests := []struct {

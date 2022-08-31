@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/keptn/go-utils/pkg/sdk"
+	"github.com/sirupsen/logrus"
 	"log"
-	"net"
 	"os"
 
-	api "github.com/keptn/go-utils/pkg/api/utils"
 	v1 "k8s.io/api/core/v1"
 
 	"keptn-contrib/job-executor-service/pkg/config"
@@ -34,10 +34,10 @@ type envConfig struct {
 	Path string `envconfig:"RCV_PATH" default:"/"`
 	// Whether we are running locally (e.g., for testing) or on production
 	Env string `envconfig:"ENV" default:"local"`
-	// URL of the Keptn configuration service (this is where we can fetch files from the config repo)
-	ConfigurationServiceURL string `envconfig:"CONFIGURATION_SERVICE" default:""`
 	// The k8s namespace the job will run in
 	JobNamespace string `envconfig:"JOB_NAMESPACE" required:"true"`
+	// URL of the Keptn API endpoint
+	KeptnAPIENDPOINT string `envconfig:"KEPTN_API_ENDPOINT" required:"true"`
 	// The token of the keptn API
 	KeptnAPIToken string `envconfig:"KEPTN_API_TOKEN"`
 	// The init container image to use
@@ -93,28 +93,13 @@ var /* const */ JobLabels map[string]string
 // TaskDeadlineSecondsPtr represents the max duration of a task run, no limit if nil
 var TaskDeadlineSecondsPtr *int64
 
-/**
- * This method gets called when a new event is received from the Keptn Event Distributor
- * Depending on the Event Type will call the specific event handler functions, e.g: handleDeploymentFinishedEvent
- * See https://github.com/keptn/spec/blob/0.2.0-alpha/cloudevents.md for details on the payload
- */
-func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowList *utils.ImageFilterList) error {
-	// create keptn handler
-	log.Printf("Initializing Keptn Handler")
-	myKeptn, err := keptnv2.NewKeptn(&event, keptnOptions)
-	if err != nil {
-		return fmt.Errorf("could not create Keptn Handler: %w", err)
-	}
+const serviceName = "job-executor-service"
+const eventWildcard = "*"
 
-	log.Printf("gotEvent(%s): %s - %s", event.Type(), myKeptn.KeptnContext, event.Context.GetID())
-
-	// create a uniform handler talking to the distributor
-	uniformHandler := api.NewUniformHandler("localhost:8081/controlPlane")
-	var eventHandler = &eventhandler.EventHandler{
-		Keptn: myKeptn,
-		JobConfigReader: &config.JobConfigReader{
-			Keptn: keptn_interface.NewV1ResourceHandler(myKeptn.Event, myKeptn.ResourceHandler),
-		},
+// NewEventHandler creates a new EventHandler
+func NewEventHandler(allowList *utils.ImageFilterList) *eventhandler.EventHandler {
+	//uniformHandler := api.NewUniformHandler("localhost:8081/controlPlane")
+	return &eventhandler.EventHandler{
 		ServiceName: ServiceName,
 		Mapper:      new(eventhandler.KeptnCloudEventMapper),
 		ImageFilter: imageFilterImpl{
@@ -133,22 +118,13 @@ func processKeptnCloudEvent(ctx context.Context, event cloudevents.Event, allowL
 			TaskDeadlineSeconds:         TaskDeadlineSecondsPtr,
 			JesDeploymentName:           env.FullDeploymentName,
 		},
-		K8s:         k8sutils.NewK8s(""), // FIXME Why do we pass a namespoace if it's ignored?
-		ErrorSender: keptn_interface.NewErrorLogSender(ServiceName, uniformHandler, myKeptn),
+		K8s: k8sutils.NewK8s(""), // FIXME Why do we pass a namespace if it's ignored?
 	}
-
-	// prevent duplicate events - https://github.com/keptn/keptn/issues/3888
-	go eventHandler.HandleEvent()
-
-	return nil
 }
 
 /**
  * Usage: ./main
  * no args: starts listening for cloudnative events on localhost:port/path
- *
- * Environment Variables
- * env=runlocal   -> will fetch resources from local drive instead of configuration service
  */
 func main() {
 	if err := envconfig.Process("", &env); err != nil {
@@ -194,26 +170,19 @@ func main() {
 		TaskDeadlineSecondsPtr = &env.TaskDeadlineSeconds
 	}
 
-	os.Exit(_main(os.Args[1:], env))
+	_main(os.Args[1:], env)
 }
 
 /**
  * Opens up a listener on localhost:port/path and passes incoming requets to gotEvent
  */
-func _main(args []string, env envConfig) int {
-
-	// configure keptn options
-	if env.Env == "local" {
-		log.Println("env=local: Running with local filesystem to fetch resources")
-		keptnOptions.UseLocalFileSystem = true
-	}
-
+func _main(args []string, env envConfig) {
 	// Checking if the given job service account is empty
 	if env.DefaultJobServiceAccount == "" {
 		log.Println("WARNING: No default service account for jobs configured: using kubernetes default service account!")
 	}
 
-	keptnOptions.ConfigurationServiceURL = env.ConfigurationServiceURL
+	keptnOptions.ConfigurationServiceURL = fmt.Sprintf("%s/resource-service", env.KeptnAPIENDPOINT)
 
 	log.Println("Starting job-executor-service...")
 	log.Printf("    on Port = %d; Path=%s", env.Port, env.Path)
@@ -223,43 +192,62 @@ func _main(args []string, env envConfig) int {
 
 	log.Printf("Creating new http handler")
 
-	// configure http server to receive cloudevents
-	listeningAddr := fmt.Sprintf("localhost:%d", env.Port)
-	listener, err := net.Listen(
-		"tcp", listeningAddr,
-	)
-	if err != nil {
-		log.Fatalf("error listening on tcp %s: %v", listeningAddr, err)
-	}
-
-	p, err := cloudevents.NewHTTP(
-		cloudevents.WithPath(env.Path),
-		cloudevents.WithListener(
-			listener,
-		),
-	)
-
-	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
-	}
-	c, err := cloudevents.NewClient(p)
-	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
-	}
-
 	imageFilterList, err := utils.BuildImageAllowList(env.AllowedImageList)
 	if err != nil {
 		log.Fatalf("failed to generate the allowlist, %v", err)
 	}
 
-	processCloudEventFunc := func(ctx context.Context, event cloudevents.Event) error {
-		return processKeptnCloudEvent(ctx, event, imageFilterList)
+	// Handle all events and filter them later in jobEventFilter
+	log.Fatal(sdk.NewKeptn(
+		serviceName,
+		sdk.WithTaskHandler(
+			eventWildcard,
+			NewEventHandler(imageFilterList),
+			jobEventFilter),
+		sdk.WithLogger(logrus.New()),
+	).Start())
+}
+
+// jobEventFilter checks if a job/config exists and whether it contains the event type
+func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
+	keptnHandle.Logger().Infof("Received event of type: %s from %s with id: %s", *event.Type, *event.Source, event.ID)
+
+	data := &keptnv2.EventData{}
+	if err := keptnv2.Decode(event.Data, data); err != nil {
+		keptnHandle.Logger().Errorf("Could not parse event: %s", err.Error())
+		return false
 	}
 
-	log.Printf("Starting receiver")
-	log.Fatal(c.StartReceiver(ctx, processCloudEventFunc))
+	jcr := &config.JobConfigReader{
+		Keptn: keptn_interface.NewV1ResourceHandler(*data, keptnHandle.APIV2().Resources()),
+	}
 
-	return 0
+	// Check if the job configuration can be found
+	configuration, _, err := jcr.GetJobConfig(event.GitCommitID)
+
+	if err != nil {
+		keptnHandle.Logger().Infof("could not retrieve config for job-executor-service: %e", err)
+		return false
+	}
+
+	// Check if we have an action that we can use, if it isn't the case we produce a log output
+	mapper := new(eventhandler.KeptnCloudEventMapper)
+	eventAsInterface, err := mapper.Map(event)
+	if err != nil {
+		keptnHandle.Logger().Infof("failed to convert incoming cloudevent: %v", err)
+		return false
+	}
+
+	hasMatchingEvent := configuration.IsEventMatch(*event.Type, eventAsInterface)
+	if !hasMatchingEvent {
+		keptnHandle.Logger().Infof(
+			"No match found for event %s of type %s. Skipping...", event.ID,
+			event.Type,
+		)
+		return false
+	}
+
+	return true
 }
 
 type imageFilterImpl struct {

@@ -2,7 +2,7 @@ package file
 
 import (
 	"fmt"
-	"keptn-contrib/job-executor-service/pkg/keptn"
+	"keptn-contrib/job-executor-service/pkg/config"
 	"log"
 	"path/filepath"
 
@@ -10,9 +10,8 @@ import (
 )
 
 // MountFiles requests all specified files of a task from the keptn configuration service and copies them to /keptn
-func MountFiles(actionName string, taskName string, fs afero.Fs, configService keptn.ConfigService) error {
-
-	configuration, err := configService.GetJobConfiguration()
+func MountFiles(actionName string, taskName string, gitCommitID string, fs afero.Fs, jcr config.JobConfigReader) error {
+	configuration, _, err := jcr.GetJobConfig(gitCommitID)
 	if err != nil {
 		return fmt.Errorf("could not find config for job-executor-service: %v", err)
 	}
@@ -28,7 +27,7 @@ func MountFiles(actionName string, taskName string, fs afero.Fs, configService k
 	}
 
 	for _, resourcePath := range task.Files {
-		allServiceResources, err := configService.GetAllKeptnResources(fs, resourcePath)
+		allServiceResources, err := jcr.Keptn.GetAllKeptnResources(resourcePath)
 		if err != nil {
 			return fmt.Errorf("could not retrieve resources for task '%v': %v", taskName, err)
 		}

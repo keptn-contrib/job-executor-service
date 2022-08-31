@@ -14,6 +14,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/keptn/go-utils/pkg/api/models"
+	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -248,7 +249,7 @@ func (env testEnvironment) Cleanup() error {
 
 // GetKeptnVersion returns the current version of the Keptn server as semver
 func (env testEnvironment) GetKeptnVersion() (*semver.Version, error) {
-	metadata, errModel := env.API.APIHandler.GetMetadata()
+	metadata, errModel := env.API.APIHandler.GetMetadata(context.Background(), api.APIGetMetadataOptions{})
 	if errModel != nil {
 		return nil, fmt.Errorf("unable to query keptn metadata: %s", convertKeptnModelToErrorString(errModel))
 	}

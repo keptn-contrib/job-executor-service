@@ -4,24 +4,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"reflect"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/golang/mock/gomock"
+	"github.com/keptn/go-utils/pkg/api/models"
+	keptnapi "github.com/keptn/go-utils/pkg/api/models"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	keptnfake "github.com/keptn/go-utils/pkg/lib/v0_2_0/fake"
-
+	"github.com/keptn/go-utils/pkg/sdk"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"keptn-contrib/job-executor-service/pkg/config"
-	"keptn-contrib/job-executor-service/pkg/k8sutils"
-
 	eventhandlerfake "keptn-contrib/job-executor-service/pkg/eventhandler/fake"
+	"keptn-contrib/job-executor-service/pkg/k8sutils"
+	"log"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
 )
 
 const testEvent = `
@@ -85,10 +85,20 @@ func initializeTestObjects(eventFileName string) (*keptnv2.Keptn, *cloudevents.E
 	var keptnOptions = keptn.KeptnOpts{
 		EventSender: fakeEventSender,
 	}
-	keptnOptions.UseLocalFileSystem = true
 	myKeptn, err := keptnv2.NewKeptn(incomingEvent, keptnOptions)
 
 	return myKeptn, incomingEvent, fakeEventSender, err
+}
+
+func newEvent(filename string) keptnapi.KeptnContextExtendedCE {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	event := keptnapi.KeptnContextExtendedCE{}
+	err = json.Unmarshal(content, &event)
+	_ = err
+	return event
 }
 
 func TestErrorMappingEvent(t *testing.T) {
@@ -106,12 +116,7 @@ func TestErrorMappingEvent(t *testing.T) {
 		mappingError,
 	)
 
-	myKeptn, _, _, err := initializeTestObjects("../../test/events/action.triggered.json")
-
-	require.NoError(t, err)
-
 	sut := EventHandler{
-		Keptn:           myKeptn,
 		JobConfigReader: mockJobConfigReader,
 		ServiceName:     "test-jes",
 		JobSettings:     k8sutils.JobSettings{},
@@ -119,9 +124,20 @@ func TestErrorMappingEvent(t *testing.T) {
 		Mapper:          mockMapper,
 		ErrorSender:     mockUniformErrorSender,
 	}
-	err = sut.HandleEvent()
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, mappingError)
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &sut)
+
+	err := fakeKeptn.NewEvent(newEvent("../../test/events/action.triggered.json"))
+
+	require.NoError(t, err)
+
+	fakeKeptn.AssertSentEventStatus(t, 1, keptnv2.StatusErrored)
+	fakeKeptn.AssertSentEventResult(t, 1, keptnv2.ResultFailed)
+	fakeKeptn.AssertSentEvent(t, 1, func(ce models.KeptnContextExtendedCE) bool {
+		getActionFinishedData := keptnv2.GetActionFinishedEventData{}
+		ce.DataAs(&getActionFinishedData)
+		return strings.Contains(getActionFinishedData.Message, mappingError.Error())
+	})
 }
 
 type matcherErrorIs struct {
@@ -151,21 +167,13 @@ func TestErrorGettingJobConfig(t *testing.T) {
 	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 	errorGettingJobConfig := errors.New("error getting resource")
+
 	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
 		nil, "",
 		errorGettingJobConfig,
 	).Times(1)
 
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
-	require.NoError(t, err)
-
-	mockUniformErrorSender.EXPECT().SendErrorLogEvent(
-		myKeptn.CloudEvent,
-		&matcherErrorIs{targetErr: errorGettingJobConfig},
-	).Times(1)
-
 	sut := EventHandler{
-		Keptn:           myKeptn,
 		JobConfigReader: mockJobConfigReader,
 		ServiceName:     "",
 		JobSettings:     k8sutils.JobSettings{},
@@ -174,9 +182,21 @@ func TestErrorGettingJobConfig(t *testing.T) {
 		ErrorSender:     mockUniformErrorSender,
 	}
 
-	err = sut.HandleEvent()
-	assert.ErrorIs(t, err, errorGettingJobConfig)
-	assert.NoError(t, fakeEventSender.AssertSentEventTypes([]string{}))
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &sut)
+
+	err := fakeKeptn.NewEvent(newEvent("../../test/events/action.triggered.json"))
+
+	require.NoError(t, err)
+
+	fakeKeptn.AssertSentEventType(t, 1, "sh.keptn.event.action.finished")
+	fakeKeptn.AssertSentEventStatus(t, 1, keptnv2.StatusErrored)
+	fakeKeptn.AssertSentEventResult(t, 1, keptnv2.ResultFailed)
+	fakeKeptn.AssertSentEvent(t, 1, func(ce models.KeptnContextExtendedCE) bool {
+		getActionFinishedData := keptnv2.GetActionFinishedEventData{}
+		ce.DataAs(&getActionFinishedData)
+		return strings.Contains(getActionFinishedData.Message, errorGettingJobConfig.Error())
+	})
 }
 
 func TestErrorConnectingToK8s(t *testing.T) {
@@ -242,11 +262,7 @@ func TestErrorConnectingToK8s(t *testing.T) {
 				connectionError := errors.New("error connecting to k8s cluster")
 				mockK8s.EXPECT().ConnectToCluster().Return(connectionError).Times(1)
 
-				myKeptn, _, mockEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
-				require.NoError(t, err)
-
 				sut := EventHandler{
-					Keptn:           myKeptn,
 					JobConfigReader: mockJobConfigReader,
 					ServiceName:     "test-jes",
 					JobSettings:     k8sutils.JobSettings{},
@@ -256,15 +272,16 @@ func TestErrorConnectingToK8s(t *testing.T) {
 					ErrorSender:     mockUniformErrorSender,
 				}
 
-				err = sut.HandleEvent()
+				fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+				fakeKeptn.AddTaskHandler("*", &sut)
+
+				err := fakeKeptn.NewEvent(newEvent("../../test/events/action.triggered.json"))
+				require.NoError(t, err)
 
 				// TODO: weird that if connection to k8s fails we don't send back an error from the handling function
-				assert.NoError(t, err)
-				assert.NoError(
-					t, mockEventSender.AssertSentEventTypes(
-						test.expectedEventTypes,
-					),
-				)
+				for i, eventType := range test.expectedEventTypes {
+					fakeKeptn.AssertSentEventType(t, i, eventType)
+				}
 			},
 		)
 	}
@@ -389,10 +406,6 @@ func TestEventMatching(t *testing.T) {
 
 				mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
-				myKeptn, _, mockEventSender, err := initializeTestObjects(test.inputs.eventFile)
-
-				require.NoError(t, err)
-
 				totalNoOfExpectedTasks := 0
 				for _, invocation := range test.expected.jobsInvocations {
 					for range invocation.taskNames {
@@ -405,7 +418,7 @@ func TestEventMatching(t *testing.T) {
 								TaskIndex:     0,
 								JobConfigHash: "<config-hash-value>",
 							}),
-							gomock.Eq(myKeptn.Event),
+							gomock.Any(),
 							gomock.Eq(k8sutils.JobSettings{}),
 							gomock.Any(),
 							gomock.Eq(""),
@@ -429,45 +442,36 @@ func TestEventMatching(t *testing.T) {
 				).Times(totalNoOfExpectedTasks)
 
 				sut := EventHandler{
-					Keptn:           myKeptn,
 					JobConfigReader: mockJobConfigReader,
-					ServiceName:     "test-jes",
+					ServiceName:     "",
 					JobSettings:     k8sutils.JobSettings{},
 					ImageFilter:     mockFilter,
 					Mapper:          new(KeptnCloudEventMapper),
-					K8s:             mockK8s,
 					ErrorSender:     mockUniformErrorSender,
+					K8s:             mockK8s,
 				}
 
-				err = sut.HandleEvent()
-				assert.NoError(t, err)
-				assert.NoError(t, mockEventSender.AssertSentEventTypes(test.expected.events))
+				fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+				fakeKeptn.AddTaskHandler("*", &sut)
+
+				err := fakeKeptn.NewEvent(newEvent(test.inputs.eventFile))
+				require.NoError(t, err)
+
+				for index, event := range test.expected.events {
+					fakeKeptn.AssertSentEventType(t, index, event)
+				}
 			},
 		)
 	}
 }
 
 func TestStartK8s(t *testing.T) {
-	jobNamespace1 := "keptn"
-	jobNamespace2 := "keptn-2"
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
-	require.NoError(t, err)
-
 	k8sMock := createK8sMock(t)
-
-	eventData := &keptnv2.EventData{}
-	myKeptn.CloudEvent.DataAs(eventData)
-	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		ImageFilter: acceptAllImagesFilter{},
-		JobSettings: k8sutils.JobSettings{
-			JobNamespace: jobNamespace1,
-		},
-		K8s: k8sMock,
-	}
-	mapper := new(KeptnCloudEventMapper)
-	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockFilter := eventhandlerfake.NewMockImageFilter(mockCtrl)
+	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
 	maxPollDuration := 1006
 	action := config.Action{
@@ -479,11 +483,33 @@ func TestStartK8s(t *testing.T) {
 			},
 			{
 				Name:      "Run locust healthy snack tests",
-				Namespace: jobNamespace2,
+				Namespace: "keptn2",
+			},
+		},
+		Events: []config.Event{
+			{
+				Name: "sh.keptn.event.action.triggered",
 			},
 		},
 	}
 
+	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
+		&config.Config{
+			Actions: []config.Action{action},
+		}, "", nil,
+	).Times(1)
+
+	eh := EventHandler{
+		JobConfigReader: mockJobConfigReader,
+		ServiceName:     "test-jes",
+		JobSettings:     k8sutils.JobSettings{},
+		ImageFilter:     mockFilter,
+		Mapper:          new(KeptnCloudEventMapper),
+		K8s:             k8sMock,
+		ErrorSender:     mockUniformErrorSender,
+	}
+
+	mockFilter.EXPECT().IsImageAllowed(gomock.Any()).Return(true).MinTimes(1)
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
 		gomock.Eq(jobName1), gomock.Eq(k8sutils.JobDetails{
@@ -493,7 +519,7 @@ func TestStartK8s(t *testing.T) {
 			TaskIndex:     0,
 			JobConfigHash: "",
 		}), gomock.Any(), gomock.Any(),
-		gomock.Any(), jobNamespace1,
+		gomock.Any(), gomock.Any(),
 	).Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
 		gomock.Eq(jobName2), gomock.Eq(k8sutils.JobDetails{
@@ -503,39 +529,40 @@ func TestStartK8s(t *testing.T) {
 			TaskIndex:     1,
 			JobConfigHash: "",
 		}), gomock.Any(), gomock.Any(),
-		gomock.Any(), jobNamespace2,
+		gomock.Any(), gomock.Any(),
 	).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, pollInterval, jobNamespace1).Times(1)
-	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), defaultMaxPollDuration, pollInterval, jobNamespace2).Times(1)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), jobNamespace1).Times(1)
-	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), jobNamespace2).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName1), 1006*time.Second, pollInterval,
+		gomock.Any()).Times(1)
+	k8sMock.EXPECT().AwaitK8sJobDone(gomock.Eq(jobName2), defaultMaxPollDuration, pollInterval, gomock.Any()).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
+	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
-	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &eh)
 
-	err = fakeEventSender.AssertSentEventTypes(
-		[]string{
-			"sh.keptn.event.action.started", "sh.keptn.event.action.finished",
-		},
-	)
-	assert.NoError(t, err)
+	err := fakeKeptn.NewEvent(newEvent("../../test/events/action.triggered.json"))
+	require.NoError(t, err)
+
+	fakeKeptn.AssertSentEventType(t, 0, "sh.keptn.event.action.started")
+	fakeKeptn.AssertSentEventType(t, 1, "sh.keptn.event.action.finished")
 }
 
 func TestStartK8sJobSilent(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/action.triggered.json")
-	require.NoError(t, err)
-
 	k8sMock := createK8sMock(t)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
-	eventData := &keptnv2.EventData{}
-	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		ImageFilter: acceptAllImagesFilter{},
-		K8s:         k8sMock,
+		ServiceName:     "job-executor-service",
+		ImageFilter:     acceptAllImagesFilter{},
+		JobConfigReader: mockJobConfigReader,
+		Mapper:          new(KeptnCloudEventMapper),
+		K8s:             k8sMock,
+		ErrorSender:     mockUniformErrorSender,
+		JobSettings:     k8sutils.JobSettings{},
 	}
-	mapper := new(KeptnCloudEventMapper)
-	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	action := config.Action{
 		Name: "Run locust",
@@ -547,8 +574,19 @@ func TestStartK8sJobSilent(t *testing.T) {
 				Name: "Run locust healthy snack tests",
 			},
 		},
+		Events: []config.Event{
+			{
+				Name: "sh.keptn.event.action.triggered",
+			},
+		},
 		Silent: true,
 	}
+
+	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
+		&config.Config{
+			Actions: []config.Action{action},
+		}, "", nil,
+	).Times(1)
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
@@ -561,28 +599,32 @@ func TestStartK8sJobSilent(t *testing.T) {
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName1), gomock.Any()).Times(1)
 	k8sMock.EXPECT().GetLogsOfPod(gomock.Eq(jobName2), gomock.Any()).Times(1)
 
-	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &eh)
 
-	err = fakeEventSender.AssertSentEventTypes([]string{})
-	assert.NoError(t, err)
+	err := fakeKeptn.NewEvent(newEvent("../../test/events/action.triggered.json"))
+	require.NoError(t, err)
+
+	// Only one event means the finished event was skipped
+	fakeKeptn.AssertNumberOfEventSent(t, 1)
 }
 
 func TestStartK8s_TestFinishedEvent(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/test.triggered.json")
-	require.NoError(t, err)
-
 	k8sMock := createK8sMock(t)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
-	eventData := &keptnv2.EventData{}
-	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		ImageFilter: acceptAllImagesFilter{},
-		K8s:         k8sMock,
+		ServiceName:     "job-executor-service",
+		ImageFilter:     acceptAllImagesFilter{},
+		JobConfigReader: mockJobConfigReader,
+		Mapper:          new(KeptnCloudEventMapper),
+		K8s:             k8sMock,
+		ErrorSender:     mockUniformErrorSender,
+		JobSettings:     k8sutils.JobSettings{},
 	}
-	mapper := new(KeptnCloudEventMapper)
-	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	action := config.Action{
 		Name: "Run locust",
@@ -591,7 +633,18 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 				Name: "Run locust healthy snack tests",
 			},
 		},
+		Events: []config.Event{
+			{
+				Name: "sh.keptn.event.test.triggered",
+			},
+		},
 	}
+
+	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
+		&config.Config{
+			Actions: []config.Action{action},
+		}, "", nil,
+	).Times(1)
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
@@ -605,28 +658,27 @@ func TestStartK8s_TestFinishedEvent(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &eh)
 
-	err = fakeEventSender.AssertSentEventTypes(
-		[]string{
-			keptnv2.GetStartedEventType(keptnv2.TestTaskName),
-			keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
-		},
-	)
+	err = fakeKeptn.NewEvent(newEvent("../../test/events/test.triggered.json"))
 	require.NoError(t, err)
 
-	for _, cloudEvent := range fakeEventSender.SentEvents {
-		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
-			eventData := &keptnv2.TestFinishedEventData{}
-			cloudEvent.DataAs(eventData)
+	fakeKeptn.AssertSentEventType(t, 0, keptnv2.GetStartedEventType(keptnv2.TestTaskName))
+	fakeKeptn.AssertSentEventType(t, 1, keptnv2.GetFinishedEventType(keptnv2.TestTaskName))
 
-			dateLayout := "2006-01-02T15:04:05Z"
-			_, err := time.Parse(dateLayout, eventData.Test.Start)
-			assert.NoError(t, err)
-			_, err = time.Parse(dateLayout, eventData.Test.End)
-			assert.NoError(t, err)
-		}
+	fakeKeptn.AssertSentEvent(t, 0, checkFinishedEvent)
+	fakeKeptn.AssertSentEvent(t, 1, checkFinishedEvent)
+}
+
+func checkFinishedEvent(ce models.KeptnContextExtendedCE) bool {
+	eventData := &keptnv2.TestFinishedEventData{}
+	err := ce.DataAs(eventData)
+	if err != nil {
+		return false
 	}
+
+	return eventData.Status == keptnv2.StatusSucceeded
 }
 
 type disallowAllImagesFilter struct {
@@ -638,21 +690,21 @@ func (f disallowAllImagesFilter) IsImageAllowed(_ string) bool {
 }
 
 func TestExpectImageNotAllowedError(t *testing.T) {
-	myKeptn, _, fakeEventSender, err := initializeTestObjects("../../test/events/test.triggered.json")
-	require.NoError(t, err)
-
 	k8sMock := createK8sMock(t)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockJobConfigReader := eventhandlerfake.NewMockJobConfigReader(mockCtrl)
+	mockUniformErrorSender := eventhandlerfake.NewMockErrorLogSender(mockCtrl)
 
-	eventData := &keptnv2.EventData{}
-	myKeptn.CloudEvent.DataAs(eventData)
 	eh := EventHandler{
-		ServiceName: "job-executor-service",
-		Keptn:       myKeptn,
-		ImageFilter: disallowAllImagesFilter{},
-		K8s:         k8sMock,
+		ServiceName:     "job-executor-service",
+		ImageFilter:     acceptAllImagesFilter{},
+		JobConfigReader: mockJobConfigReader,
+		Mapper:          new(KeptnCloudEventMapper),
+		K8s:             k8sMock,
+		ErrorSender:     mockUniformErrorSender,
+		JobSettings:     k8sutils.JobSettings{},
 	}
-	mapper := new(KeptnCloudEventMapper)
-	eventPayloadAsInterface, err := mapper.Map(*eh.Keptn.CloudEvent)
 
 	notAllowedImageName := "alpine:latest"
 	action := config.Action{
@@ -663,7 +715,18 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 				Name:  "Run some image",
 			},
 		},
+		Events: []config.Event{
+			{
+				Name: "sh.keptn.event.test.triggered",
+			},
+		},
 	}
+
+	mockJobConfigReader.EXPECT().GetJobConfig("").Return(
+		&config.Config{
+			Actions: []config.Action{action},
+		}, "", nil,
+	).Times(1)
 
 	k8sMock.EXPECT().ConnectToCluster().Times(1)
 	k8sMock.EXPECT().CreateK8sJob(
@@ -677,24 +740,30 @@ func TestExpectImageNotAllowedError(t *testing.T) {
 	require.NoError(t, err)
 	time.Local = local
 
-	eh.startK8sJob(&action, 0, "", "", eventPayloadAsInterface)
+	fakeKeptn := sdk.NewFakeKeptn("test-job-executor-service")
+	fakeKeptn.AddTaskHandler("*", &eh)
 
-	err = fakeEventSender.AssertSentEventTypes(
-		[]string{
-			keptnv2.GetStartedEventType(keptnv2.TestTaskName),
-			keptnv2.GetFinishedEventType(keptnv2.TestTaskName),
-		},
-	)
+	err = fakeKeptn.NewEvent(newEvent("../../test/events/test.triggered.json"))
 	require.NoError(t, err)
 
-	for _, cloudEvent := range fakeEventSender.SentEvents {
-		if cloudEvent.Type() == keptnv2.GetFinishedEventType(keptnv2.TestTaskName) {
-			eventData := &keptnv2.TestFinishedEventData{}
-			cloudEvent.DataAs(eventData)
+	fakeKeptn.AssertSentEventType(t, 0, keptnv2.GetStartedEventType(keptnv2.TestTaskName))
+	fakeKeptn.AssertSentEventType(t, 1, keptnv2.GetFinishedEventType(keptnv2.TestTaskName))
 
-			assert.Equal(t, eventData.Status, keptnv2.StatusErrored)
-			assert.Equal(t, eventData.Result, keptnv2.ResultFailed)
-			assert.Contains(t, eventData.Message, notAllowedImageName)
-		}
+	fakeKeptn.AssertSentEvent(t, 0, checkFinishedEvent)
+}
+
+func checkFinishedEventImageNotAllowed(ce models.KeptnContextExtendedCE) bool {
+	eventData := &keptnv2.TestFinishedEventData{}
+	err := ce.DataAs(eventData)
+	if err != nil {
+		return false
 	}
+
+	if eventData.Status != keptnv2.StatusErrored {
+		return false
+	} else if eventData.Result != keptnv2.ResultFailed {
+		return false
+	}
+
+	return true
 }
