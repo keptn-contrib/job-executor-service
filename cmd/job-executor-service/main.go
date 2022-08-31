@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	api "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/keptn/go-utils/pkg/sdk"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -227,9 +226,7 @@ func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
 	configuration, _, err := jcr.GetJobConfig(event.GitCommitID)
 
 	if err != nil {
-		// TODO: Send error log event
-		uniformHandler := api.NewUniformHandler(fmt.Sprintf("%s/controlPlane/v1", env.KeptnAPIENDPOINT))
-		errorSender := keptn_interface.NewErrorLogSender(ServiceName, uniformHandler, keptnHandle.APIV2().API())
+		errorSender := keptn_interface.NewErrorLogSender(ServiceName, keptnHandle.APIV2().Uniform(), keptnHandle.APIV2().Logs())
 
 		errorLogErr := errorSender.SendErrorLogEvent(&event, fmt.Errorf(
 			"could not retrieve config for job-executor-service: %w", err,

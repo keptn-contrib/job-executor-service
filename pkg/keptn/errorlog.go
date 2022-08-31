@@ -9,6 +9,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/keptn/go-utils/pkg/sdk"
 	"log"
+	"time"
 )
 
 const errorType = "sh.keptn.log.error"
@@ -24,25 +25,28 @@ type UniformClient interface {
 	GetRegistrations(ctx context.Context, opts api.UniformGetRegistrationsOptions) ([]*models.Integration, error)
 }
 
-// CloudEventSender represents the interface implemented by the Keptn API client for sending cloudevents
-type CloudEventSender interface {
-	SendEvent(ctx context.Context, event models.KeptnContextExtendedCE, opts api.APISendEventOptions) (*models.EventContext, *models.Error)
+type LogEventSender interface {
+	// Log appends the specified logs to the log cache.
+	Log(logs []models.LogEntry, opts api.LogsLogOptions)
+
+	// Flush flushes the log cache.
+	Flush(ctx context.Context, opts api.LogsFlushOptions) error
 }
 
-//go:generate mockgen -destination=fake/errorlog_mock.go -package=fake .  UniformClient,CloudEventSender
+//go:generate mockgen -destination=fake/errorlog_mock.go -package=fake .  UniformClient,LogEventSender
 
 // ErrorLogSender creates and sends the error log cloudevents for the registered job-executor-service extension
 type ErrorLogSender struct {
 	uniformHandler  UniformClient
-	ceSender        CloudEventSender
+	logSender       LogEventSender
 	integrationName string
 }
 
 // NewErrorLogSender returns an initialized ErrorLogSender
-func NewErrorLogSender(integrationName string, uniformClient UniformClient, sender CloudEventSender) *ErrorLogSender {
+func NewErrorLogSender(integrationName string, uniformClient UniformClient, sender LogEventSender) *ErrorLogSender {
 	return &ErrorLogSender{
 		uniformHandler:  uniformClient,
-		ceSender:        sender,
+		logSender:       sender,
 		integrationName: integrationName,
 	}
 }
@@ -76,17 +80,17 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *sdk.KeptnEvent, 
 	sendEvent := false
 	for _, registration := range registrations {
 		if registration.Name == els.integrationName {
-			errorCloudEvent, err := createErrorLogCloudEvent(registration.ID, initialCloudEvent, applicationError)
+			errorLog, err := createErrorLog(registration.ID, initialCloudEvent, applicationError)
 			if err != nil {
 				log.Printf("unable to create error log cloudevent %+v: %+v", initialCloudEvent, err)
 				continue
 			}
 
-			_, eventErr := els.ceSender.SendEvent(context.Background(), errorCloudEvent, api.APISendEventOptions{})
+			els.logSender.Log([]models.LogEntry{errorLog}, api.LogsLogOptions{})
+			eventErr := els.logSender.Flush(context.Background(), api.LogsFlushOptions{})
 			if eventErr == nil {
 				sendEvent = true
 			}
-
 		}
 	}
 
@@ -97,25 +101,20 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *sdk.KeptnEvent, 
 	return fmt.Errorf("no registration found with name %s", els.integrationName)
 }
 
-func createErrorLogCloudEvent(
+func createErrorLog(
 	integrationID string, initialEvent *sdk.KeptnEvent, err error,
-) (models.KeptnContextExtendedCE, error) {
-	errorData := ErrorData{
+) (models.LogEntry, error) {
+	logEntry := models.LogEntry{
+		GitCommitID:   initialEvent.GitCommitID,
+		KeptnContext:  initialEvent.Shkeptncontext,
 		Message:       err.Error(),
-		IntegrationID: integrationID,
+		Time:          time.Now(),
 		Task:          getTaskFromEvent(*initialEvent.Type),
+		IntegrationID: integrationID,
+		TriggeredID:   initialEvent.Triggeredid,
 	}
 
-	eventType := errorType
-	event := models.KeptnContextExtendedCE{
-		Data:           errorData,
-		Source:         initialEvent.Source,
-		Type:           &eventType,
-		Triggeredid:    initialEvent.ID,
-		Shkeptncontext: initialEvent.Shkeptncontext,
-	}
-
-	return event, nil
+	return logEntry, nil
 }
 
 func getTaskFromEvent(eventType string) string {
