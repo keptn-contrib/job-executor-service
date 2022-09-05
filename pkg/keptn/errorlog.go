@@ -81,11 +81,7 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *sdk.KeptnEvent, 
 	sendEvent := false
 	for _, registration := range registrations {
 		if registration.Name == els.integrationName {
-			errorLog, err := createErrorLog(registration.ID, initialCloudEvent, applicationError)
-			if err != nil {
-				log.Printf("unable to create error log cloudevent %+v: %+v", initialCloudEvent, err)
-				continue
-			}
+			errorLog := createErrorLog(registration.ID, initialCloudEvent, applicationError)
 
 			els.logSender.Log([]models.LogEntry{errorLog}, api.LogsLogOptions{})
 			eventErr := els.logSender.Flush(context.Background(), api.LogsFlushOptions{})
@@ -104,7 +100,7 @@ func (els *ErrorLogSender) SendErrorLogEvent(initialCloudEvent *sdk.KeptnEvent, 
 
 func createErrorLog(
 	integrationID string, initialEvent *sdk.KeptnEvent, err error,
-) (models.LogEntry, error) {
+) models.LogEntry {
 	logEntry := models.LogEntry{
 		GitCommitID:   initialEvent.GitCommitID,
 		KeptnContext:  initialEvent.Shkeptncontext,
