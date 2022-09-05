@@ -111,7 +111,7 @@ func createErrorLog(
 		TriggeredID:   initialEvent.Triggeredid,
 	}
 
-	return logEntry, nil
+	return logEntry
 }
 
 func getTaskFromEvent(eventType string) string {
