@@ -1,8 +1,11 @@
 package keptn
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/keptn/go-utils/pkg/sdk"
+	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -103,7 +106,7 @@ func TestErrorWhenNoMatchingRegistrationIsReturned(t *testing.T) {
 	assert.ErrorContains(t, err, "no registration found with name foobar")
 }
 
-/*func TestErrorWhenMultipleMatchingRegistrationReturned(t *testing.T) {
+func TestErrorWhenMultipleMatchingRegistrationReturned(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -127,10 +130,11 @@ func TestErrorWhenNoMatchingRegistrationIsReturned(t *testing.T) {
 
 	keptnContext := "returnedEventContext"
 
-	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
-	mockCloudEventSender.EXPECT().SendEvent(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil, nil)
+	mockLogEventSender := fake.NewMockLogEventSender(ctrl)
+	mockLogEventSender.EXPECT().Log(gomock.Any(), gomock.Any()).Times(2)
+	mockLogEventSender.EXPECT().Flush(gomock.Any(), gomock.Any()).Times(2).Return(nil)
 
-	sut := NewErrorLogSender("foobar", uniformClient, mockCloudEventSender)
+	sut := NewErrorLogSender("foobar", uniformClient, mockLogEventSender)
 
 	eventType := "sh.keptn.test.triggered"
 	newEvent := sdk.KeptnEvent{
@@ -172,13 +176,14 @@ func TestSendErrorLogHappyPath(t *testing.T) {
 
 	testError := errors.New("some job executor error")
 
-	mockCloudEventSender := fake.NewMockCloudEventSender(ctrl)
-	// ErrorCloudEventData cannot be compared since models.KeptnContextExtendedCE has no matcher
-	mockCloudEventSender.EXPECT().SendEvent(gomock.Any(), gomock.AssignableToTypeOf(models.KeptnContextExtendedCE{}), gomock.Any()).Times(1).Return(nil, nil)
+	// ErrorCloudEventData cannot be compared since models.LogEntry{} has no matcher
+	mockLogEventSender := fake.NewMockLogEventSender(ctrl)
+	mockLogEventSender.EXPECT().Log(gomock.AssignableToTypeOf([]models.LogEntry{}), gomock.Any()).Times(1)
+	mockLogEventSender.EXPECT().Flush(gomock.Any(), gomock.Any()).Times(1).Return(nil)
 
-	sut := NewErrorLogSender("bar", uniformClient, mockCloudEventSender)
+	sut := NewErrorLogSender("bar", uniformClient, mockLogEventSender)
 
 	err = sut.SendErrorLogEvent(&initialCloudEvent, testError)
 
 	require.NoError(t, err)
-}*/
+}
