@@ -25,6 +25,7 @@ type UniformClient interface {
 	GetRegistrations(ctx context.Context, opts api.UniformGetRegistrationsOptions) ([]*models.Integration, error)
 }
 
+// LogEventSender represents the interface implemented by the Keptn API client for sending log messages
 type LogEventSender interface {
 	// Log appends the specified logs to the log cache.
 	Log(logs []models.LogEntry, opts api.LogsLogOptions)
