@@ -226,6 +226,17 @@ func jobEventFilter(keptnHandle sdk.IKeptn, event sdk.KeptnEvent) bool {
 	configuration, _, err := jcr.GetJobConfig(event.GitCommitID)
 
 	if err != nil {
+		errorSender := keptn_interface.NewErrorLogSender(ServiceName, keptnHandle.APIV2().Uniform(), keptnHandle.APIV2().Logs())
+
+		errorLogErr := errorSender.SendErrorLogEvent(&event, fmt.Errorf(
+			"could not retrieve config for job-executor-service: %w", err,
+		))
+
+		if errorLogErr != nil {
+			keptnHandle.Logger().Infof("Failed sending error log for keptn context %s: %v. Initial error: %v", event.Shkeptncontext,
+				errorLogErr, err)
+		}
+
 		keptnHandle.Logger().Infof("could not retrieve config for job-executor-service: %e", err)
 		return false
 	}
