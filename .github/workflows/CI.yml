@@ -126,7 +126,7 @@ jobs:
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
-        uses: c-py/action-dotenv-to-setenv@v3
+        uses: c-py/action-dotenv-to-setenv@v4
         with:
           env-file: .ci_env
 
@@ -213,7 +213,7 @@ jobs:
         uses: actions/checkout@v3.0.2
 
       - name: Set up Go
-        uses: actions/setup-go@v3.2.1
+        uses: actions/setup-go@v3.3.0
         with:
           go-version-file: "go.mod"
 

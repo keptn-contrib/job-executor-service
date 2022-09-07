@@ -36,7 +36,6 @@ jobs:
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
-      GO_VERSION: 1.18
       GOPROXY: "https://proxy.golang.org"
       GO111MODULE: "on"
       BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -53,7 +52,7 @@ jobs:
         uses: actions/checkout@v3.0.2
 
       - name: Setup Go
-        uses: actions/setup-go@v3.2.1
+        uses: actions/setup-go@v3.3.0
         with:
           go-version-file: "go.mod"
 
@@ -63,7 +62,7 @@ jobs:
 
       # Download artifacts from last CI run
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v2.21.1
+        uses: dawidd6/action-download-artifact@v2.23.0
         id: download_artifacts_push
         with:
           # Download last successful artifact from a CI build
@@ -272,7 +271,7 @@ jobs:
       # As output a markdown and a json version will be generated
       - name: Build final test report
         id: build_final_test_report
-        uses: actions/github-script@v6.1.0
+        uses: actions/github-script@v6.2.0
         env:
           TEST_REPORTS_PATH: ${{ env.TEST_REPORTS_PATH }}
           FINAL_TEST_REPORTS_FOLDER: ${{ env.FINAL_TEST_REPORTS_FOLDER }}

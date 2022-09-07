@@ -1,8 +1,5 @@
 name: "Unit Tests"
 description: "Run unit tests using go"
-inputs:
-  GO_VERSION:
-    default: "1.18"
 env:
   GO111MODULE: "on"
   GOPROXY: "https://proxy.golang.org"
