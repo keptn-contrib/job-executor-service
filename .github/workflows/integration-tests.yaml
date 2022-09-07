@@ -36,7 +36,7 @@ jobs:
         network-policy: [true, false]
         job-network-policy: [true, false]
     env:
-      GO_VERSION: 1.17
+      GO_VERSION: 1.18
       GOPROXY: "https://proxy.golang.org"
       GO111MODULE: "on"
       BRANCH: ${{ github.head_ref || github.ref_name }}
