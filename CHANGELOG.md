@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/keptn-contrib/job-executor-service/compare/0.2.5...0.3.0) (2022-09-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Reimplement service with go-sdk (#351)
+
+### Features
+
+* Reimplement service with go-sdk ([#351](https://github.com/keptn-contrib/job-executor-service/issues/351)) ([91c9409](https://github.com/keptn-contrib/job-executor-service/commit/91c940971dd01d641ddeb16ea9044e21520dd799))
+* Send error cloud event ([#354](https://github.com/keptn-contrib/job-executor-service/issues/354)) ([e247419](https://github.com/keptn-contrib/job-executor-service/commit/e247419c6f10ac4f2fa623b1a57bee3aabaf9914))
+
+
+### Other
+
+* Delete NoIngress integration test ([#353](https://github.com/keptn-contrib/job-executor-service/issues/353)) ([cbe07b7](https://github.com/keptn-contrib/job-executor-service/commit/cbe07b792562c6400517d8eaca3445ef0de0eca8))
+* Release notes for 0.2.5 ([#350](https://github.com/keptn-contrib/job-executor-service/issues/350)) ([f772d0c](https://github.com/keptn-contrib/job-executor-service/commit/f772d0c1282da8ba6414403c40a720516880dfcf))
+* Update dependencies ([#356](https://github.com/keptn-contrib/job-executor-service/issues/356)) ([6b613b1](https://github.com/keptn-contrib/job-executor-service/commit/6b613b1aed0910e8cbb50c0eb4cb3d658f401caf))
+* Update to Go 1.18 ([#357](https://github.com/keptn-contrib/job-executor-service/issues/357)) ([1353261](https://github.com/keptn-contrib/job-executor-service/commit/1353261872708207b55d152db462105d92c3a746))
+
 ### [0.2.5](https://github.com/keptn-contrib/job-executor-service/compare/0.2.4...0.2.5) (2022-08-29)
 
 
