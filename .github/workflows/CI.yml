@@ -43,7 +43,7 @@ jobs:
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
-        uses: c-py/action-dotenv-to-setenv@v3
+        uses: c-py/action-dotenv-to-setenv@v4
         with:
           env-file: .ci_env
 
@@ -183,7 +183,7 @@ jobs:
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
-        uses: c-py/action-dotenv-to-setenv@v3
+        uses: c-py/action-dotenv-to-setenv@v4
         with:
           env-file: .ci_env
 
