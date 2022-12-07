@@ -36,6 +36,9 @@ running in the Keptn ecosystem:
 |    0.16.x     |                               keptncontrib/job-executor-service:0.2.4                                |       v2       |
 |    0.17.x     |                               keptncontrib/job-executor-service:0.2.5                                |       v2       |
 |    0.18.x     |                               keptncontrib/job-executor-service:0.3.0                                |       v2       |
+|    0.19.x     |                               keptncontrib/job-executor-service:0.3.0                                |       v2       |
+|    0.20.x     |                               keptncontrib/job-executor-service:0.3.0                                |       v2       |
+|    1.x.y      |                               keptncontrib/job-executor-service:0.3.0                                |       v2       |
 
 **Please Note**:
 - Newer Keptn versions might be compatible, but compatibility has not been verified at the time of the release.
