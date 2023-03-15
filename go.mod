@@ -5,21 +5,21 @@ go 1.18
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/PaesslerAG/jsonpath v0.1.1
-	github.com/cloudevents/sdk-go/v2 v2.11.0
+	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/gobwas/glob v0.2.3
 	github.com/golang/mock v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.18.1-0.20220829063445-1f5af67a8cf3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/afero v1.9.2
-	github.com/stretchr/testify v1.8.0
+	github.com/spf13/afero v1.9.5
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
-	k8s.io/client-go v0.24.4
+	k8s.io/api v0.24.7
+	k8s.io/apimachinery v0.24.7
+	k8s.io/client-go v0.24.7
 )
 
 require (
@@ -64,11 +64,11 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
-	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
-	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
