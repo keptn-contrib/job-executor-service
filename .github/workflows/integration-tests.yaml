@@ -271,7 +271,7 @@ jobs:
       # As output a markdown and a json version will be generated
       - name: Build final test report
         id: build_final_test_report
-        uses: actions/github-script@v6.3.3
+        uses: actions/github-script@v6.4.1
         env:
           TEST_REPORTS_PATH: ${{ env.TEST_REPORTS_PATH }}
           FINAL_TEST_REPORTS_FOLDER: ${{ env.FINAL_TEST_REPORTS_FOLDER }}
