@@ -19,7 +19,7 @@ jobs:
       LATEST_KEPTN_PRERELEASE: ${{ steps.prepare_keptn_version_matrix.outputs.LATEST_PRERELEASE }}
     steps:
       - name: Check out code.
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Prepare Keptn version matrix
         id: prepare_keptn_version_matrix
@@ -49,7 +49,7 @@ jobs:
     steps:
       # Checkout code for the integrations tests in test/e2e
       - name: Check out code.
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Setup Go
         uses: actions/setup-go@v3.3.1
