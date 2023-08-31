@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -23,7 +23,7 @@ jobs:
       VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -64,7 +64,7 @@ jobs:
       VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -95,7 +95,7 @@ jobs:
       VERSION: ${{ needs.release.outputs.RELEASE_TAG }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Run make
         run: make build-lint

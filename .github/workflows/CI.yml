@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
         with:
           fetch-depth: 0 # need to checkout "all commits" for certain features to work (e.g., get all changed files)
 
@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -122,7 +122,7 @@ jobs:
       DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -179,7 +179,7 @@ jobs:
       DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -210,7 +210,7 @@ jobs:
       VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.6.0
 
       - name: Set up Go
         uses: actions/setup-go@v3.3.1
