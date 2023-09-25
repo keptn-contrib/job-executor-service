@@ -62,7 +62,7 @@ jobs:
 
       # Download artifacts from last CI run
       - name: Download artifacts
-        uses: dawidd6/action-download-artifact@v2.23.0
+        uses: dawidd6/action-download-artifact@v2.28.0
         id: download_artifacts_push
         with:
           # Download last successful artifact from a CI build
