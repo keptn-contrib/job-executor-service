@@ -256,7 +256,7 @@ jobs:
       FINAL_TEST_REPORT_FILEPATH_MARKDOWN: "./final-test-reports/final-test-report.md"
     steps:
       - name: Set up Node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.8.2
         with:
           node-version: 16
       - run: npm install ndjson-parse@1.0.4 tablemark@v2.0.0
