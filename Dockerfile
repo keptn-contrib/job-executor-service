@@ -1,7 +1,7 @@
 # Use the offical Golang image to create a build artifact.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
-FROM golang:1.18.3-alpine as builder
+FROM golang:1.21.6-alpine as builder
 
 RUN apk add --no-cache gcc libc-dev git
 
