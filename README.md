@@ -1,5 +1,7 @@
 # Job Executor Service
 
+## This service has reached end of life on December 22nd, 2023 similar to [Keptn V1](https://github.com/keptn/keptn).
+
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/job-executor-service)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/job-executor-service)](https://goreportcard.com/report/github.com/keptn-contrib/job-executor-service)
 
